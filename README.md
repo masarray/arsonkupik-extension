@@ -3,8 +3,8 @@
   <h1>ArSonKuPik</h1>
   <p><strong>Professional browser audio mastering, processed locally.</strong></p>
   <p>
-    <a href="https://masarray.github.io/arsonkupik-extension/"><img alt="Website" src="https://img.shields.io/badge/Website-Live-62E6D8?style=flat-square"></a>
-    <a href="https://github.com/masarray/arsonkupik-extension/releases"><img alt="Release" src="https://img.shields.io/github/v/release/masarray/ArSonKuPik?display_name=tag&style=flat-square"></a>
+    <a href="https://masarray.github.io/arsonkupik-extension/"><img alt="GitHub Pages deployment" src="https://github.com/masarray/arsonkupik-extension/actions/workflows/pages.yml/badge.svg?branch=main"></a>
+    <a href="https://github.com/masarray/arsonkupik-extension/releases"><img alt="Release" src="https://img.shields.io/github/v/release/masarray/arsonkupik-extension?display_name=tag&style=flat-square"></a>
     <img alt="Manifest V3" src="https://img.shields.io/badge/Chrome-Manifest%20V3-6EA8FF?style=flat-square">
     <img alt="Privacy first" src="https://img.shields.io/badge/Privacy-Local%20processing-B79CFF?style=flat-square">
   </p>
@@ -109,7 +109,7 @@ ArSonKuPik is under active development. The repository currently tracks the `0.3
 
 ## Support development
 
-ArSonKuPik remains free to use. Indonesian users can optionally support independent development from the public [QRIS support page](https://masarray.github.io/arsonkupik-extension/id/dukung.html). The link is user-initiated, contains no analytics or payment SDK, and never unlocks or restricts core features. QRIS deployment instructions are documented in [QRIS_SETUP.md](QRIS_SETUP.md).
+ArSonKuPik remains free to use. The optional [Indonesia support page](https://masarray.github.io/arsonkupik-extension/id/dukung.html) is prepared for an official merchant QRIS and clearly remains inactive until that QRIS is verified. The link is user-initiated, contains no analytics or payment SDK, and never unlocks or restricts core features. Activation instructions are documented in [QRIS_SETUP.md](QRIS_SETUP.md).
 
 ## Contributing and security
 
