@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Installation & Support · ArSonKuPik</title>
+  <meta name="description" content="Install, verify, and troubleshoot the ArSonKuPik Chrome browser audio enhancer, including tab capture, output routing, performance modes, and bug reports.">
+  <meta name="robots" content="index,follow">
+  <meta name="theme-color" content="#06080d">
+  <link rel="canonical" href="https://masarray.github.io/ArSonKuPik/support.html">
+  <link rel="icon" href="favicon.ico">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="site-header"><div class="container nav"><a class="brand" href="./"><img src="assets/icon-192.png" alt="" width="34" height="34"><span class="brand-word"><span class="arson">ArSon</span><span class="kupik">KuPik</span></span></a><button class="menu-button" type="button" data-menu-button aria-label="Open navigation" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button><nav class="nav-links" data-menu><a href="./">Home</a><a href="privacy.html">Privacy</a><a href="https://github.com/masarray/ArSonKuPik/issues">Issues</a><a href="https://github.com/masarray/ArSonKuPik">GitHub</a></nav></div></header>
+  <main id="main">
+    <section class="doc-hero"><div class="container"><p class="eyebrow">Install · Verify · Troubleshoot</p><h1>Get the cleanest first run.</h1><p>Start with a known browser version and System Default output. Then verify the source tab, mastering state, and output route one step at a time.</p></div></section>
+    <div class="container doc-layout">
+      <article class="prose">
+        <h2 id="requirements">Requirements</h2>
+        <ul><li>Chrome or a compatible Chromium-based browser with the required extension APIs.</li><li>Chrome 116 or newer, as declared in the current manifest.</li><li>An audible source playing in a normal browser tab.</li><li>Developer mode only when installing an unpacked build.</li></ul>
+
+        <h2 id="install">Install an unpacked build</h2>
+        <ol><li>Download and extract the source repository or release archive.</li><li>Open <code>chrome://extensions</code>.</li><li>Enable <strong>Developer mode</strong>.</li><li>Select <strong>Load unpacked</strong>.</li><li>Choose the directory that directly contains <code>manifest.json</code>.</li></ol>
+        <p>Do not select the parent directory and do not load the GitHub Pages <code>docs/</code> directory.</p>
+
+        <h2 id="first-run">First run</h2>
+        <ol><li>Open a tab containing music, video, or another audible source.</li><li>Start playback before opening the extension popup.</li><li>Select <strong>Start Enhance</strong>.</li><li>Leave output routing on <strong>System Default</strong> for the first test.</li><li>Open Studio and use master bypass to confirm an audible difference.</li></ol>
+
+        <h2 id="no-audio">No audio or no audible change</h2>
+        <ul>
+          <li>Confirm the selected tab is producing sound and is not muted.</li>
+          <li>Stop and start enhancement again after changing the source tab.</li>
+          <li>Use System Default output to eliminate sink-routing issues.</li>
+          <li>Disable other audio enhancement extensions temporarily.</li>
+          <li>Reload ArSonKuPik on <code>chrome://extensions</code> after modifying source files.</li>
+          <li>Test master bypass and a clearly voiced preset at a safe listening level.</li>
+        </ul>
+
+        <h2 id="routing">Output-device routing</h2>
+        <p>Output enumeration and sink selection depend on browser and operating-system support. If a named device cannot be selected, return to System Default, verify that the device is active in the operating system, and restart the source tab. ArSonKuPik does not need microphone audio for output routing.</p>
+
+        <h2 id="performance">Performance</h2>
+        <p>Use <strong>ECO</strong> on low-power or thermally constrained systems. Use <strong>TURBO</strong> for the full processing configuration. If playback becomes unstable, test with a single source tab, close unnecessary heavy tabs, switch to ECO, and compare CPU behavior with master bypass enabled.</p>
+
+        <h2 id="report">Report a bug</h2>
+        <p>Search existing issues before opening a report. Include the ArSonKuPik version, browser version, operating system, source type, output route, exact reproduction steps, expected behavior, actual behavior, and screenshots or console errors when useful.</p>
+        <p><a class="button" href="https://github.com/masarray/ArSonKuPik/issues/new/choose">Open an issue</a></p>
+
+        <h2 id="support-development">Support development</h2>
+        <p>Technical support remains free. Indonesian users who wish to support independent development can use the optional QRIS page; contributing is never required to report a bug or use core features.</p>
+        <p><a class="button" href="id/dukung.html">Open voluntary support page</a></p>
+
+        <h2 id="security">Security and privacy</h2>
+        <p>Do not publish a vulnerability or sensitive privacy concern in a public issue. Use GitHub's private vulnerability reporting flow described in the repository's security policy.</p>
+      </article>
+      <aside class="doc-side"><strong>On this page</strong><a href="#requirements">Requirements</a><a href="#install">Install</a><a href="#first-run">First run</a><a href="#no-audio">No audio</a><a href="#routing">Output routing</a><a href="#performance">Performance</a><a href="#report">Bug reports</a><a href="#support-development">Support development</a><a href="#security">Security</a></aside>
+    </div>
+  </main>
+  <footer class="site-footer"><div class="container footer-grid"><div class="footer-copy"><a class="brand" href="./"><img src="assets/icon-192.png" alt="" width="34" height="34"><span class="brand-word"><span class="arson">ArSon</span><span class="kupik">KuPik</span></span></a><p>Copyright © <span data-year>2026</span> Mas Ari. All rights reserved.</p></div><nav class="footer-links"><a href="./">Home</a><a href="privacy.html">Privacy</a><a href="https://github.com/masarray/ArSonKuPik/issues">Issues</a></nav></div></footer>
+  <script src="app.js" defer></script>
+</body>
+</html>

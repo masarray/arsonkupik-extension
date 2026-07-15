@@ -1,0 +1,41 @@
+name: Package release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Validate release
+        run: python3 scripts/validate.py --release
+
+      - name: Package extension
+        run: python3 scripts/package_extension.py
+
+      - name: Verify tag matches manifest
+        shell: bash
+        run: |
+          VERSION=$(python3 -c "import json; print(json.load(open('manifest.json'))['version'])")
+          test "${GITHUB_REF_NAME}" = "v${VERSION}"
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            dist/ArSonKuPik-v*-chrome-web-store.zip
+            dist/SHA256SUMS.txt

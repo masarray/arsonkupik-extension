@@ -1,0 +1,46 @@
+name: Bug report
+description: Report a reproducible ArSonKuPik problem
+title: "bug: "
+labels: [bug, triage]
+body:
+  - type: markdown
+    attributes:
+      value: Please do not report security or privacy vulnerabilities publicly. Follow SECURITY.md instead.
+  - type: input
+    id: version
+    attributes:
+      label: ArSonKuPik version
+      placeholder: 0.3.100
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Browser and operating system
+      placeholder: Chrome 150, Windows 11 24H2
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: Provide a minimal, numbered sequence.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Logs, screenshots, or recordings
+      description: Remove private information before uploading.

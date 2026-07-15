@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <link id="arDynamicFavicon" rel="icon" type="image/png" sizes="32x32" href="icons/icon-32.png">
+  <link rel="shortcut icon" href="icons/favicon.ico">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ArSonKuPik</title>
+  <link rel="stylesheet" href="src/popup/popup.css">
+</head>
+<body>
+  <main class="popup-shell">
+    <header class="topbar">
+      <div>
+        <div class="eyebrow">Browser Mastering</div>
+        <h1><span class="brand-arson">ArSon</span><span class="brand-kupik">KuPik</span></h1>
+      </div>
+      <span id="statusDot" class="status-dot" title="Engine status"></span>
+    </header>
+
+    <section id="privacyNotice" class="privacy-notice" aria-labelledby="privacyNoticeTitle" hidden>
+      <span class="privacy-kicker">Before first use</span>
+      <h2 id="privacyNoticeTitle">Local-processing privacy notice</h2>
+      <p>Tab audio is processed only on this device and is never recorded or uploaded. When per-site preferences are used, the current site hostname and selected output route may be stored locally in this Chrome profile.</p>
+      <div class="privacy-notice-actions">
+        <button id="acceptPrivacyButton" class="primary-button" type="button">Accept &amp; Continue</button>
+        <button id="privacyPolicyNoticeButton" class="text-button" type="button">Read privacy policy</button>
+      </div>
+    </section>
+
+    <section class="source-card">
+      <div class="source-head-row">
+        <span class="label">Source</span>
+        <span id="sourceStatePill" class="source-state-pill idle">Idle</span>
+      </div>
+      <div class="source-meta">
+        <strong id="sourceTitle">No active capture</strong>
+      </div>
+      <button id="startStopButton" class="primary-button" type="button">Start Enhance</button>
+      <p id="hintText" class="hint" aria-live="polite">Audio is processed locally. No recording, no upload.</p>
+    </section>
+
+    <section class="panel">
+      <div class="panel-title-row">
+        <span>Quick preset</span>
+      </div>
+      <div class="preset-select-row">
+        <select id="presetSelect" aria-label="Master preset"></select>
+      </div>
+    </section>
+
+    <section class="compact-controls">
+      <div class="device-row">
+        <label>
+          <span>Output device</span>
+          <select id="audioOutputSelect" aria-label="Audio output device"></select>
+        </label>
+      </div>
+      <p id="audioOutputHint" class="device-hint" aria-live="polite">System default output.</p>
+      <label class="slider-row" hidden>
+        <span>Output</span>
+        <output id="outputGainValue">0.0 dB</output>
+        <input id="outputGain" min="-18" max="12" step="0.1" value="0.5" type="range">
+      </label>
+      <label class="switch-row" hidden>
+        <span>Limiter safety</span>
+        <input id="limiterToggle" type="checkbox" checked>
+      </label>
+
+      <details class="privacy-data-controls">
+        <summary>Privacy &amp; local data</summary>
+        <p id="localDataSummary">No site preferences stored.</p>
+        <div class="privacy-data-actions">
+          <button id="clearSitePreferencesButton" class="secondary-button" type="button">Clear Site Preferences</button>
+          <button id="resetAllLocalDataButton" class="secondary-button danger-outline" type="button">Reset All Local Data</button>
+          <button id="privacyPolicyDataButton" class="text-button" type="button">Privacy policy</button>
+        </div>
+      </details>
+    </section>
+
+    <button id="openStudioButton" class="studio-button" type="button">Open Studio Panel</button>
+
+    <footer class="popup-support" aria-label="Support ArSonKuPik development">
+      <button id="supportDevelopmentButton" class="support-development-button" type="button">
+        <span aria-hidden="true">♡</span> Support ArSonKuPik
+      </button>
+      <span>Optional · QRIS Indonesia</span>
+    </footer>
+  </main>
+
+  <div id="soundModeToast" class="sound-mode-toast" hidden aria-live="polite" aria-atomic="true">
+    <div class="sound-mode-card">
+      <span class="sound-mode-kicker">Sound Enhancer</span>
+      <strong id="soundModeToastStatus" class="sound-mode-status">Active</strong>
+    </div>
+  </div>
+
+  <script type="module" src="src/popup/popup.js"></script>
+</body>
+</html>

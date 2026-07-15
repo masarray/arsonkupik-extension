@@ -1,0 +1,36 @@
+name: Feature request
+description: Propose an improvement to the listening experience or workflow
+title: "feat: "
+labels: [enhancement, triage]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Listening or workflow problem
+      description: Explain the problem before describing a control or implementation.
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Desired outcome
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Existing controls or alternatives considered
+  - type: dropdown
+    id: area
+    attributes:
+      label: Product area
+      options:
+        - Audio engine
+        - Presets
+        - Popup
+        - Studio UI
+        - Output routing
+        - Performance
+        - Documentation
+    validations:
+      required: true
