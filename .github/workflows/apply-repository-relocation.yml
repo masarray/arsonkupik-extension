@@ -1,0 +1,58 @@
+name: Apply repository relocation
+
+on:
+  push:
+    branches:
+      - fix/repository-relocation-ci
+    paths:
+      - scripts/apply_repository_relocation.py
+      - .github/workflows/apply-repository-relocation.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout migration branch
+        uses: actions/checkout@v4
+        with:
+          ref: fix/repository-relocation-ci
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Apply repository relocation
+        run: python3 scripts/apply_repository_relocation.py
+
+      - name: Remove temporary migration files
+        run: |
+          rm scripts/apply_repository_relocation.py
+          rm .github/workflows/apply-repository-relocation.yml
+
+      - name: Run release-grade validation
+        run: |
+          npm run release:check
+          npm run package
+          ZIP=$(find dist -maxdepth 1 -name 'ArSonKuPik-v*-chrome-web-store.zip' -print -quit)
+          test -n "$ZIP"
+          unzip -t "$ZIP"
+
+      - name: Commit migrated repository
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "fix: migrate repository URLs and strengthen release CI"
+          git push origin HEAD:fix/repository-relocation-ci
