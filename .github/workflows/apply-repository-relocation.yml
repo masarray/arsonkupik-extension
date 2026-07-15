@@ -7,6 +7,12 @@ on:
     paths:
       - scripts/apply_repository_relocation.py
       - .github/workflows/apply-repository-relocation.yml
+  pull_request:
+    branches:
+      - main
+    paths:
+      - scripts/apply_repository_relocation.py
+      - .github/workflows/apply-repository-relocation.yml
   workflow_dispatch:
 
 permissions:
