@@ -3,8 +3,8 @@
   <h1>ArSonKuPik</h1>
   <p><strong>Professional browser audio mastering, processed locally.</strong></p>
   <p>
-    <a href="https://masarray.github.io/ArSonKuPik/"><img alt="Website" src="https://img.shields.io/badge/Website-Live-62E6D8?style=flat-square"></a>
-    <a href="https://github.com/masarray/ArSonKuPik/releases"><img alt="Release" src="https://img.shields.io/github/v/release/masarray/ArSonKuPik?display_name=tag&style=flat-square"></a>
+    <a href="https://masarray.github.io/arsonkupik-extension/"><img alt="Website" src="https://img.shields.io/badge/Website-Live-62E6D8?style=flat-square"></a>
+    <a href="https://github.com/masarray/arsonkupik-extension/releases"><img alt="Release" src="https://img.shields.io/github/v/release/masarray/ArSonKuPik?display_name=tag&style=flat-square"></a>
     <img alt="Manifest V3" src="https://img.shields.io/badge/Chrome-Manifest%20V3-6EA8FF?style=flat-square">
     <img alt="Privacy first" src="https://img.shields.io/badge/Privacy-Local%20processing-B79CFF?style=flat-square">
   </p>
@@ -35,8 +35,8 @@ ArSonKuPik is a privacy-first Chrome extension that transforms browser playback 
 5. Open a tab that is playing audio, click the ArSonKuPik icon, then select **Start Enhance**.
 
 ```bash
-git clone https://github.com/masarray/ArSonKuPik.git
-cd ArSonKuPik
+git clone https://github.com/masarray/arsonkupik-extension.git
+cd arsonkupik-extension
 npm run check
 ```
 
@@ -109,7 +109,7 @@ ArSonKuPik is under active development. The repository currently tracks the `0.3
 
 ## Support development
 
-ArSonKuPik remains free to use. Indonesian users can optionally support independent development from the public [QRIS support page](https://masarray.github.io/ArSonKuPik/id/dukung.html). The link is user-initiated, contains no analytics or payment SDK, and never unlocks or restricts core features. QRIS deployment instructions are documented in [QRIS_SETUP.md](QRIS_SETUP.md).
+ArSonKuPik remains free to use. Indonesian users can optionally support independent development from the public [QRIS support page](https://masarray.github.io/arsonkupik-extension/id/dukung.html). The link is user-initiated, contains no analytics or payment SDK, and never unlocks or restricts core features. QRIS deployment instructions are documented in [QRIS_SETUP.md](QRIS_SETUP.md).
 
 ## Contributing and security
 

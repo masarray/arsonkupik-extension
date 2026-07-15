@@ -15,9 +15,9 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/masarray/ArSonKuPik.git"
+    "url": "git+https://github.com/masarray/arsonkupik-extension.git"
   },
-  "homepage": "https://masarray.github.io/ArSonKuPik/",
+  "homepage": "https://masarray.github.io/arsonkupik-extension/",
   "keywords": [
     "audio-enhancer",
     "browser-extension",

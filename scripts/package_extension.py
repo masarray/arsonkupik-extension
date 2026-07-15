@@ -16,7 +16,16 @@ VERSION = MANIFEST["version"]
 OUTPUT = DIST / f"ArSonKuPik-v{VERSION}-chrome-web-store.zip"
 
 INCLUDE_ROOT_FILES = ["manifest.json", "popup.html", "studio.html", "offscreen.html"]
-INCLUDE_DIRS = ["icons", "src"]
+INCLUDE_DIRS = ["src"]
+INCLUDE_ICON_FILES = [
+    "icons/favicon.ico",
+    "icons/icon-16.png",
+    "icons/icon-32.png",
+    "icons/icon-48.png",
+    "icons/icon-128.png",
+    "icons/icon-256.png",
+    "icons/icon-512.png",
+]
 EXCLUDED_SUFFIXES = {".map", ".log", ".psd", ".ai"}
 EXCLUDED_NAMES = {"README_REQUIRED_FONTS.txt", ".DS_Store", "Thumbs.db"}
 
@@ -31,6 +40,7 @@ def should_include(path: Path) -> bool:
 
 def collect_files() -> list[Path]:
     files = [ROOT / name for name in INCLUDE_ROOT_FILES]
+    files.extend(ROOT / name for name in INCLUDE_ICON_FILES)
     for directory in INCLUDE_DIRS:
         files.extend(path for path in (ROOT / directory).rglob("*") if should_include(path))
     missing = [path for path in files if not path.is_file()]

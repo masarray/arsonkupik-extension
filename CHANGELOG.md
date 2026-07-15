@@ -54,7 +54,7 @@ All notable project changes are documented here. The format follows Keep a Chang
 - GitHub Pages landing site with English and Indonesian content.
 - SEO metadata, canonical URLs, structured data, sitemap, robots file, and social-sharing image.
 
-[Unreleased]: https://github.com/masarray/ArSonKuPik/compare/v0.3.102...HEAD
-[0.3.102]: https://github.com/masarray/ArSonKuPik/compare/v0.3.101...v0.3.102
-[0.3.101]: https://github.com/masarray/ArSonKuPik/compare/v0.3.100...v0.3.101
-[0.3.100]: https://github.com/masarray/ArSonKuPik/releases/tag/v0.3.100
+[Unreleased]: https://github.com/masarray/arsonkupik-extension/compare/v0.3.102...HEAD
+[0.3.102]: https://github.com/masarray/arsonkupik-extension/compare/v0.3.101...v0.3.102
+[0.3.101]: https://github.com/masarray/arsonkupik-extension/compare/v0.3.100...v0.3.101
+[0.3.100]: https://github.com/masarray/arsonkupik-extension/releases/tag/v0.3.100

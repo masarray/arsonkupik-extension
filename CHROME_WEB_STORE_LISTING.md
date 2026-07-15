@@ -66,10 +66,10 @@ Used to save audio settings, custom presets, consent metadata, output routes, an
 
 ## Required public URLs
 
-- Website: `https://masarray.github.io/ArSonKuPik/`
-- Support: `https://masarray.github.io/ArSonKuPik/support.html`
-- Privacy policy: `https://masarray.github.io/ArSonKuPik/privacy.html`
-- Source and releases: `https://github.com/masarray/ArSonKuPik`
+- Website: `https://masarray.github.io/arsonkupik-extension/`
+- Support: `https://masarray.github.io/arsonkupik-extension/support.html`
+- Privacy policy: `https://masarray.github.io/arsonkupik-extension/privacy.html`
+- Source and releases: `https://github.com/masarray/arsonkupik-extension`
 
 ## Suggested screenshots
 

@@ -11,8 +11,8 @@ const STORE_KEYS = {
 };
 
 const PRIVACY_NOTICE_VERSION = '2026-07-15-p0';
-const PRIVACY_POLICY_URL = 'https://masarray.github.io/ArSonKuPik/privacy.html';
-const SUPPORT_DEVELOPMENT_URL = 'https://masarray.github.io/ArSonKuPik/id/dukung.html';
+const PRIVACY_POLICY_URL = 'https://masarray.github.io/arsonkupik-extension/privacy.html';
+const SUPPORT_DEVELOPMENT_URL = 'https://masarray.github.io/arsonkupik-extension/id/dukung.html';
 
 let lastState = createDefaultState();
 let creatingOffscreenDocument = null;

@@ -15,7 +15,7 @@ const supportScript = read('docs/support-page.js');
 const privacy = read('PRIVACY.md');
 
 assert.match(worker, /OPEN_SUPPORT_PAGE/);
-assert.match(worker, /https:\/\/masarray\.github\.io\/ArSonKuPik\/id\/dukung\.html/);
+assert.match(worker, /https:\/\/masarray\.github\.io\/arsonkupik-extension\/id\/dukung\.html/);
 assert.match(messaging, /export async function openSupportPage/);
 assert.match(popup, /supportDevelopmentButton/);
 assert.match(studio, /btnSupportDevelopment/);

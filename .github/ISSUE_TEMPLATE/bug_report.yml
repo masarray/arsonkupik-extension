@@ -10,7 +10,7 @@ body:
     id: version
     attributes:
       label: ArSonKuPik version
-      placeholder: 0.3.100
+      placeholder: 0.3.102
     validations:
       required: true
   - type: input

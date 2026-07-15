@@ -94,7 +94,7 @@ assert.equal(tabQueryCount, 0, 'Tab metadata must not be queried before privacy 
 
 const supportPage = await sendBackground('OPEN_SUPPORT_PAGE');
 assert.equal(supportPage.ok, true);
-assert.equal(createdTabUrls.at(-1), 'https://masarray.github.io/ArSonKuPik/id/dukung.html');
+assert.equal(createdTabUrls.at(-1), 'https://masarray.github.io/arsonkupik-extension/id/dukung.html');
 assert.equal(tabQueryCount, 0, 'Opening the support page must not read active-tab metadata.');
 
 const blocked = await sendBackground('START_ENHANCE');

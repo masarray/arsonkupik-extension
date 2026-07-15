@@ -2,29 +2,29 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
         xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
-    <loc>https://masarray.github.io/ArSonKuPik/</loc>
+    <loc>https://masarray.github.io/arsonkupik-extension/</loc>
     <lastmod>2026-07-15</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://masarray.github.io/ArSonKuPik/"/>
-    <xhtml:link rel="alternate" hreflang="id" href="https://masarray.github.io/ArSonKuPik/id/"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://masarray.github.io/ArSonKuPik/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://masarray.github.io/arsonkupik-extension/"/>
+    <xhtml:link rel="alternate" hreflang="id" href="https://masarray.github.io/arsonkupik-extension/id/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://masarray.github.io/arsonkupik-extension/"/>
   </url>
   <url>
-    <loc>https://masarray.github.io/ArSonKuPik/id/</loc>
+    <loc>https://masarray.github.io/arsonkupik-extension/id/</loc>
     <lastmod>2026-07-15</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://masarray.github.io/ArSonKuPik/"/>
-    <xhtml:link rel="alternate" hreflang="id" href="https://masarray.github.io/ArSonKuPik/id/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://masarray.github.io/arsonkupik-extension/"/>
+    <xhtml:link rel="alternate" hreflang="id" href="https://masarray.github.io/arsonkupik-extension/id/"/>
   </url>
   <url>
-    <loc>https://masarray.github.io/ArSonKuPik/privacy.html</loc>
+    <loc>https://masarray.github.io/arsonkupik-extension/privacy.html</loc>
     <lastmod>2026-07-15</lastmod>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://masarray.github.io/ArSonKuPik/support.html</loc>
+    <loc>https://masarray.github.io/arsonkupik-extension/support.html</loc>
     <lastmod>2026-07-15</lastmod>
     <priority>0.7</priority>
   </url>

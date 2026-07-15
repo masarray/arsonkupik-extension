@@ -16,7 +16,7 @@ CONFIG = ROOT / "docs/support-config.js"
 PAGE = ROOT / "docs/id/dukung.html"
 SITEMAP = ROOT / "docs/sitemap.xml"
 TARGET = ROOT / "docs/assets/qris-arsonkupik.png"
-URL = "https://masarray.github.io/ArSonKuPik/id/dukung.html"
+URL = "https://masarray.github.io/arsonkupik-extension/id/dukung.html"
 
 
 def png_dimensions(path: Path) -> tuple[int, int]:
