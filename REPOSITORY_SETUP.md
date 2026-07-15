@@ -1,6 +1,6 @@
 # GitHub Repository Setup
 
-Recommended repository name: **ArSonKuPik**
+Repository name: **arsonkupik-extension**
 
 Recommended description:
 
