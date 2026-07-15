@@ -17,6 +17,6 @@ The first support phase is Indonesia-only through an official static merchant QR
 
 ## Public URL
 
-`https://masarray.github.io/ArSonKuPik/id/dukung.html`
+`https://masarray.github.io/arsonkupik-extension/id/dukung.html`
 
 See [QRIS_SETUP.md](QRIS_SETUP.md) before enabling the payment image.

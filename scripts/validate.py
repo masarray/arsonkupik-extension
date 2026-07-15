@@ -15,6 +15,15 @@ ROOT = Path(__file__).resolve().parents[1]
 MANIFEST_PATH = ROOT / "manifest.json"
 RUNTIME_DIRS = [ROOT / "src"]
 RUNTIME_HTML = [ROOT / "popup.html", ROOT / "studio.html", ROOT / "offscreen.html"]
+PROJECT_REPOSITORY_URL = "https://github.com/masarray/arsonkupik-extension"
+PROJECT_PAGES_URL = "https://masarray.github.io/arsonkupik-extension/"
+PROJECT_PRIVACY_URL = f"{PROJECT_PAGES_URL}privacy.html"
+PROJECT_SUPPORT_URL = f"{PROJECT_PAGES_URL}id/dukung.html"
+LEGACY_PROJECT_URLS = (
+    "https://github.com/masarray/" + "ArSonKuPik",
+    "https://masarray.github.io/" + "ArSonKuPik/",
+)
+
 REQUIRED_FILES = [
     MANIFEST_PATH,
     ROOT / "popup.html",
@@ -233,7 +242,7 @@ def main() -> int:
     qris_image = ROOT / "docs/assets/qris-arsonkupik.png"
     support_page_text = (ROOT / "docs/id/dukung.html").read_text(encoding="utf-8")
     sitemap_text = (ROOT / "docs/sitemap.xml").read_text(encoding="utf-8")
-    support_url = "https://masarray.github.io/ArSonKuPik/id/dukung.html"
+    support_url = PROJECT_SUPPORT_URL
     qris_verified = re.search(r"lastVerified\s*:\s*['\"]([^'\"]*)", support_config_text)
     qris_verified_value = qris_verified.group(1).strip() if qris_verified else ""
     if qris_enabled:
@@ -267,6 +276,22 @@ def main() -> int:
     if re.search(r"\bfetch\s*\(|XMLHttpRequest|sendBeacon|localStorage|sessionStorage", support_script_text):
         fail("Support page must not add tracking, network APIs, or browser storage", failures)
     note(f"Indonesia QRIS support flow validated (enabled={qris_enabled})")
+
+    text_extensions = {".md", ".html", ".js", ".mjs", ".json", ".xml", ".txt", ".yml", ".yaml", ".py"}
+    for path in ROOT.rglob("*"):
+        if not path.is_file() or path.suffix.lower() not in text_extensions or ".git" in path.parts or "dist" in path.parts:
+            continue
+        content = path.read_text(encoding="utf-8")
+        for legacy_url in LEGACY_PROJECT_URLS:
+            if legacy_url in content:
+                fail(f"Legacy repository URL remains in {path.relative_to(ROOT)}: {legacy_url}", failures)
+    if manifest.get("homepage_url") != PROJECT_PAGES_URL:
+        fail("manifest homepage_url does not match the current GitHub Pages project", failures)
+    worker_text = (ROOT / "src/background/service-worker.js").read_text(encoding="utf-8")
+    if PROJECT_PRIVACY_URL not in worker_text or PROJECT_SUPPORT_URL not in worker_text:
+        fail("Runtime privacy/support URLs do not match the current GitHub Pages project", failures)
+    note("Repository relocation URLs validated")
+
     validate_site(failures)
 
     if manifest.get("background", {}).get("type") != "module":
@@ -281,7 +306,7 @@ def main() -> int:
         version = manifest.get("version", "")
         if f"[{version}]" not in changelog:
             fail(f"CHANGELOG.md has no release entry for {version}", failures)
-        if manifest.get("homepage_url") != "https://masarray.github.io/ArSonKuPik/":
+        if manifest.get("homepage_url") != PROJECT_PAGES_URL:
             fail("Unexpected manifest homepage_url for release", failures)
         privacy_text = (ROOT / "PRIVACY.md").read_text(encoding="utf-8")
         if "Limited Use requirements" not in privacy_text:

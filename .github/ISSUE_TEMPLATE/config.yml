@@ -1,8 +1,8 @@
 blank_issues_enabled: false
 contact_links:
   - name: Security or privacy report
-    url: https://github.com/masarray/ArSonKuPik/security/advisories/new
+    url: https://github.com/masarray/arsonkupik-extension/security/advisories/new
     about: Report vulnerabilities privately.
   - name: User documentation
-    url: https://masarray.github.io/ArSonKuPik/support.html
+    url: https://masarray.github.io/arsonkupik-extension/support.html
     about: Review installation and troubleshooting guidance.
