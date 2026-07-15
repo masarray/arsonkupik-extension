@@ -53,7 +53,7 @@ jobs:
           test -n "$ZIP"
           unzip -t "$ZIP"
 
-      - name: Commit migrated repository
+      - name: Create local migration commit
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -61,4 +61,70 @@ jobs:
           git restore --staged .github/workflows/validate.yml .github/workflows/release.yml
           git restore .github/workflows/validate.yml .github/workflows/release.yml
           git commit -m "fix: migrate repository URLs and package only runtime assets"
-          git push origin HEAD:fix/repository-relocation-ci
+
+      - name: Publish commit through Git Data API
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TARGET_BRANCH: fix/repository-relocation-ci
+        run: |
+          python3 - <<'PY'
+          import base64
+          import json
+          import os
+          import subprocess
+          import urllib.request
+
+          repo = os.environ["GITHUB_REPOSITORY"]
+          token = os.environ["GH_TOKEN"]
+          branch = os.environ["TARGET_BRANCH"]
+          api = f"https://api.github.com/repos/{repo}"
+
+          def request(method, path, payload=None):
+              data = None if payload is None else json.dumps(payload).encode("utf-8")
+              req = urllib.request.Request(
+                  api + path,
+                  data=data,
+                  method=method,
+                  headers={
+                      "Authorization": f"Bearer {token}",
+                      "Accept": "application/vnd.github+json",
+                      "X-GitHub-Api-Version": "2022-11-28",
+                      "User-Agent": "arsonkupik-relocation-workflow",
+                  },
+              )
+              with urllib.request.urlopen(req) as response:
+                  return json.load(response)
+
+          parent = subprocess.check_output(["git", "rev-parse", "HEAD^"], text=True).strip()
+          diff = subprocess.check_output(
+              ["git", "diff", "--name-status", "--no-renames", "HEAD^", "HEAD"],
+              text=True,
+          ).splitlines()
+          base_commit = request("GET", f"/git/commits/{parent}")
+          entries = []
+          for line in diff:
+              status, path = line.split("\t", 1)
+              if status == "D":
+                  entries.append({"path": path, "mode": "100644", "type": "blob", "sha": None})
+                  continue
+              content = open(path, "rb").read()
+              blob = request(
+                  "POST",
+                  "/git/blobs",
+                  {"content": base64.b64encode(content).decode("ascii"), "encoding": "base64"},
+              )
+              entries.append({"path": path, "mode": "100644", "type": "blob", "sha": blob["sha"]})
+
+          tree = request("POST", "/git/trees", {"base_tree": base_commit["tree"]["sha"], "tree": entries})
+          commit = request(
+              "POST",
+              "/git/commits",
+              {
+                  "message": "fix: migrate repository URLs and package only runtime assets",
+                  "tree": tree["sha"],
+                  "parents": [parent],
+              },
+          )
+          request("PATCH", f"/git/refs/heads/{branch}", {"sha": commit["sha"], "force": False})
+          print(f"Published migration commit {commit['sha']}")
+          PY
