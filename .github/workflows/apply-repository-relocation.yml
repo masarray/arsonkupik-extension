@@ -42,10 +42,8 @@ jobs:
       - name: Apply repository relocation
         run: python3 scripts/apply_repository_relocation.py
 
-      - name: Remove temporary migration files
-        run: |
-          rm scripts/apply_repository_relocation.py
-          rm .github/workflows/apply-repository-relocation.yml
+      - name: Remove temporary migration script
+        run: rm scripts/apply_repository_relocation.py
 
       - name: Run release-grade validation
         run: |
@@ -60,5 +58,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
-          git commit -m "fix: migrate repository URLs and strengthen release CI"
+          git restore --staged .github/workflows/validate.yml .github/workflows/release.yml
+          git restore .github/workflows/validate.yml .github/workflows/release.yml
+          git commit -m "fix: migrate repository URLs and package only runtime assets"
           git push origin HEAD:fix/repository-relocation-ci
