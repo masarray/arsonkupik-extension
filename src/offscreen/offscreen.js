@@ -207,6 +207,8 @@ class AudioEnhancerEngine {
     this.monitoringOutputTap = null;
     this.graphRebuildPromise = null;
     this.retiredEqNodes = [];
+    this.outputShellConnected = false;
+    this.outputShellConnected = false;
     this.timeBufferIn = null;
     this.timeBufferInputLeft = null;
     this.timeBufferInputRight = null;
@@ -1152,16 +1154,47 @@ class AudioEnhancerEngine {
     ].filter(Boolean);
   }
 
+  ensureOutputShell() {
+    if (this.outputShellConnected || !this.context || !this.source || !this.bypassGain || !this.outputMixGain) return;
+    this.source.connect(this.bypassGain).connect(this.outputMixGain).connect(this.context.destination);
+    this.outputShellConnected = true;
+  }
+
+  disconnectProcessingGraph() {
+    try { this.source?.disconnect(this.inputGain); } catch {}
+    const nodes = [
+      this.inputGain,
+      this.smartHeadroomGain,
+      this.safetyHighPass,
+      ...this.getFlatEqNodes(),
+      ...this.retiredEqNodes,
+      ...Object.values(this.compNodes || {}),
+      this.compressor,
+      this.makeupGain,
+      ...Object.values(this.colorNodes || {}),
+      ...this.getFlatWidthNodes(),
+      this.smartMakeupGain,
+      this.limiterDrive,
+      this.softClipper,
+      this.limiter,
+      this.outputGain,
+      this.processedGain
+    ].filter(Boolean);
+    for (const node of nodes) { try { node.disconnect(); } catch {} }
+  }
+
   connectGraph({ preserveCrossfade = false } = {}) {
     if (!this.context || !this.source) return;
-    for (const node of this.getAllNodes()) { try { node.disconnect(); } catch {} }
     const leanAudio = isLeanAudioMode(this.performanceMode);
     const isBypassed = Boolean(this.state.output.bypass);
-    if (this.bypassGain && this.processedGain && this.outputMixGain) {
-      if (!preserveCrossfade) { this.bypassGain.gain.value = isBypassed ? 1 : 0; this.processedGain.gain.value = isBypassed ? 0 : 1; }
-      this.outputMixGain.gain.value = 1;
-      this.source.connect(this.bypassGain).connect(this.outputMixGain);
+    if (!preserveCrossfade) {
+      this.bypassGain.gain.value = isBypassed ? 1 : 0;
+      this.processedGain.gain.value = isBypassed ? 0 : 1;
     }
+    this.outputMixGain.gain.value = 1;
+    this.ensureOutputShell();
+    this.disconnectProcessingGraph();
+
     let cursor = this.source.connect(this.inputGain).connect(this.smartHeadroomGain).connect(this.safetyHighPass);
     if (this.state.eqEnabled !== false) for (const eqNode of this.getFlatEqNodes()) cursor = cursor.connect(eqNode);
     if (this.state.compressor.enabled) cursor = this.connectCompressor(cursor);
@@ -1169,17 +1202,10 @@ class AudioEnhancerEngine {
     if (!leanAudio && this.state.width.enabled) cursor = this.connectWidth(cursor);
     if (this.smartMakeupGain) cursor = cursor.connect(this.smartMakeupGain);
     if (this.state.output.limiterEnabled) cursor = cursor.connect(this.limiterDrive).connect(this.softClipper).connect(this.limiter);
-    cursor = cursor.connect(this.outputGain);
-    if (this.processedGain && this.outputMixGain) { cursor.connect(this.processedGain).connect(this.outputMixGain); this.connectOutputDestination(this.outputMixGain); }
-    else this.connectOutputDestination(cursor);
+    cursor.connect(this.outputGain).connect(this.processedGain).connect(this.outputMixGain);
+    this.monitoringOutputTap = this.outputMixGain;
+    this.connectMonitoringTaps(this.monitoringOutputTap);
     this.retiredEqNodes = [];
-  }
-
-  connectOutputDestination(cursor) {
-    if (!cursor || !this.context) return;
-    this.monitoringOutputTap = cursor;
-    cursor.connect(this.context.destination);
-    this.connectMonitoringTaps(cursor);
   }
 
   createMonitoringNodes() {
@@ -1197,7 +1223,13 @@ class AudioEnhancerEngine {
   }
 
   disconnectMonitoringTaps() {
-    for (const node of [this.inputAnalyser,this.inputChannelSplitter,this.inputLeftAnalyser,this.inputRightAnalyser,this.outputAnalyser,this.correlationSplitter,this.leftAnalyser,this.rightAnalyser,...this.getStereoBandNodes(),this.meterSink].filter(Boolean)) { try { node.disconnect(); } catch {} }
+    try { this.source?.disconnect(this.inputAnalyser); } catch {}
+    try { this.source?.disconnect(this.inputChannelSplitter); } catch {}
+    try { this.monitoringOutputTap?.disconnect(this.outputAnalyser); } catch {}
+    try { this.monitoringOutputTap?.disconnect(this.correlationSplitter); } catch {}
+    for (const node of [this.inputAnalyser,this.inputChannelSplitter,this.inputLeftAnalyser,this.inputRightAnalyser,this.outputAnalyser,this.correlationSplitter,this.leftAnalyser,this.rightAnalyser,...this.getStereoBandNodes(),this.meterSink].filter(Boolean)) {
+      try { node.disconnect(); } catch {}
+    }
   }
 
   destroyMonitoringNodes() {
@@ -1205,6 +1237,7 @@ class AudioEnhancerEngine {
     this.inputChannelSplitter=this.inputLeftAnalyser=this.inputRightAnalyser=this.inputAnalyser=this.outputAnalyser=this.correlationSplitter=this.leftAnalyser=this.rightAnalyser=this.meterSink=null;
     this.stereoBands=[]; this.timeBufferIn=this.timeBufferInputLeft=this.timeBufferInputRight=this.timeBufferOut=this.timeBufferLeft=this.timeBufferRight=this.inputFrequencyData=this.outputFrequencyData=null;
     this.lastRtaFrame={source:'sfeq-rta-v93',pointCount:RTA_POINT_COUNT,input:[],output:[],updatedAt:0};
+    this.state.meters = createSilentMeters();
   }
 
   connectMonitoringTaps(outputCursor = this.monitoringOutputTap) {
