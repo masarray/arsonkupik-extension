@@ -4,7 +4,7 @@ This document is the submission checklist for the Chrome Web Store Privacy Pract
 
 ## Single purpose
 
-ArSonKuPik provides user-initiated, local, real-time audio enhancement for a selected browser tab, including equalization, dynamics, harmonic processing, stereo shaping, limiting, metering, presets, and supported output routing.
+ArSonKuPik provides user-initiated, local, real-time audio enhancement for a selected browser tab, including equalization, dynamics, harmonic processing, stereo shaping, limiting, metering, presets, and direct system-default playback.
 
 ## Data-use declarations
 
@@ -30,7 +30,7 @@ Browser-tab audio is processed transiently and locally after a user action. It i
 
 ### Device and configuration data
 
-Audio-output identifiers and labels exposed by the browser or operating system may be stored locally to restore a selected route. General settings, custom presets, consent metadata, and normalized per-site preferences are also stored locally.
+General settings, custom presets, consent metadata, active-capture coordination state, and normalized per-site enhancement preferences may be stored locally. The extension does not read or store speaker identifiers or named audio-output routes.
 
 ## Permitted purposes
 
@@ -56,7 +56,7 @@ The maintainer should certify that user data is not:
 - `activeTab`: access is limited to the tab selected by the user.
 - `tabCapture`: obtains audio from the selected tab after the user starts enhancement.
 - `offscreen`: hosts the local Web Audio graph while the popup is closed.
-- `storage`: keeps settings, presets, consent, device routes, and per-site preferences locally.
+- `storage`: keeps settings, presets, consent, and per-site enhancement preferences locally.
 
 The extension declares no host permissions, no `contentSettings` permission, and no microphone permission.
 
@@ -64,7 +64,7 @@ The extension declares no host permissions, no `contentSettings` permission, and
 
 Before first use, the popup states:
 
-> Tab audio is processed only on this device and is never recorded or uploaded. When per-site preferences are used, the current site hostname and selected output route may be stored locally in this Chrome profile.
+> Tab audio is processed only on this device and is never recorded or uploaded. When per-site preferences are used, the current site hostname may be stored locally in this Chrome profile.
 
 The user must choose **Accept & Continue** before `START_ENHANCE` is accepted by the background service worker.
 
@@ -79,7 +79,7 @@ The user must choose **Accept & Continue** before `START_ENHANCE` is accepted by
 
 The popup exposes:
 
-- **Clear Site Preferences** — removes per-site enhancement preferences and output routes.
+- **Clear Site Preferences** — removes saved per-site enhancement preferences.
 - **Reset All Local Data** — removes all extension-local configuration and consent after stopping capture.
 
 ## Submission verification

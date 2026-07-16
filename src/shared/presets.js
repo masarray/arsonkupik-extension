@@ -112,10 +112,7 @@ export const DEFAULT_OUTPUT = {
   limiterCeiling: -1.05,
   limiterDrive: 0.76,
   punchProtect: true,
-  bypass: false,
-  outputDeviceId: 'default',
-  outputDeviceLabel: 'System Default',
-  outputRouteStatus: 'default'
+  bypass: false
 };
 
 export const DEFAULT_MASTER_REVISION = 'v0-3-96-treble-coherence-skin-engine';
@@ -740,10 +737,7 @@ export function normalizeOutput(output = {}) {
     limiterDrive: clampNumber(output.limiterDrive ?? DEFAULT_OUTPUT.limiterDrive, 0, 12),
     limiterEnabled: output.limiterEnabled !== false,
     punchProtect: output.punchProtect !== false,
-    bypass: output.bypass === true,
-    outputDeviceId: sanitizeOutputDeviceId(output.outputDeviceId ?? DEFAULT_OUTPUT.outputDeviceId),
-    outputDeviceLabel: String(output.outputDeviceLabel || DEFAULT_OUTPUT.outputDeviceLabel),
-    outputRouteStatus: String(output.outputRouteStatus || DEFAULT_OUTPUT.outputRouteStatus)
+    bypass: output.bypass === true
   };
 }
 
@@ -792,14 +786,7 @@ export function applyPresetToState(state, preset) {
     compressor: normalizeCompressor(nextPreset.compressor),
     color: normalizeColor(nextPreset.color),
     width: normalizeWidth(nextPreset.width),
-    output: normalizeOutput({
-      ...nextPreset.output,
-      // Output always follows the selected preset. The previous developer
-      // gain-match lock was removed because it made preset loudness feel buggy.
-      outputDeviceId: state.output?.outputDeviceId || DEFAULT_OUTPUT.outputDeviceId,
-      outputDeviceLabel: state.output?.outputDeviceLabel || DEFAULT_OUTPUT.outputDeviceLabel,
-      outputRouteStatus: state.output?.outputRouteStatus || DEFAULT_OUTPUT.outputRouteStatus
-    }),
+    output: normalizeOutput(nextPreset.output),
     updatedAt: Date.now()
   };
 }
@@ -827,7 +814,3 @@ function clampNumber(value, min, max) {
 }
 
 
-function sanitizeOutputDeviceId(deviceId) {
-  const text = String(deviceId || 'default').trim();
-  return text && text !== 'undefined' && text !== 'null' ? text : 'default';
-}

@@ -8,6 +8,7 @@ const createdTabUrls = [];
 
 // Simulate an upgrade from an earlier build that persisted an active capture.
 localData.arAudioState = { active: true, tabId: 41, sourceTitle: 'Legacy active capture' };
+localData.arAudioDomainOutputRoutes = { 'legacy.example': { outputDeviceId: 'old-device' } };
 
 function pick(source, keys) {
   if (keys == null) return { ...source };
@@ -91,6 +92,7 @@ const initialState = await sendBackground('GET_STATE');
 assert.equal(initialState.state.active, false);
 assert.equal(initialState.state.tabId, null);
 assert.equal(tabQueryCount, 0, 'Tab metadata must not be queried before privacy consent.');
+assert.equal('arAudioDomainOutputRoutes' in localData, false, 'Legacy output-route storage must be deleted during migration.');
 
 const supportPage = await sendBackground('OPEN_SUPPORT_PAGE');
 assert.equal(supportPage.ok, true);
@@ -106,19 +108,15 @@ assert.equal(accepted.ok, true);
 assert.equal(accepted.privacy.accepted, true);
 assert.ok(tabQueryCount > 0, 'Tab context may be resolved only after privacy consent.');
 
-const selected = await sendBackground('UPDATE_STATE', {
-  patch: { output: { outputDeviceId: 'speaker-1', outputDeviceLabel: 'Test Speaker' } }
-});
-assert.equal(selected.ok, true);
-assert.equal(selected.state.privacy.sitePreferenceCount, 1);
-assert.deepEqual(Object.keys(localData.arAudioDomainOutputRoutes), ['example.com']);
-assert.equal('lastTitle' in localData.arAudioDomainOutputRoutes['example.com'], false);
-assert.equal('lastTabId' in localData.arAudioDomainOutputRoutes['example.com'], false);
+const started = await sendBackground('START_ENHANCE');
+assert.equal(started.ok, true);
+assert.deepEqual(Object.keys(localData.arAudioDomainEnhancePrefs), ['example.com']);
+assert.equal('lastTitle' in localData.arAudioDomainEnhancePrefs['example.com'], false);
+assert.equal('lastTabId' in localData.arAudioDomainEnhancePrefs['example.com'], false);
 
 const cleared = await sendBackground('CLEAR_SITE_PREFERENCES');
 assert.equal(cleared.ok, true);
 assert.equal(cleared.privacy.sitePreferenceCount, 0);
-assert.equal(cleared.state.output.outputDeviceId, 'default');
 assert.equal(cleared.privacy.accepted, true);
 
 const reset = await sendBackground('RESET_ALL_LOCAL_DATA');

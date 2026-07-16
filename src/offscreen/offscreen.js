@@ -12,7 +12,6 @@ import {
   isCutType
 } from '../shared/presets.js';
 import { buildSfeqRtaSpectrumFromFft } from '../shared/sfeq-rta.js';
-import { deviceIdToSinkId, normalizeOutputDeviceId } from '../shared/audio-devices.js';
 import { DEFAULT_PERFORMANCE_MODE, normalizePerformanceMode, requiresEqTopologyRebuild } from '../shared/audio-stability.js';
 
 const AUDIO_CONSTRAINTS = (streamId) => ({
@@ -125,6 +124,9 @@ async function handleOffscreenMessage(message) {
       return { ok: true, state: host.getPublicState() };
     case 'GET_ANALYSIS_FRAME':
       return { ok: true, frame: host.getAnalysisFrame() };
+    case 'SET_MONITORING_ACTIVE':
+      host.setMonitoringActive(Boolean(message.active));
+      return { ok: true, state: host.getPublicState() };
     case 'APPLY_PRESET':
       await host.applyPreset(message.preset || FACTORY_PRESETS.find((p) => p.id === message.presetId));
       return { ok: true, state: host.getPublicState() };
@@ -201,10 +203,11 @@ class AudioEnhancerEngine {
     this.aiHighRepairMeter = 0;
     this.dopamineToneMap = createDefaultDopamineToneMap();
     this.lastDopamineToneAt = 0;
-    this.outputRouteDestination = null;
-    this.outputRouteMode = 'media-element';
-    this.outputElement = null;
-    this.routeStatus = { ok: true, deviceId: 'default', label: 'System Default', status: 'default' };
+    this.monitoringActive = false;
+    this.monitoringOutputTap = null;
+    this.graphRebuildPromise = null;
+    this.retiredEqNodes = [];
+    this.outputShellConnected = false;
     this.timeBufferIn = null;
     this.timeBufferInputLeft = null;
     this.timeBufferInputRight = null;
@@ -246,9 +249,6 @@ class AudioEnhancerEngine {
       this.inputGain = this.context.createGain();
       this.smartHeadroomGain = this.context.createGain();
       this.smartMakeupGain = this.context.createGain();
-      this.inputChannelSplitter = this.context.createChannelSplitter(2);
-      this.inputLeftAnalyser = this.createMeterAnalyser();
-      this.inputRightAnalyser = this.createMeterAnalyser();
       this.safetyHighPass = this.context.createBiquadFilter();
       this.safetyHighPass.type = 'highpass';
       this.safetyHighPass.frequency.value = 18;
@@ -277,34 +277,17 @@ class AudioEnhancerEngine {
       this.outputMixGain = this.context.createGain();
       this.rtaFftSize = chooseRtaFftSize(this.performanceMode);
       this.meterFftSize = chooseMeterFftSize(this.performanceMode);
-      this.inputAnalyser = this.createRtaAnalyser();
-      this.outputAnalyser = this.createRtaAnalyser();
-      this.leftAnalyser = this.createMeterAnalyser();
-      this.rightAnalyser = this.createMeterAnalyser();
-      this.correlationSplitter = this.context.createChannelSplitter(2);
-      this.meterSink = this.context.createGain();
-      this.meterSink.gain.value = 0;
-      this.createStereoBandMeters();
-      this.createOutputRoute();
-
-      this.timeBufferIn = new Float32Array(this.inputAnalyser.fftSize);
-      this.timeBufferInputLeft = new Float32Array(this.inputLeftAnalyser.fftSize);
-      this.timeBufferInputRight = new Float32Array(this.inputRightAnalyser.fftSize);
-      this.timeBufferOut = new Float32Array(this.outputAnalyser.fftSize);
-      this.timeBufferLeft = new Float32Array(this.leftAnalyser.fftSize);
-      this.timeBufferRight = new Float32Array(this.rightAnalyser.fftSize);
-      this.inputFrequencyData = new Float32Array(this.inputAnalyser.frequencyBinCount);
-      this.outputFrequencyData = new Float32Array(this.outputAnalyser.frequencyBinCount);
+      if (this.monitoringActive) this.createMonitoringNodes();
 
       this.applyAllParams();
       this.connectGraph();
-      await this.applyOutputDevice();
       await this.context.resume();
-      await this.ensureOutputPlayback();
 
       this.state = { ...this.state, active: true, tabId, sourceTitle: sourceTitle || 'Current tab', updatedAt: Date.now() };
-      this.runAdaptiveAudioFrame({ force: true, includeStereoBands: true });
-      this.startAdaptiveAudioLoop();
+      if (this.monitoringActive) {
+        this.runAdaptiveAudioFrame({ force: true, includeStereoBands: true });
+        this.startAdaptiveAudioLoop();
+      }
       notifyStateChanged(this.getPublicState());
     } catch (error) {
       // If startup fails after getUserMedia() succeeds, Chrome keeps the tab capture
@@ -320,14 +303,10 @@ class AudioEnhancerEngine {
 
   async stop(notify = true) {
     this.stopAdaptiveAudioLoop();
+    this.destroyMonitoringNodes();
     if (this.stream) this.stream.getTracks().forEach((track) => track.stop());
     for (const node of this.getAllNodes()) {
       try { node.disconnect(); } catch {}
-    }
-    if (this.outputElement) {
-      try { this.outputElement.pause(); } catch {}
-      this.outputElement.srcObject = null;
-      try { this.outputElement.remove(); } catch {}
     }
     if (this.context && this.context.state !== 'closed') await this.context.close().catch(() => {});
 
@@ -377,10 +356,10 @@ class AudioEnhancerEngine {
     this.aiHighRepairMeter = 0;
     this.dopamineToneMap = createDefaultDopamineToneMap();
     this.lastDopamineToneAt = 0;
-    this.outputRouteDestination = null;
-    this.outputRouteMode = 'media-element';
-    this.outputElement = null;
-    this.routeStatus = { ok: true, deviceId: 'default', label: 'System Default', status: 'default' };
+    this.monitoringOutputTap = null;
+    this.graphRebuildPromise = null;
+    this.retiredEqNodes = [];
+    this.outputShellConnected = false;
     this.timeBufferIn = null;
     this.timeBufferInputLeft = null;
     this.timeBufferInputRight = null;
@@ -1106,9 +1085,7 @@ class AudioEnhancerEngine {
   reconcileEqNodeGroups(nextBands) {
     const normalized = normalizeEqBands(nextBands);
     if (!requiresEqTopologyRebuild(this.eqNodeGroups, normalized)) return false;
-    for (const node of this.getFlatEqNodes()) {
-      try { node.disconnect(); } catch {}
-    }
+    this.retiredEqNodes.push(...this.getFlatEqNodes());
     this.eqNodeGroups = normalized.map((band) => this.createEqNodeGroup(band));
     return true;
   }
@@ -1153,6 +1130,7 @@ class AudioEnhancerEngine {
       this.smartHeadroomGain,
       this.safetyHighPass,
       ...this.getFlatEqNodes(),
+      ...this.retiredEqNodes,
       ...Object.values(this.compNodes || {}),
       this.compressor,
       this.makeupGain,
@@ -1172,112 +1150,110 @@ class AudioEnhancerEngine {
       this.rightAnalyser,
       ...this.getStereoBandNodes(),
       this.meterSink,
-      this.outputRouteDestination
+      this.monitoringOutputTap
     ].filter(Boolean);
   }
 
-  connectGraph() {
+  ensureOutputShell() {
+    if (this.outputShellConnected || !this.context || !this.source || !this.bypassGain || !this.outputMixGain) return;
+    this.source.connect(this.bypassGain).connect(this.outputMixGain).connect(this.context.destination);
+    this.outputShellConnected = true;
+  }
+
+  disconnectProcessingGraph() {
+    try { this.source?.disconnect(this.inputGain); } catch {}
+    const nodes = [
+      this.inputGain,
+      this.smartHeadroomGain,
+      this.safetyHighPass,
+      ...this.getFlatEqNodes(),
+      ...this.retiredEqNodes,
+      ...Object.values(this.compNodes || {}),
+      this.compressor,
+      this.makeupGain,
+      ...Object.values(this.colorNodes || {}),
+      ...this.getFlatWidthNodes(),
+      this.smartMakeupGain,
+      this.limiterDrive,
+      this.softClipper,
+      this.limiter,
+      this.outputGain,
+      this.processedGain
+    ].filter(Boolean);
+    for (const node of nodes) { try { node.disconnect(); } catch {} }
+  }
+
+  connectGraph({ preserveCrossfade = false } = {}) {
     if (!this.context || !this.source) return;
-    for (const node of this.getAllNodes()) {
-      try { node.disconnect(); } catch {}
-    }
-
     const leanAudio = isLeanAudioMode(this.performanceMode);
-    this.source.connect(this.inputAnalyser);
-    if (this.inputChannelSplitter && this.inputLeftAnalyser && this.inputRightAnalyser && this.meterSink) {
-      this.source.connect(this.inputChannelSplitter);
-      this.inputChannelSplitter.connect(this.inputLeftAnalyser, 0);
-      this.inputChannelSplitter.connect(this.inputRightAnalyser, 1);
-      this.inputLeftAnalyser.connect(this.meterSink);
-      this.inputRightAnalyser.connect(this.meterSink);
-    }
-
     const isBypassed = Boolean(this.state.output.bypass);
-    if (this.bypassGain && this.processedGain && this.outputMixGain) {
-      // Keep raw and enhanced paths connected in parallel. In ECO/lean graph the
-      // bypass path taps the source directly so the audio does not depend on an
-      // AnalyserNode in the critical playback path.
+    if (!preserveCrossfade) {
       this.bypassGain.gain.value = isBypassed ? 1 : 0;
       this.processedGain.gain.value = isBypassed ? 0 : 1;
-      this.outputMixGain.gain.value = 1;
-      const bypassSource = leanAudio ? this.source : this.inputAnalyser;
-      bypassSource.connect(this.bypassGain).connect(this.outputMixGain);
     }
+    this.outputMixGain.gain.value = 1;
+    this.ensureOutputShell();
+    this.disconnectProcessingGraph();
 
-    let cursor = (leanAudio ? this.source : this.inputAnalyser).connect(this.inputGain).connect(this.smartHeadroomGain).connect(this.safetyHighPass);
-    if (this.state.eqEnabled !== false) {
-      for (const eqNode of this.getFlatEqNodes()) cursor = cursor.connect(eqNode);
-    }
-
+    let cursor = this.source.connect(this.inputGain).connect(this.smartHeadroomGain).connect(this.safetyHighPass);
+    if (this.state.eqEnabled !== false) for (const eqNode of this.getFlatEqNodes()) cursor = cursor.connect(eqNode);
     if (this.state.compressor.enabled) cursor = this.connectCompressor(cursor);
     if (!leanAudio && this.state.color.enabled && this.state.color.mix > 0) cursor = this.connectColor(cursor);
     if (!leanAudio && this.state.width.enabled) cursor = this.connectWidth(cursor);
-
     if (this.smartMakeupGain) cursor = cursor.connect(this.smartMakeupGain);
+    if (this.state.output.limiterEnabled) cursor = cursor.connect(this.limiterDrive).connect(this.softClipper).connect(this.limiter);
+    cursor.connect(this.outputGain).connect(this.processedGain).connect(this.outputMixGain);
+    this.monitoringOutputTap = this.outputMixGain;
+    this.connectMonitoringTaps(this.monitoringOutputTap);
+    this.retiredEqNodes = [];
+  }
 
-    if (this.state.output.limiterEnabled) {
-      cursor = cursor.connect(this.limiterDrive).connect(this.softClipper).connect(this.limiter);
-    }
+  createMonitoringNodes() {
+    if (!this.context || this.inputAnalyser) return;
+    this.inputChannelSplitter = this.context.createChannelSplitter(2);
+    this.inputLeftAnalyser = this.createMeterAnalyser(); this.inputRightAnalyser = this.createMeterAnalyser();
+    this.inputAnalyser = this.createRtaAnalyser(); this.outputAnalyser = this.createRtaAnalyser();
+    this.leftAnalyser = this.createMeterAnalyser(); this.rightAnalyser = this.createMeterAnalyser();
+    this.correlationSplitter = this.context.createChannelSplitter(2);
+    this.meterSink = this.context.createGain(); this.meterSink.gain.value = 0; this.stereoBands = [];
+    if (getPerfConfig(this.performanceMode).stereoBandsInAnalysis) this.createStereoBandMeters();
+    this.timeBufferIn = new Float32Array(this.inputAnalyser.fftSize); this.timeBufferInputLeft = new Float32Array(this.inputLeftAnalyser.fftSize); this.timeBufferInputRight = new Float32Array(this.inputRightAnalyser.fftSize);
+    this.timeBufferOut = new Float32Array(this.outputAnalyser.fftSize); this.timeBufferLeft = new Float32Array(this.leftAnalyser.fftSize); this.timeBufferRight = new Float32Array(this.rightAnalyser.fftSize);
+    this.inputFrequencyData = new Float32Array(this.inputAnalyser.frequencyBinCount); this.outputFrequencyData = new Float32Array(this.outputAnalyser.frequencyBinCount);
+  }
 
-    cursor = cursor.connect(this.outputGain);
-    if (this.processedGain && this.outputMixGain) {
-      cursor.connect(this.processedGain).connect(this.outputMixGain);
-      this.connectOutputMetersAndDestination(this.outputMixGain);
-    } else {
-      this.connectOutputMetersAndDestination(cursor);
+  disconnectMonitoringTaps() {
+    try { this.source?.disconnect(this.inputAnalyser); } catch {}
+    try { this.source?.disconnect(this.inputChannelSplitter); } catch {}
+    try { this.monitoringOutputTap?.disconnect(this.outputAnalyser); } catch {}
+    try { this.monitoringOutputTap?.disconnect(this.correlationSplitter); } catch {}
+    for (const node of [this.inputAnalyser,this.inputChannelSplitter,this.inputLeftAnalyser,this.inputRightAnalyser,this.outputAnalyser,this.correlationSplitter,this.leftAnalyser,this.rightAnalyser,...this.getStereoBandNodes(),this.meterSink].filter(Boolean)) {
+      try { node.disconnect(); } catch {}
     }
   }
 
-  connectOutputMetersAndDestination(cursor) {
-    const routeDestination = this.outputRouteDestination || this.context.destination;
-    const leanAudio = isLeanAudioMode(this.performanceMode);
-    if (leanAudio) {
-      // In ECO, keep the playback path direct but keep lightweight level meters alive.
-      // Only the heavy stereo-band/RTA work is throttled; basic input/output meters are cheap.
-      cursor.connect(routeDestination);
-      if (this.outputAnalyser && this.meterSink) {
-        cursor.connect(this.outputAnalyser);
-        this.outputAnalyser.connect(this.meterSink);
-        if (this.correlationSplitter && this.leftAnalyser && this.rightAnalyser) {
-          cursor.connect(this.correlationSplitter);
-          this.correlationSplitter.connect(this.leftAnalyser, 0);
-          this.correlationSplitter.connect(this.rightAnalyser, 1);
-          this.leftAnalyser.connect(this.meterSink);
-          this.rightAnalyser.connect(this.meterSink);
-        }
-        this.meterSink.connect(routeDestination);
-      }
-      return;
-    }
-    cursor.connect(this.outputAnalyser).connect(routeDestination);
-    if (this.correlationSplitter && this.leftAnalyser && this.rightAnalyser && this.meterSink) {
-      cursor.connect(this.correlationSplitter);
-      this.correlationSplitter.connect(this.leftAnalyser, 0);
-      this.correlationSplitter.connect(this.rightAnalyser, 1);
-      this.leftAnalyser.connect(this.meterSink);
-      this.rightAnalyser.connect(this.meterSink);
-      if (this.stereoBands?.length) {
-        for (const band of this.stereoBands) {
-          const leftSource = band.leftTap;
-          const rightSource = band.rightTap;
-          const leftTail = band.leftTail || band.leftTap;
-          const rightTail = band.rightTail || band.rightTap;
-          this.correlationSplitter.connect(leftSource, 0);
-          this.correlationSplitter.connect(rightSource, 1);
-          // getAllNodes().disconnect() is called on every graph rebuild. That
-          // also removes the internal mid-band HPF → LPF connection, so the
-          // mid analyser was receiving silence and the UI showed 0% forever.
-          // Rebuild every band chain here, not only the splitter → first node.
-          if (leftTail !== leftSource) leftSource.connect(leftTail);
-          if (rightTail !== rightSource) rightSource.connect(rightTail);
-          leftTail.connect(band.leftAnalyser);
-          rightTail.connect(band.rightAnalyser);
-          band.leftAnalyser.connect(this.meterSink);
-          band.rightAnalyser.connect(this.meterSink);
-        }
-      }
-      this.meterSink.connect(routeDestination);
-    }
+  destroyMonitoringNodes() {
+    this.disconnectMonitoringTaps();
+    this.inputChannelSplitter=this.inputLeftAnalyser=this.inputRightAnalyser=this.inputAnalyser=this.outputAnalyser=this.correlationSplitter=this.leftAnalyser=this.rightAnalyser=this.meterSink=null;
+    this.stereoBands=[]; this.timeBufferIn=this.timeBufferInputLeft=this.timeBufferInputRight=this.timeBufferOut=this.timeBufferLeft=this.timeBufferRight=this.inputFrequencyData=this.outputFrequencyData=null;
+    this.lastRtaFrame={source:'sfeq-rta-v93',pointCount:RTA_POINT_COUNT,input:[],output:[],updatedAt:0};
+    this.state.meters = createSilentMeters();
+  }
+
+  connectMonitoringTaps(outputCursor = this.monitoringOutputTap) {
+    this.disconnectMonitoringTaps();
+    if (!this.monitoringActive || !this.context || !this.source || !outputCursor) return;
+    this.source.connect(this.inputAnalyser); this.inputAnalyser.connect(this.meterSink);
+    this.source.connect(this.inputChannelSplitter); this.inputChannelSplitter.connect(this.inputLeftAnalyser,0); this.inputChannelSplitter.connect(this.inputRightAnalyser,1); this.inputLeftAnalyser.connect(this.meterSink); this.inputRightAnalyser.connect(this.meterSink);
+    outputCursor.connect(this.outputAnalyser); this.outputAnalyser.connect(this.meterSink);
+    outputCursor.connect(this.correlationSplitter); this.correlationSplitter.connect(this.leftAnalyser,0); this.correlationSplitter.connect(this.rightAnalyser,1); this.leftAnalyser.connect(this.meterSink); this.rightAnalyser.connect(this.meterSink);
+    this.meterSink.connect(this.context.destination);
+  }
+
+  setMonitoringActive(active) {
+    const next=Boolean(active); if (this.monitoringActive===next) return; this.monitoringActive=next;
+    if (!next) { this.stopAdaptiveAudioLoop(); this.destroyMonitoringNodes(); return; }
+    this.createMonitoringNodes(); this.connectMonitoringTaps(); this.runAdaptiveAudioFrame({force:true,includeStereoBands:false}); this.startAdaptiveAudioLoop();
   }
 
   createStereoBandMeters() {
@@ -1325,113 +1301,6 @@ class AudioEnhancerEngine {
   getStereoBandNodes() {
     return (this.stereoBands || []).flatMap((band) => band.nodes || []);
   }
-
-  createOutputRoute() {
-    if (!this.context) return;
-    const deviceId = normalizeOutputDeviceId(this.state.output?.outputDeviceId);
-    if (deviceId === 'default') {
-      this.outputRouteMode = 'context-destination';
-      this.outputRouteDestination = null;
-      if (this.outputElement) {
-        try { this.outputElement.pause(); } catch {}
-        this.outputElement.srcObject = null;
-        try { this.outputElement.remove(); } catch {}
-      }
-      this.outputElement = null;
-      return;
-    }
-
-    // Only non-default routed devices need a MediaStreamDestination + hidden
-    // <audio> element. Keeping System Default on context.destination avoids the
-    // extra browser re-clock path that can cause crackle/pitch drift over time.
-    this.outputRouteMode = 'media-element';
-    this.outputRouteDestination = this.context.createMediaStreamDestination();
-    this.outputElement = document.getElementById('processedOutput') || document.createElement('audio');
-    this.outputElement.id = 'processedOutput';
-    this.outputElement.autoplay = true;
-    this.outputElement.controls = false;
-    this.outputElement.muted = false;
-    this.outputElement.volume = 1;
-    this.outputElement.playsInline = true;
-    this.outputElement.preload = 'auto';
-    this.outputElement.disableRemotePlayback = true;
-    this.outputElement.srcObject = this.outputRouteDestination.stream;
-    this.outputElement.dataset.role = 'ar-audio-enhancer-output';
-    this.outputElement.setAttribute('aria-hidden', 'true');
-    if (!this.outputElement.isConnected) document.body.appendChild(this.outputElement);
-  }
-
-
-  async applyOutputDevice() {
-    const output = normalizeOutput(this.state.output || {});
-    const deviceId = normalizeOutputDeviceId(output.outputDeviceId);
-    const sinkId = deviceIdToSinkId(deviceId);
-    const label = output.outputDeviceLabel || (deviceId === 'default' ? 'System Default' : 'Selected output device');
-
-    if (!this.context) {
-      this.routeStatus = { ok: true, deviceId, label, status: deviceId === 'default' ? 'default' : 'selected' };
-      this.state.output = normalizeOutput({ ...this.state.output, outputDeviceId: deviceId, outputDeviceLabel: label, outputRouteStatus: this.routeStatus.status });
-      return;
-    }
-
-    const previousMode = this.outputRouteMode;
-    const previousDestination = this.outputRouteDestination;
-
-    if (deviceId === 'default') {
-      this.state.output = normalizeOutput({ ...this.state.output, outputDeviceId: 'default', outputDeviceLabel: 'System Default', outputRouteStatus: 'default' });
-      this.routeStatus = { ok: true, deviceId: 'default', label: 'System Default', sinkId: 'default', status: 'default', method: 'AudioContext.destination' };
-      this.createOutputRoute();
-      if (previousMode !== this.outputRouteMode || previousDestination !== this.outputRouteDestination) this.connectGraph();
-      return;
-    }
-
-    if (!this.outputElement || !this.outputRouteDestination || this.outputRouteMode !== 'media-element') {
-      this.createOutputRoute();
-      this.connectGraph();
-    }
-    if (!this.outputElement) return;
-    if (this.outputRouteDestination?.stream && this.outputElement.srcObject !== this.outputRouteDestination.stream) {
-      this.outputElement.srcObject = this.outputRouteDestination.stream;
-    }
-
-    if (typeof this.outputElement.setSinkId !== 'function') {
-      this.routeStatus = { ok: false, deviceId, label, status: 'unsupported', error: 'HTMLMediaElement.setSinkId is not supported by this browser.', method: 'HTMLMediaElement.setSinkId' };
-      this.state.output = normalizeOutput({ ...this.state.output, outputDeviceId: deviceId, outputDeviceLabel: label, outputRouteStatus: 'unsupported' });
-      return;
-    }
-
-    let lastError = null;
-    for (let attempt = 0; attempt < 3; attempt += 1) {
-      try {
-        if (this.context.state === 'suspended') await this.context.resume().catch(() => {});
-        await this.outputElement.setSinkId(sinkId);
-        this.routeStatus = { ok: true, deviceId, label, sinkId: this.outputElement.sinkId || 'default', status: 'routed', method: 'HTMLMediaElement.setSinkId' };
-        this.state.output = normalizeOutput({ ...this.state.output, outputDeviceId: deviceId, outputDeviceLabel: label, outputRouteStatus: this.routeStatus.status });
-        return;
-      } catch (error) {
-        lastError = error;
-        await new Promise((resolve) => setTimeout(resolve, 120));
-      }
-    }
-
-    this.routeStatus = { ok: false, deviceId, label, status: 'failed', error: lastError?.message || String(lastError || 'Unable to apply output route.'), method: 'HTMLMediaElement.setSinkId' };
-    this.state.output = normalizeOutput({ ...this.state.output, outputDeviceId: deviceId, outputDeviceLabel: label, outputRouteStatus: 'failed' });
-  }
-
-
-  async ensureOutputPlayback() {
-    if (this.outputRouteMode !== 'media-element' || !this.outputElement) return;
-    try {
-      if (this.outputRouteDestination?.stream && this.outputElement.srcObject !== this.outputRouteDestination.stream) {
-        this.outputElement.srcObject = this.outputRouteDestination.stream;
-      }
-      await this.outputElement.play();
-    } catch (error) {
-      this.routeStatus = { ...this.routeStatus, ok: false, status: 'playback-blocked', error: error.message || String(error) };
-      this.state.output = normalizeOutput({ ...this.state.output, outputRouteStatus: 'playback-blocked' });
-    }
-  }
-
 
   connectCompressor(cursor) {
     const mix = clamp01((this.state.compressor.parallelMix ?? 100) / 100);
@@ -2217,6 +2086,13 @@ class AudioEnhancerEngine {
     return true;
   }
 
+  async rebuildGraphSafely() {
+    if (!this.context || !this.state.active) { this.connectGraph(); return; }
+    if (this.graphRebuildPromise) return this.graphRebuildPromise;
+    this.graphRebuildPromise=(async()=>{ const bypassed=Boolean(this.state.output.bypass); this.rampGainParam(this.bypassGain?.gain,1,0.018); this.rampGainParam(this.processedGain?.gain,0,0.018); await new Promise(r=>setTimeout(r,24)); this.connectGraph({preserveCrossfade:true}); this.rampGainParam(this.bypassGain?.gain,bypassed?1:0,0.028); this.rampGainParam(this.processedGain?.gain,bypassed?0:1,0.038); })().finally(()=>{this.graphRebuildPromise=null;});
+    return this.graphRebuildPromise;
+  }
+
   async applyPreset(preset) {
     if (!preset) throw new Error('Preset not found.');
     const previousState = this.state;
@@ -2224,9 +2100,7 @@ class AudioEnhancerEngine {
     if (this.context) {
       const eqTopologyChanged = this.reconcileEqNodeGroups(this.state.eq);
       this.applyAllParams();
-      if (this.requiresGraphTopologyChange(previousState, this.state, eqTopologyChanged)) this.connectGraph();
-      await this.applyOutputDevice();
-      await this.ensureOutputPlayback();
+      if (this.requiresGraphTopologyChange(previousState, this.state, eqTopologyChanged)) await this.rebuildGraphSafely();
     }
     notifyStateChanged(this.getPublicState());
   }
@@ -2241,13 +2115,9 @@ class AudioEnhancerEngine {
     const graphTopologyChanged = this.context
       ? this.requiresGraphTopologyChange(previousState, this.state, eqTopologyChanged)
       : false;
-    if (graphTopologyChanged) this.connectGraph();
+    if (graphTopologyChanged) await this.rebuildGraphSafely();
     if (bypassPatch) this.crossfadeEnhancePower(Boolean(this.state.output.bypass));
-    if (patch.output?.outputDeviceId !== undefined || patch.output?.outputDeviceLabel !== undefined) {
-      await this.applyOutputDevice();
-      await this.ensureOutputPlayback();
-    }
-    if (patch.performance && this.context) {
+    if (patch.performance && this.context && this.monitoringActive) {
       this.runAdaptiveAudioFrame({ force: true, includeStereoBands: false });
       this.startAdaptiveAudioLoop();
     }
@@ -2340,19 +2210,19 @@ class AudioEnhancerEngine {
 
   startAdaptiveAudioLoop() {
     this.stopAdaptiveAudioLoop();
-    if (!this.context || this.context.state === 'closed') return;
+    if (!this.context || this.context.state === 'closed' || !this.monitoringActive) return;
     const config = getPerfConfig(this.performanceMode);
     if (!config.adaptiveLoopEnabled) return;
 
     const tick = () => {
       this.adaptiveAudioTimer = null;
-      if (!this.context || this.context.state === 'closed' || !this.state.active) return;
+      if (!this.context || this.context.state === 'closed' || !this.state.active || !this.monitoringActive) return;
       try {
         this.runAdaptiveAudioFrame({ force: true, includeStereoBands: false });
       } catch (error) {
         console.warn('Adaptive audio loop failed:', error);
       }
-      if (this.context && this.context.state !== 'closed' && this.state.active) {
+      if (this.context && this.context.state !== 'closed' && this.state.active && this.monitoringActive) {
         const nextConfig = getPerfConfig(this.performanceMode);
         if (nextConfig.adaptiveLoopEnabled) this.adaptiveAudioTimer = setTimeout(tick, nextConfig.adaptiveLoopMs);
       }
@@ -3239,7 +3109,7 @@ class AudioEnhancerEngine {
   }
 
   getPublicState(metersOverride = null) {
-    const meters = metersOverride || this.state.meters || this.computeMeters({ force: true, includeStereoBands: false });
+    const meters = metersOverride || this.state.meters || createSilentMeters();
     return {
       ...this.state,
       eq: normalizeEqBands(this.state.eq),

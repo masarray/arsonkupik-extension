@@ -1,15 +1,16 @@
 {
   "name": "arsonkupik",
-  "version": "0.3.103",
+  "version": "0.3.104",
   "private": true,
   "description": "Privacy-first professional browser audio enhancer built on the Web Audio API.",
   "scripts": {
-    "check": "node scripts/check_repository_identity.mjs && node scripts/run-python.mjs scripts/validate.py && node scripts/smoke_privacy.mjs && node scripts/smoke_support.mjs && node scripts/smoke_stability.mjs",
+    "check": "node scripts/check_repository_identity.mjs && node scripts/run-python.mjs scripts/validate.py && node scripts/smoke_privacy.mjs && node scripts/smoke_support.mjs && node scripts/smoke_stability.mjs && node scripts/smoke_headless.mjs",
     "package": "node scripts/run-python.mjs scripts/package_extension.py",
-    "release:check": "node scripts/check_repository_identity.mjs && node scripts/run-python.mjs scripts/validate.py --release && node scripts/smoke_privacy.mjs && node scripts/smoke_support.mjs && node scripts/smoke_stability.mjs",
+    "release:check": "node scripts/check_repository_identity.mjs && node scripts/run-python.mjs scripts/validate.py --release && node scripts/smoke_privacy.mjs && node scripts/smoke_support.mjs && node scripts/smoke_stability.mjs && node scripts/smoke_headless.mjs",
     "test:privacy": "node scripts/smoke_privacy.mjs",
     "test:support": "node scripts/smoke_support.mjs",
-    "test:stability": "node scripts/smoke_stability.mjs"
+    "test:stability": "node scripts/smoke_stability.mjs",
+    "test:headless": "node scripts/smoke_headless.mjs"
   },
   "engines": {
     "node": ">=20"

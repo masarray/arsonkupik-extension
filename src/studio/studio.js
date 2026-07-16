@@ -13,7 +13,6 @@ import {
   PRIMARY_MASTER_PRESET_IDS
 } from '../shared/presets.js';
 import { DEFAULT_PERFORMANCE_MODE, PERFORMANCE_MODE_LABELS, STABILITY_REVISION, nextPerformanceMode, normalizePerformanceMode } from '../shared/audio-stability.js';
-import { detectAudioOutputDevices, normalizeOutputDeviceId, openBrowserAudioOutputChooser, watchAudioOutputDeviceChanges } from '../shared/audio-devices.js';
 import {
   getEngineState,
   startEnhance,
@@ -126,7 +125,6 @@ const inspector = document.getElementById('inspector');
 const ui = {
   sourceChip: document.getElementById('sourceChip'),
   sourceTitle: document.getElementById('sourceTitle'),
-  topbarOutputDevice: document.getElementById('topbarOutputDevice'),
   startStopButton: document.getElementById('startStopButton'),
   btnAB: document.getElementById('btnAB'),
   btnUndo: document.getElementById('btnUndo'),
@@ -212,15 +210,12 @@ const PEAK_RELEASE_ALPHA = 0.10;
 async function init() {
   sendMessage({ target: 'background', type: 'REGISTER_STUDIO' }).catch(() => {});
   document.addEventListener('visibilitychange', onStudioVisibilityChange);
+  window.addEventListener('pagehide', () => setStudioMonitoringActive(false));
   buildSkeleton();
   bindUiEvents();
   await refreshState();
-  stopWatchingOutputDevices = watchAudioOutputDeviceChanges(() => {
-    outputDeviceLastDetectionAt = 0;
-    refreshStudioOutputDevicesIfStale();
-  });
   layout();
-  startMeterPolling();
+  await setStudioMonitoringActive(!document.hidden);
   startCompLoop();
   startColorLoop();
   requestAnimationFrame(tickSpectrum);
@@ -415,7 +410,6 @@ async function refreshState(resetHistory = false) {
   renderColorControls();
   renderWidthControls();
   renderOutputControls();
-  renderTopbarOutputDevice();
   drawCompressorCurve();
   updateRackState();
   updateMeters(state.meters || {});
@@ -483,11 +477,19 @@ async function toggleEnhanceBypass() {
 }
 
 function onStudioVisibilityChange() {
+  setStudioMonitoringActive(!document.hidden).catch(console.error);
   if (!document.hidden) {
     lastSpectrumRenderMs = 0;
     lastSpectrumTickMs = 0;
     refreshState(false).catch(console.error);
   }
+}
+
+async function setStudioMonitoringActive(active) {
+  clearTimeout(pollingTimer);
+  pollingTimer = null;
+  await sendMessage({ target: 'offscreen', type: 'SET_MONITORING_ACTIVE', active: Boolean(active) }).catch(() => {});
+  if (active) startMeterPolling();
 }
 
 function getPresetDisplayName(preset) {
@@ -529,7 +531,6 @@ function renderChromeState() {
   syncMasterBypassButton(muted);
   document.querySelector('.app')?.classList.toggle('master-bypassed', muted);
   updateRackState();
-  updateTopbarOutputDeviceHint();
   renderPerformanceToggle();
   renderABButton();
 }
@@ -1009,9 +1010,6 @@ async function applyModulePreset(key, preset) {
     state.output = normalizeOutput({
       ...state.output,
       ...(preset.output || {}),
-      outputDeviceId: state.output?.outputDeviceId || DEFAULT_OUTPUT.outputDeviceId,
-      outputDeviceLabel: state.output?.outputDeviceLabel || DEFAULT_OUTPUT.outputDeviceLabel,
-      outputRouteStatus: state.output?.outputRouteStatus || DEFAULT_OUTPUT.outputRouteStatus
     });
     renderOutputControls();
     updateRackState();
@@ -1398,10 +1396,6 @@ function setSpectrumMode(mode = 'post') {
   if (layers.specIn) renderRoundedSpectrumPaths();
 }
 
-let _topbarDeviceControlEl = null;
-let outputDevicePopulateToken = 0;
-let outputDeviceLastDetectionAt = 0;
-let stopWatchingOutputDevices = null;
 function renderOutputControls() {
   if (!state) return;
   ui.outputControls.innerHTML = '';
@@ -1427,162 +1421,6 @@ function renderOutputControls() {
     });
     ui.outputControls.appendChild(control);
   }
-  renderTopbarOutputDevice();
-}
-
-
-function renderTopbarOutputDevice() {
-  if (!ui.topbarOutputDevice || !state) return;
-  if (!_topbarDeviceControlEl) {
-    _topbarDeviceControlEl = createOutputDeviceControl();
-    ui.topbarOutputDevice.replaceChildren(_topbarDeviceControlEl);
-  }
-  if (!_topbarDeviceControlEl.isConnected) ui.topbarOutputDevice.replaceChildren(_topbarDeviceControlEl);
-  const select = _topbarDeviceControlEl.querySelector('select');
-  const privacyAccepted = Boolean(state?.privacy?.accepted);
-  select.disabled = !privacyAccepted;
-  if (!privacyAccepted) {
-    select.replaceChildren(new Option('Accept privacy notice in popup', 'default', true, true));
-    select.dataset.deviceSignature = '';
-    select.dataset.privacyReady = 'false';
-    updateTopbarOutputDeviceStatus('Output routing is available after accepting the privacy notice in the popup.', true);
-    return;
-  }
-  if (select.dataset.privacyReady !== 'true') {
-    select.dataset.privacyReady = 'true';
-    populateStudioOutputDevices(select).catch((error) => updateTopbarOutputDeviceStatus(error.message || 'Unable to refresh output devices.', true));
-  }
-  restoreStudioOutputSelection(select);
-  updateTopbarOutputDeviceStatus();
-}
-
-function updateTopbarOutputDeviceHint() {
-  updateTopbarOutputDeviceStatus();
-}
-
-function createOutputDeviceControl() {
-  const wrapper = document.createElement('div');
-  wrapper.className = 'topbar-device-control';
-  wrapper.innerHTML = `
-    <label>
-      <span>Output</span>
-      <select class="ak-select" aria-label="Output audio device">
-        <option value="default">System Default</option>
-      </select>
-    </label>`;
-  const select = wrapper.querySelector('select');
-  select.addEventListener('change', async () => {
-    const option = select.selectedOptions?.[0];
-    if (option?.value === CHOOSE_OUTPUT_DEVICE_ID) {
-      await chooseStudioBrowserOutputDevice(select).catch((error) => {
-        restoreStudioOutputSelection(select);
-        updateTopbarOutputDeviceStatus(error.message || 'Output device selection was cancelled.', true);
-      });
-      return;
-    }
-    await applyStudioOutputDevice({
-      deviceId: option?.value || 'default',
-      label: option?.dataset?.label || option?.textContent || 'System Default'
-    }).catch((error) => updateTopbarOutputDeviceStatus(error.message || 'Unable to route output.', true));
-  });
-  return wrapper;
-}
-
-async function populateStudioOutputDevices(select, preferredDeviceId = null) {
-  if (!select) return;
-  const token = ++outputDevicePopulateToken;
-  const selectedId = normalizeOutputDeviceId(preferredDeviceId || state?.output?.outputDeviceId || 'default');
-  select.dataset.detecting = 'true';
-  const detection = await detectAudioOutputDevices();
-  if (token !== outputDevicePopulateToken) return;
-  const devices = detection.devices || [];
-  const optionModels = devices.map((device) => ({
-    value: device.deviceId,
-    text: device.isDefault ? 'System Default' : device.label,
-    label: device.label
-  }));
-  if (!optionModels.some((option) => option.value === selectedId)) {
-    optionModels.push({
-      value: selectedId,
-      text: state.output?.outputDeviceLabel || 'Previously selected device',
-      label: state.output?.outputDeviceLabel || 'Previously selected device'
-    });
-  }
-  if (detection.chooserAvailable) {
-    optionModels.push({ value: CHOOSE_OUTPUT_DEVICE_ID, text: 'Choose output device…', label: 'Choose output device…' });
-  }
-
-  const signature = optionModels.map((option) => `${option.value}:${option.text}`).join('|');
-  if (select.dataset.deviceSignature !== signature) {
-    const fragment = document.createDocumentFragment();
-    for (const model of optionModels) {
-      const option = document.createElement('option');
-      option.value = model.value;
-      option.textContent = model.text;
-      option.dataset.label = model.label;
-      option.selected = model.value === selectedId;
-      fragment.appendChild(option);
-    }
-    select.replaceChildren(fragment);
-    select.dataset.deviceSignature = signature;
-  }
-  restoreStudioOutputSelection(select);
-  select.dataset.detecting = 'false';
-  outputDeviceLastDetectionAt = Date.now();
-  updateTopbarOutputDeviceStatus();
-}
-
-async function refreshStudioOutputDevicesIfStale() {
-  if (!_topbarDeviceControlEl || !state?.privacy?.accepted) return;
-  const select = _topbarDeviceControlEl.querySelector('select');
-  if (!select || Date.now() - outputDeviceLastDetectionAt < 15000) return;
-  await populateStudioOutputDevices(select).catch((error) => updateTopbarOutputDeviceStatus(error.message || 'Unable to refresh output devices.', true));
-}
-
-async function chooseStudioBrowserOutputDevice(select) {
-  updateTopbarOutputDeviceStatus('Opening Chrome output chooser…');
-  const selected = await openBrowserAudioOutputChooser();
-  await applyStudioOutputDevice(selected);
-  await populateStudioOutputDevices(select, selected.deviceId);
-}
-
-function restoreStudioOutputSelection(select) {
-  const selectedId = normalizeOutputDeviceId(state?.output?.outputDeviceId || 'default');
-  const option = [...(select?.options || [])].find((candidate) => candidate.value === selectedId);
-  if (option) option.selected = true;
-}
-
-async function applyStudioOutputDevice(device) {
-  const outputDeviceId = normalizeOutputDeviceId(device?.deviceId);
-  const outputDeviceLabel = outputDeviceId === 'default' ? 'System Default' : (device?.label || 'Selected output device');
-  state.output = { ...state.output, outputDeviceId, outputDeviceLabel, outputRouteStatus: outputDeviceId === 'default' ? 'default' : 'selected' };
-  updateTopbarOutputDeviceStatus('Routing output…');
-  const response = await updateEngineState({ output: { outputDeviceId, outputDeviceLabel } });
-  if (!response?.ok) throw new Error(response?.error || 'Unable to route output device.');
-  if (response.state?.output) state.output = { ...state.output, ...response.state.output };
-  updateTopbarOutputDeviceStatus();
-  refreshStudioOutputDevicesIfStale();
-}
-
-function updateOutputDeviceHint() {
-  updateTopbarOutputDeviceStatus();
-}
-
-function updateTopbarOutputDeviceStatus(message = '', forceIssue = false) {
-  const wrapper = _topbarDeviceControlEl;
-  if (!wrapper) return;
-  const select = wrapper.querySelector('select');
-  const label = state?.output?.outputDeviceLabel || 'System Default';
-  const status = state?.output?.outputRouteStatus || (state?.output?.outputDeviceId === 'default' ? 'default' : 'selected');
-  const issue = forceIssue || status === 'failed' || status === 'unsupported' || status === 'playback-blocked';
-  const routed = status === 'routed';
-  const selected = state?.output?.outputDeviceId && state.output.outputDeviceId !== 'default';
-  const title = message || `${issue ? 'Issue' : routed ? 'Routed' : selected ? 'Selected' : 'Output'}: ${label}`;
-  wrapper.title = title;
-  wrapper.setAttribute('aria-label', title);
-  select?.setAttribute('title', title);
-  wrapper.classList.toggle('route-ok', routed || (!issue && selected));
-  wrapper.classList.toggle('route-issue', issue);
 }
 
 let _knobUid = 0;
@@ -2094,7 +1932,7 @@ function snapshot() {
 }
 
 function snapshotAudioOnly() {
-  const { outputDeviceId, outputDeviceLabel, outputRouteStatus, ...sonicOutput } = state.output || {};
+  const sonicOutput = { ...(state.output || {}) };
   return JSON.stringify({
     eqEnabled: state.eqEnabled !== false,
     eq: serializeBands(),
@@ -2113,9 +1951,6 @@ function restoreAudioOnly(serialized) {
   state.output = {
     ...state.output,
     ...(data.output || {}),
-    outputDeviceId: state.output?.outputDeviceId || 'default',
-    outputDeviceLabel: state.output?.outputDeviceLabel || 'System Default',
-    outputRouteStatus: state.output?.outputRouteStatus || 'default'
   };
   state.color = data.color || state.color;
   state.width = data.width || state.width;
@@ -2134,7 +1969,6 @@ function restoreAudioOnly(serialized) {
   renderColorControls();
   renderWidthControls();
   renderOutputControls();
-  renderTopbarOutputDevice();
   syncMasterBypassButton(bypassAll);
   document.querySelector('.app')?.classList.toggle('master-bypassed', bypassAll);
   updateRackState();

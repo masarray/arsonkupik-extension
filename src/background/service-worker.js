@@ -5,7 +5,6 @@ const OFFSCREEN_URL = 'offscreen.html';
 const STORE_KEYS = {
   state: 'arAudioState',
   customPresets: 'arAudioCustomPresets',
-  domainOutputRoutes: 'arAudioDomainOutputRoutes',
   domainEnhancePrefs: 'arAudioDomainEnhancePrefs',
   privacyConsent: 'arAudioPrivacyConsent',
   studioTabId: 'arAudioStudioTabId'
@@ -142,6 +141,7 @@ chrome.tabCapture?.onStatusChanged?.addListener((info) => {
 chrome.tabs?.onRemoved?.addListener((tabId) => {
   if (Number(tabId) === Number(studioTabId)) {
     studioTabId = null;
+    safeSendMessage({ target: 'offscreen', type: 'SET_MONITORING_ACTIVE', active: false });
     clearStoredStudioTabId().catch(() => {});
   }
   markCaptureInactiveIfMatches(tabId).catch(() => {});
@@ -236,7 +236,9 @@ function normalizePerformancePatch(patch) {
 }
 
 async function ensureStorageDefaults() {
-  const current = await chrome.storage.local.get([STORE_KEYS.state, STORE_KEYS.customPresets, STORE_KEYS.domainOutputRoutes, STORE_KEYS.domainEnhancePrefs, STORE_KEYS.privacyConsent]);
+  const current = await chrome.storage.local.get([STORE_KEYS.state, STORE_KEYS.customPresets, STORE_KEYS.domainEnhancePrefs, STORE_KEYS.privacyConsent]);
+  const legacyRoutes = await chrome.storage.local.get('arAudioDomainOutputRoutes');
+  if (legacyRoutes.arAudioDomainOutputRoutes) await chrome.storage.local.remove('arAudioDomainOutputRoutes');
   if (!current[STORE_KEYS.state]) {
     lastState = migratePerformanceForStability(prepareStateForStorage(applyInitialPerformanceMode(createDefaultState())));
     await chrome.storage.local.set({ [STORE_KEYS.state]: lastState });
@@ -254,9 +256,6 @@ async function ensureStorageDefaults() {
   }
   if (!current[STORE_KEYS.customPresets]) {
     await chrome.storage.local.set({ [STORE_KEYS.customPresets]: [] });
-  }
-  if (!current[STORE_KEYS.domainOutputRoutes]) {
-    await chrome.storage.local.set({ [STORE_KEYS.domainOutputRoutes]: {} });
   }
   if (!current[STORE_KEYS.domainEnhancePrefs]) {
     await chrome.storage.local.set({ [STORE_KEYS.domainEnhancePrefs]: {} });
@@ -280,17 +279,15 @@ async function ensureStorageDefaults() {
 
 function buildPrivacyStatus(stored = {}) {
   const consent = stored[STORE_KEYS.privacyConsent] || {};
-  const routes = stored[STORE_KEYS.domainOutputRoutes] || {};
   const enhancePrefs = stored[STORE_KEYS.domainEnhancePrefs] || {};
   const customPresets = stored[STORE_KEYS.customPresets] || [];
-  const siteDomains = new Set([...Object.keys(routes), ...Object.keys(enhancePrefs)]);
+  const siteDomains = new Set(Object.keys(enhancePrefs));
   return {
     accepted: consent.accepted === true && consent.noticeVersion === PRIVACY_NOTICE_VERSION,
     noticeVersion: PRIVACY_NOTICE_VERSION,
     storedNoticeVersion: consent.noticeVersion || '',
     acceptedAt: Number(consent.acceptedAt || 0),
     sitePreferenceCount: siteDomains.size,
-    outputRouteCount: Object.keys(routes).length,
     enhancePreferenceCount: Object.keys(enhancePrefs).length,
     customPresetCount: Array.isArray(customPresets) ? customPresets.length : 0
   };
@@ -299,7 +296,6 @@ function buildPrivacyStatus(stored = {}) {
 async function getPrivacyStatus() {
   const stored = await chrome.storage.local.get([
     STORE_KEYS.privacyConsent,
-    STORE_KEYS.domainOutputRoutes,
     STORE_KEYS.domainEnhancePrefs,
     STORE_KEYS.customPresets
   ]);
@@ -326,29 +322,8 @@ async function acceptPrivacyNotice() {
 }
 
 async function clearSitePreferences() {
-  await chrome.storage.local.set({
-    [STORE_KEYS.domainOutputRoutes]: {},
-    [STORE_KEYS.domainEnhancePrefs]: {}
-  });
-
-  const stored = await chrome.storage.local.get(STORE_KEYS.state);
-  lastState = prepareStateForStorage({
-    ...createDefaultState(),
-    ...(stored[STORE_KEYS.state] || lastState),
-    output: {
-      ...(stored[STORE_KEYS.state]?.output || lastState.output),
-      outputDeviceId: 'default',
-      outputDeviceLabel: 'System Default',
-      outputRouteStatus: 'default'
-    },
-    updatedAt: Date.now()
-  });
-  await chrome.storage.local.set({ [STORE_KEYS.state]: lastState });
-  await sendToOffscreenIfActive({
-    target: 'offscreen',
-    type: 'UPDATE_STATE',
-    patch: { output: { outputDeviceId: 'default', outputDeviceLabel: 'System Default' } }
-  }).catch(() => {});
+  await chrome.storage.local.set({ [STORE_KEYS.domainEnhancePrefs]: {} });
+  await chrome.storage.local.remove('arAudioDomainOutputRoutes');
   return { ok: true, privacy: await getPrivacyStatus(), state: await getStateWithPresets() };
 }
 
@@ -406,12 +381,10 @@ async function getStateWithPresets() {
   const stored = await chrome.storage.local.get([
     STORE_KEYS.state,
     STORE_KEYS.customPresets,
-    STORE_KEYS.domainOutputRoutes,
     STORE_KEYS.domainEnhancePrefs,
     STORE_KEYS.privacyConsent
   ]);
   const customPresets = stored[STORE_KEYS.customPresets] || [];
-  const domainRoutes = stored[STORE_KEYS.domainOutputRoutes] || {};
   const domainEnhancePrefs = stored[STORE_KEYS.domainEnhancePrefs] || {};
   const privacy = buildPrivacyStatus(stored);
   lastState = prepareStateForStorage({ ...createDefaultState(), ...(stored[STORE_KEYS.state] || lastState) });
@@ -426,20 +399,6 @@ async function getStateWithPresets() {
   const activeDomain = getDomainFromUrl(activeWebTab?.url || '');
   const captureDomain = getDomainFromUrl(captureTab?.url || '');
   const contextDomain = activeDomain || captureDomain || '';
-  const route = privacy.accepted && contextDomain ? domainRoutes[contextDomain] : null;
-  if (route?.outputDeviceId) {
-    const sameDevice = lastState.output?.outputDeviceId === route.outputDeviceId;
-    lastState = prepareStateForStorage({
-      ...lastState,
-      output: {
-        ...lastState.output,
-        outputDeviceId: route.outputDeviceId,
-        outputDeviceLabel: route.outputDeviceLabel || lastState.output?.outputDeviceLabel || 'Selected output device',
-        outputRouteStatus: sameDevice ? lastState.output?.outputRouteStatus : 'selected'
-      }
-    });
-    await chrome.storage.local.set({ [STORE_KEYS.state]: lastState });
-  }
 
   const currentTabId = Number(activeWebTab?.id);
   const captureTabId = Number(lastState.tabId);
@@ -742,7 +701,6 @@ async function startEnhance(sourceTabId = null) {
 
   const streamId = await requestCaptureStreamIdWithRetry(tab.id);
   const title = tab.title || 'Current tab';
-  await applyStoredDomainOutputRouteForTab(tab);
   const stateBeforeStart = prepareStateForStorage({
     ...(await getStateWithPresets()),
     output: { ...(lastState.output || {}), bypass: false }
@@ -830,7 +788,6 @@ async function updateStateCommand(patch) {
   lastState = migratePerformanceForStability(prepareStateForStorage(deepMerge({ ...createDefaultState(), ...(stored[STORE_KEYS.state] || lastState) }, normalizedPatch)));
   lastState.updatedAt = Date.now();
   await chrome.storage.local.set({ [STORE_KEYS.state]: lastState });
-  await saveDomainOutputRouteIfNeeded(normalizedPatch, lastState);
 
   const offscreenResponse = await sendToOffscreenIfActive({ target: 'offscreen', type: 'UPDATE_STATE', patch: normalizedPatch }).catch(() => null);
   if (offscreenResponse?.ok && offscreenResponse.state) {
@@ -858,66 +815,6 @@ async function saveDomainEnhancePreference(tab, enabled = true) {
   return prefs[domain];
 }
 
-
-async function applyStoredDomainOutputRouteForTab(tab) {
-  if (!(await getPrivacyStatus()).accepted) return null;
-  const domain = getDomainFromUrl(tab?.url || '');
-  if (!domain) return null;
-  const stored = await chrome.storage.local.get([STORE_KEYS.domainOutputRoutes, STORE_KEYS.state]);
-  const route = stored[STORE_KEYS.domainOutputRoutes]?.[domain];
-  if (!route?.outputDeviceId) return null;
-  lastState = prepareStateForStorage({
-    ...createDefaultState(),
-    ...(stored[STORE_KEYS.state] || lastState),
-    output: {
-      ...(stored[STORE_KEYS.state]?.output || lastState.output),
-      outputDeviceId: route.outputDeviceId,
-      outputDeviceLabel: route.outputDeviceLabel || 'Selected output device',
-      outputRouteStatus: 'selected'
-    }
-  });
-  await chrome.storage.local.set({ [STORE_KEYS.state]: lastState });
-  return route;
-}
-
-async function saveDomainOutputRouteIfNeeded(patch, state) {
-  if (!(await getPrivacyStatus()).accepted) return;
-  if (patch?.output?.outputDeviceId === undefined && patch?.output?.outputDeviceLabel === undefined) return;
-  const context = await getAudioDomainContext(state);
-  if (!context.domain) return;
-  const output = state.output || {};
-  const route = {
-    outputDeviceId: output.outputDeviceId || 'default',
-    outputDeviceLabel: output.outputDeviceLabel || 'System Default',
-    updatedAt: Date.now()
-  };
-  const stored = await chrome.storage.local.get(STORE_KEYS.domainOutputRoutes);
-  const routes = stored[STORE_KEYS.domainOutputRoutes] || {};
-  routes[context.domain] = route;
-  await chrome.storage.local.set({ [STORE_KEYS.domainOutputRoutes]: routes });
-}
-
-async function getAudioDomainContext(state) {
-  const activeState = state || lastState;
-  if (activeState?.active && activeState.tabId) {
-    try {
-      const tab = await chrome.tabs.get(activeState.tabId);
-      const domain = getDomainFromUrl(tab?.url || '');
-      if (domain) return { tab, domain };
-    } catch {
-      // Fall back to active tab below.
-    }
-  }
-
-  try {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    const domain = getDomainFromUrl(tab?.url || '');
-    if (domain) return { tab, domain };
-  } catch {
-    return { tab: null, domain: '' };
-  }
-  return { tab: null, domain: '' };
-}
 
 function getDomainFromUrl(url) {
   try {

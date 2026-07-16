@@ -21,7 +21,7 @@
     <section id="privacyNotice" class="privacy-notice" aria-labelledby="privacyNoticeTitle" hidden>
       <span class="privacy-kicker">Before first use</span>
       <h2 id="privacyNoticeTitle">Local-processing privacy notice</h2>
-      <p>Tab audio is processed only on this device and is never recorded or uploaded. When per-site preferences are used, the current site hostname and selected output route may be stored locally in this Chrome profile.</p>
+      <p>Tab audio is processed only on this device and is never recorded or uploaded. When per-site preferences are used, the current site hostname may be stored locally in this Chrome profile.</p>
       <div class="privacy-notice-actions">
         <button id="acceptPrivacyButton" class="primary-button" type="button">Accept &amp; Continue</button>
         <button id="privacyPolicyNoticeButton" class="text-button" type="button">Read privacy policy</button>
@@ -50,13 +50,6 @@
     </section>
 
     <section class="compact-controls">
-      <div class="device-row">
-        <label>
-          <span>Output device</span>
-          <select id="audioOutputSelect" aria-label="Audio output device"></select>
-        </label>
-      </div>
-      <p id="audioOutputHint" class="device-hint" aria-live="polite">System default output.</p>
       <label class="slider-row" hidden>
         <span>Output</span>
         <output id="outputGainValue">0.0 dB</output>

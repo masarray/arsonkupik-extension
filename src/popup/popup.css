@@ -288,37 +288,10 @@ h1 {
 }
 
 .preset-select-row select,
-.device-row select {
-  width: 100%;
-  height: 40px;
-  appearance: none;
-  -webkit-appearance: none;
-  color: var(--text);
-  background:
-    linear-gradient(135deg, rgba(255,255,255,.04), rgba(255,255,255,0) 58%),
-    linear-gradient(180deg, #0f1420, #0a0e17);
-  border: 1px solid rgba(255,255,255,.09);
-  border-radius: 13px;
-  padding: 0 36px 0 13px;
-  outline: none;
-  cursor: pointer;
-  font-weight: 600;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.04), 0 1px 0 rgba(0,0,0,.4);
-  transition: border-color .14s ease, box-shadow .14s ease;
-}
 
 .preset-select-row select:focus,
-.device-row select:focus {
-  border-color: rgba(98,230,216,.55);
-  box-shadow: 0 0 0 3px rgba(98,230,216,.14), inset 0 1px 0 rgba(255,255,255,.04);
-}
 
 .preset-select-row select option,
-.device-row select option {
-  background: #f7f9fc;
-  color: #071018;
-  font-weight: 600;
-}
 
 .compact-controls {
   display: grid;
@@ -359,30 +332,11 @@ h1 {
 }
 
 
-.device-row {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 8px;
-  align-items: end;
-}
 
-.device-row label {
-  display: grid;
-  gap: 6px;
-  color: var(--muted);
-  font-size: 11px;
-}
 
-/* device-row select shares premium styling defined above */
 
 .mini-button { display: none; }
 
-.device-hint {
-  margin: -3px 0 0;
-  color: #93a0b3;
-  font-size: 10.5px;
-  line-height: 1.4;
-}
 
 .studio-button {
   border: 1px solid rgba(255,255,255,.09);
@@ -500,7 +454,6 @@ h1 {
 .label,
 .panel-title-row span,
 .source-state-pill,
-.device-hint,
 .hint,
 .slider-row output,
 .footer-note{font-family:var(--mono);}
@@ -516,7 +469,7 @@ h1, .brand-arson, .brand-kupik, .panel-title-row strong {
   font-family: var(--font-display);
   letter-spacing: -.045em;
 }
-output, .footer-note, .status-text, .device-hint, .sound-mode-status, .meter-value, .numeric, [data-unit], .chip, .pill {
+output, .footer-note, .status-text, .sound-mode-status, .meter-value, .numeric, [data-unit], .chip, .pill {
   font-family: var(--font-code);
   font-feature-settings: "tnum" 1, "zero" 1, "ss01" 1;
 }
