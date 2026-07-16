@@ -1,7 +1,0 @@
-# Align the regression test with the persistent output-shell architecture
-s=rd('scripts/smoke_headless.mjs')
-s=s.replace("assert.match(offscreen,/cursor\\.connect\\(this\\.context\\.destination\\)/);\n",'')
-s=s.replace("const graphSection=offscreen.slice(offscreen.indexOf('connectGraph({'),offscreen.indexOf('createMonitoringNodes()'));","const graphStart=offscreen.indexOf('connectGraph({');\nconst graphEnd=offscreen.indexOf('\\n  createMonitoringNodes()',graphStart);\nconst graphSection=offscreen.slice(graphStart,graphEnd);")
-s=s.replace("assert.doesNotMatch(graphSection,/source\\.disconnect\\(\\)/);","assert.doesNotMatch(graphSection,/source\\.disconnect\\(\\)/);\nassert.match(graphSection,/ensureOutputShell\\(\\)/);\nassert.match(graphSection,/disconnectProcessingGraph\\(\\)/);")
-wr('scripts/smoke_headless.mjs',s)
-print('Aligned output-shell regression assertions')
