@@ -13,6 +13,7 @@ import {
 } from '../shared/presets.js';
 import { buildSfeqRtaSpectrumFromFft } from '../shared/sfeq-rta.js';
 import { deviceIdToSinkId, normalizeOutputDeviceId } from '../shared/audio-devices.js';
+import { DEFAULT_PERFORMANCE_MODE, normalizePerformanceMode, requiresEqTopologyRebuild } from '../shared/audio-stability.js';
 
 const AUDIO_CONSTRAINTS = (streamId) => ({
   audio: {
@@ -36,8 +37,6 @@ const RTA_OCTAVE_WIDTH = 1 / 7;
 const PERF_CONFIG = {
   normal: {
     label: 'TURBO',
-    // v0.3.94: TURBO Micro Detail Preserve keeps the full sonic graph,
-    // but protects ECO-like 1-6 kHz detail so CPU is rewarded, not dulled.
     rtaFftSize: 1024,
     meterFftSize: 512,
     rtaMinFrameMs: 620,
@@ -49,15 +48,27 @@ const PERF_CONFIG = {
     adaptiveLoopEnabled: true,
     basicMetersOnly: false
   },
+  stable: {
+    label: 'STABLE',
+    // Full sonic graph with conservative analysis and no oversampling.
+    rtaFftSize: 512,
+    meterFftSize: 256,
+    rtaMinFrameMs: 1000,
+    adaptiveLoopMs: 1200,
+    adaptiveMinFrameMs: 180,
+    shaperOversample: 'none',
+    stereoBandsInAnalysis: false,
+    leanAudioGraph: false,
+    adaptiveLoopEnabled: false,
+    basicMetersOnly: true
+  },
   eco: {
     label: 'ECO',
-    // ECO keeps the playback path lean, but the basic volume indicators stay
-    // alive. Heavy RTA/stereo-band analysis is throttled instead of killing UI feedback.
     rtaFftSize: 512,
     meterFftSize: 256,
     rtaMinFrameMs: 1600,
     adaptiveLoopMs: 1600,
-    adaptiveMinFrameMs: 170,
+    adaptiveMinFrameMs: 220,
     shaperOversample: 'none',
     stereoBandsInAnalysis: false,
     leanAudioGraph: true,
@@ -73,9 +84,6 @@ function isLowPowerRuntime() {
   return lowMemoryDevice || lowCoreDevice;
 }
 
-function normalizePerformanceMode(mode) {
-  return mode === 'eco' ? 'eco' : 'normal';
-}
 
 function getPerfConfig(mode) {
   return PERF_CONFIG[normalizePerformanceMode(mode)] || PERF_CONFIG.normal;
@@ -85,11 +93,11 @@ function isLeanAudioMode(mode) {
   return Boolean(getPerfConfig(mode).leanAudioGraph);
 }
 
-function chooseRtaFftSize(mode = 'normal') {
+function chooseRtaFftSize(mode = DEFAULT_PERFORMANCE_MODE) {
   return getPerfConfig(mode).rtaFftSize;
 }
 
-function chooseMeterFftSize(mode = 'normal') {
+function chooseMeterFftSize(mode = DEFAULT_PERFORMANCE_MODE) {
   return getPerfConfig(mode).meterFftSize;
 }
 
@@ -205,7 +213,7 @@ class AudioEnhancerEngine {
     this.timeBufferRight = null;
     this.inputFrequencyData = null;
     this.outputFrequencyData = null;
-    this.performanceMode = normalizePerformanceMode(this.state.performance?.mode || 'normal');
+    this.performanceMode = normalizePerformanceMode(this.state.performance?.mode || DEFAULT_PERFORMANCE_MODE);
     this.rtaFftSize = chooseRtaFftSize(this.performanceMode);
     this.meterFftSize = chooseMeterFftSize(this.performanceMode);
     this.lastRtaFrame = { source: 'sfeq-rta-v93', pointCount: RTA_POINT_COUNT, input: [], output: [], updatedAt: 0 };
@@ -224,7 +232,7 @@ class AudioEnhancerEngine {
 
       this.widthAdaptiveFactor = 0.35;
       this.colorStereoAdaptive = 0.85;
-      this.performanceMode = normalizePerformanceMode(this.state.performance?.mode || 'normal');
+      this.performanceMode = normalizePerformanceMode(this.state.performance?.mode || DEFAULT_PERFORMANCE_MODE);
       this.rtaFftSize = chooseRtaFftSize(this.performanceMode);
       this.meterFftSize = chooseMeterFftSize(this.performanceMode);
 
@@ -423,7 +431,7 @@ class AudioEnhancerEngine {
       output: normalizeOutput(state.output),
       performance: {
         ...(state.performance || {}),
-        mode: normalizePerformanceMode(state.performance?.mode || 'normal')
+        mode: normalizePerformanceMode(state.performance?.mode || DEFAULT_PERFORMANCE_MODE)
       }
     };
   }
@@ -1093,6 +1101,30 @@ class AudioEnhancerEngine {
     node.frequency.value = Number(band.frequency);
     node.gain.value = isCutType(band.type) ? 0 : Number(band.gain || 0);
     node.Q.value = qOverride ?? Number(band.q || 1);
+  }
+
+  reconcileEqNodeGroups(nextBands) {
+    const normalized = normalizeEqBands(nextBands);
+    if (!requiresEqTopologyRebuild(this.eqNodeGroups, normalized)) return false;
+    for (const node of this.getFlatEqNodes()) {
+      try { node.disconnect(); } catch {}
+    }
+    this.eqNodeGroups = normalized.map((band) => this.createEqNodeGroup(band));
+    return true;
+  }
+
+  requiresGraphTopologyChange(previousState, nextState, eqTopologyChanged = false) {
+    const previousColorActive = Boolean(previousState?.color?.enabled && Number(previousState?.color?.mix || 0) > 0);
+    const nextColorActive = Boolean(nextState?.color?.enabled && Number(nextState?.color?.mix || 0) > 0);
+    return Boolean(
+      eqTopologyChanged
+      || previousState?.eqEnabled !== nextState?.eqEnabled
+      || previousState?.compressor?.enabled !== nextState?.compressor?.enabled
+      || previousColorActive !== nextColorActive
+      || previousState?.width?.enabled !== nextState?.width?.enabled
+      || previousState?.output?.limiterEnabled !== nextState?.output?.limiterEnabled
+      || isLeanAudioMode(previousState?.performance?.mode) !== isLeanAudioMode(nextState?.performance?.mode)
+    );
   }
 
   getFlatEqNodes() {
@@ -2187,11 +2219,12 @@ class AudioEnhancerEngine {
 
   async applyPreset(preset) {
     if (!preset) throw new Error('Preset not found.');
+    const previousState = this.state;
     this.state = this.prepareState(applyPresetToState(this.state, preset));
     if (this.context) {
-      this.eqNodeGroups = this.state.eq.map((band) => this.createEqNodeGroup(band));
+      const eqTopologyChanged = this.reconcileEqNodeGroups(this.state.eq);
       this.applyAllParams();
-      this.connectGraph();
+      if (this.requiresGraphTopologyChange(previousState, this.state, eqTopologyChanged)) this.connectGraph();
       await this.applyOutputDevice();
       await this.ensureOutputPlayback();
     }
@@ -2199,27 +2232,17 @@ class AudioEnhancerEngine {
   }
 
   async updateState(patch) {
+    const previousState = this.state;
     this.state = this.prepareState(deepMerge(this.state, patch));
-    const previousPerformanceMode = this.performanceMode;
     if (patch.performance && this.context) this.applyPerformanceSettings({ resetBuffers: true });
-    if (patch.eq && this.context) this.eqNodeGroups = this.state.eq.map((band) => this.createEqNodeGroup(band));
+    const eqTopologyChanged = Boolean(patch.eq && this.context && this.reconcileEqNodeGroups(this.state.eq));
     this.applyAllParams();
     const bypassPatch = patch.output?.bypass !== undefined;
-    const graphTogglePatch = (patch.output?.limiterEnabled !== undefined)
-      || (patch.compressor?.enabled !== undefined)
-      || (patch.color?.enabled !== undefined)
-      || (patch.width?.enabled !== undefined)
-      || (patch.eqEnabled !== undefined)
-      || Boolean(patch.eq)
-      || (patch.performance && previousPerformanceMode !== this.performanceMode);
-    if (graphTogglePatch) {
-      this.connectGraph();
-    }
-    if (bypassPatch && !graphTogglePatch) {
-      this.crossfadeEnhancePower(Boolean(this.state.output.bypass));
-    } else if (bypassPatch) {
-      this.crossfadeEnhancePower(Boolean(this.state.output.bypass));
-    }
+    const graphTopologyChanged = this.context
+      ? this.requiresGraphTopologyChange(previousState, this.state, eqTopologyChanged)
+      : false;
+    if (graphTopologyChanged) this.connectGraph();
+    if (bypassPatch) this.crossfadeEnhancePower(Boolean(this.state.output.bypass));
     if (patch.output?.outputDeviceId !== undefined || patch.output?.outputDeviceLabel !== undefined) {
       await this.applyOutputDevice();
       await this.ensureOutputPlayback();
@@ -2251,12 +2274,12 @@ class AudioEnhancerEngine {
   createMeterAnalyser() {
     const analyser = this.context.createAnalyser();
     analyser.fftSize = this.meterFftSize || chooseMeterFftSize(this.performanceMode);
-    analyser.smoothingTimeConstant = this.performanceMode === 'eco' ? 0.24 : 0.18;
+    analyser.smoothingTimeConstant = this.performanceMode === 'normal' ? 0.18 : 0.24;
     return analyser;
   }
 
   applyPerformanceSettings({ resetBuffers = false } = {}) {
-    this.performanceMode = normalizePerformanceMode(this.state.performance?.mode || 'normal');
+    this.performanceMode = normalizePerformanceMode(this.state.performance?.mode || DEFAULT_PERFORMANCE_MODE);
     const config = getPerfConfig(this.performanceMode);
     this.rtaFftSize = config.rtaFftSize;
     this.meterFftSize = config.meterFftSize;
@@ -2266,9 +2289,10 @@ class AudioEnhancerEngine {
       if (analyser.fftSize !== fftSize) analyser.fftSize = fftSize;
       if (typeof smoothing === 'number') analyser.smoothingTimeConstant = smoothing;
     };
-    setAnalyser(this.inputAnalyser, config.rtaFftSize, this.performanceMode === 'eco' ? 0.06 : 0);
-    setAnalyser(this.outputAnalyser, config.rtaFftSize, this.performanceMode === 'eco' ? 0.06 : 0);
-    const meterSmoothing = this.performanceMode === 'eco' ? 0.24 : 0.18;
+    const analysisSmoothing = this.performanceMode === 'normal' ? 0 : 0.06;
+    setAnalyser(this.inputAnalyser, config.rtaFftSize, analysisSmoothing);
+    setAnalyser(this.outputAnalyser, config.rtaFftSize, analysisSmoothing);
+    const meterSmoothing = this.performanceMode === 'normal' ? 0.18 : 0.24;
     for (const analyser of [this.inputLeftAnalyser, this.inputRightAnalyser, this.leftAnalyser, this.rightAnalyser]) {
       setAnalyser(analyser, config.meterFftSize, meterSmoothing);
     }

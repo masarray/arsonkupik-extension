@@ -4,6 +4,24 @@ All notable project changes are documented here. The format follows Keep a Chang
 
 ## [Unreleased]
 
+## [0.3.103] - 2026-07-16
+
+### Added
+
+- STABLE mode as the full-sound default between ECO and TURBO.
+- Regression smoke test for performance migration and EQ topology stability.
+
+### Changed
+
+- Parameter-only EQ edits now update existing AudioParams without disconnecting the live audio graph.
+- Studio meter polling adapts to performance mode and avoids overlapping asynchronous requests.
+- Automatically selected legacy TURBO states migrate once to STABLE; explicit user choices are preserved.
+
+### Fixed
+
+- Reduced audio gaps and crackle while dragging ordinary EQ frequency, gain, and Q controls.
+- Reduced background analysis pressure while preserving the complete DSP chain in STABLE mode.
+
 ## [0.3.102] - 2026-07-15
 
 ### Added

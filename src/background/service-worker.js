@@ -1,4 +1,5 @@
 import { createDefaultState, FACTORY_PRESETS, DEFAULT_MASTER_REVISION, applyPresetToState, normalizeEqBands, normalizeCompressor, normalizeColor, normalizeWidth, normalizeOutput } from '../shared/presets.js';
+import { DEFAULT_PERFORMANCE_MODE, STABILITY_REVISION, normalizePerformanceMode } from '../shared/audio-stability.js';
 
 const OFFSCREEN_URL = 'offscreen.html';
 const STORE_KEYS = {
@@ -173,27 +174,20 @@ function detectInitialPerformanceMode() {
   const memory = Number(nav.deviceMemory || 0);
   const hasCoreHint = Number.isFinite(cores) && cores > 0;
   const hasMemoryHint = Number.isFinite(memory) && memory > 0;
-
-  // Chromium exposes only coarse hardware hints. Use a conservative rule:
-  // only boot ECO on clearly low-power machines; otherwise give the user
-  // the full TURBO first impression and let them switch manually later.
   const veryLowCore = hasCoreHint && cores <= 2;
   const lowCore = hasCoreHint && cores <= 4;
   const lowMemory = hasMemoryHint && memory <= 4;
   const tinyMemory = hasMemoryHint && memory <= 2;
   const eco = Boolean(veryLowCore || tinyMemory || (lowCore && lowMemory));
-
-  const reason = eco
-    ? `low-power hint${hasCoreHint ? `: ${cores} cores` : ''}${hasMemoryHint ? `, ${memory}GB RAM` : ''}`
-    : `turbo hint${hasCoreHint ? `: ${cores} cores` : ''}${hasMemoryHint ? `, ${memory}GB RAM` : ''}`;
-
   return {
-    mode: eco ? 'eco' : 'normal',
+    mode: eco ? 'eco' : 'stable',
     autoSelected: true,
-    source: 'initial-hardware-hint',
+    userSelected: false,
+    source: 'initial-stability-hint',
+    stabilityRevision: STABILITY_REVISION,
     hardwareConcurrency: hasCoreHint ? cores : null,
     deviceMemory: hasMemoryHint ? memory : null,
-    reason,
+    reason: eco ? 'low-power hardware hint' : 'stable playback default',
     selectedAt: Date.now()
   };
 }
@@ -206,21 +200,56 @@ function applyInitialPerformanceMode(state) {
   };
 }
 
+function migratePerformanceForStability(state) {
+  const performance = { ...(state.performance || {}) };
+  const mode = normalizePerformanceMode(performance.mode || DEFAULT_PERFORMANCE_MODE);
+  const revision = Number(performance.stabilityRevision || 0);
+  const migrateAutoTurbo = revision < STABILITY_REVISION && mode === 'normal' && performance.userSelected !== true;
+  return {
+    ...state,
+    performance: {
+      ...performance,
+      mode: migrateAutoTurbo ? 'stable' : mode,
+      autoSelected: migrateAutoTurbo ? true : Boolean(performance.autoSelected),
+      userSelected: performance.userSelected === true,
+      source: migrateAutoTurbo ? 'v0.3.103-stability-migration' : (performance.source || 'normalized'),
+      stabilityRevision: STABILITY_REVISION,
+      migratedAt: migrateAutoTurbo ? Date.now() : Number(performance.migratedAt || 0)
+    }
+  };
+}
+
+function normalizePerformancePatch(patch) {
+  if (!patch?.performance || patch.performance.mode === undefined) return patch;
+  return {
+    ...patch,
+    performance: {
+      ...patch.performance,
+      mode: normalizePerformanceMode(patch.performance.mode),
+      userSelected: patch.performance.userSelected ?? true,
+      autoSelected: patch.performance.autoSelected ?? false,
+      source: patch.performance.source || 'user-control',
+      stabilityRevision: STABILITY_REVISION,
+      selectedAt: Number(patch.performance.selectedAt || Date.now())
+    }
+  };
+}
+
 async function ensureStorageDefaults() {
   const current = await chrome.storage.local.get([STORE_KEYS.state, STORE_KEYS.customPresets, STORE_KEYS.domainOutputRoutes, STORE_KEYS.domainEnhancePrefs, STORE_KEYS.privacyConsent]);
   if (!current[STORE_KEYS.state]) {
-    lastState = prepareStateForStorage(applyInitialPerformanceMode(createDefaultState()));
+    lastState = migratePerformanceForStability(prepareStateForStorage(applyInitialPerformanceMode(createDefaultState())));
     await chrome.storage.local.set({ [STORE_KEYS.state]: lastState });
   } else {
     const storedState = current[STORE_KEYS.state];
-    lastState = prepareStateForStorage({ ...createDefaultState(), ...storedState });
+    lastState = migratePerformanceForStability(prepareStateForStorage({ ...createDefaultState(), ...storedState }));
     if (shouldRefreshFactoryDefaultMaster(storedState)) {
       const defaultPreset = FACTORY_PRESETS.find((preset) => preset.id === 'default') || FACTORY_PRESETS[0];
+      const preservedPerformance = lastState.performance;
       lastState = prepareStateForStorage(applyPresetToState(lastState, defaultPreset));
-      // Keep the user's current ECO/TURBO choice on default preset refresh.
-      // Initial auto-selection happens only on first install / empty storage.
-      lastState.performance = prepareStateForStorage(storedState).performance;
+      lastState.performance = preservedPerformance;
     }
+    lastState = migratePerformanceForStability(lastState);
     await chrome.storage.local.set({ [STORE_KEYS.state]: lastState });
   }
   if (!current[STORE_KEYS.customPresets]) {
@@ -796,15 +825,16 @@ async function applyPresetCommand(preset) {
 }
 
 async function updateStateCommand(patch) {
+  const normalizedPatch = normalizePerformancePatch(patch);
   const stored = await chrome.storage.local.get(STORE_KEYS.state);
-  lastState = prepareStateForStorage(deepMerge({ ...createDefaultState(), ...(stored[STORE_KEYS.state] || lastState) }, patch));
+  lastState = migratePerformanceForStability(prepareStateForStorage(deepMerge({ ...createDefaultState(), ...(stored[STORE_KEYS.state] || lastState) }, normalizedPatch)));
   lastState.updatedAt = Date.now();
   await chrome.storage.local.set({ [STORE_KEYS.state]: lastState });
-  await saveDomainOutputRouteIfNeeded(patch, lastState);
+  await saveDomainOutputRouteIfNeeded(normalizedPatch, lastState);
 
-  const offscreenResponse = await sendToOffscreenIfActive({ target: 'offscreen', type: 'UPDATE_STATE', patch }).catch(() => null);
+  const offscreenResponse = await sendToOffscreenIfActive({ target: 'offscreen', type: 'UPDATE_STATE', patch: normalizedPatch }).catch(() => null);
   if (offscreenResponse?.ok && offscreenResponse.state) {
-    lastState = prepareStateForStorage({ ...lastState, ...offscreenResponse.state, output: { ...lastState.output, ...offscreenResponse.state.output } });
+    lastState = migratePerformanceForStability(prepareStateForStorage({ ...lastState, ...offscreenResponse.state, output: { ...lastState.output, ...offscreenResponse.state.output } }));
     lastState.updatedAt = Date.now();
     await chrome.storage.local.set({ [STORE_KEYS.state]: lastState });
   }
@@ -981,7 +1011,8 @@ function prepareStateForStorage(state) {
     output: normalizeOutput(state.output),
     performance: {
       ...(state.performance || {}),
-      mode: state.performance?.mode === 'eco' ? 'eco' : 'normal'
+      mode: normalizePerformanceMode(state.performance?.mode || DEFAULT_PERFORMANCE_MODE),
+      stabilityRevision: Number(state.performance?.stabilityRevision || 0)
     }
   };
 }

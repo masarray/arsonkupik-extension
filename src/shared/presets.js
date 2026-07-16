@@ -755,7 +755,7 @@ export function createDefaultState() {
     sourceTitle: 'No active capture',
     selectedPresetId: startupPreset.id,
     defaultMasterRevision: DEFAULT_MASTER_REVISION,
-    performance: { mode: 'normal' },
+    performance: { mode: 'stable', autoSelected: true, userSelected: false, source: 'stability-default-v0.3.103', stabilityRevision: 1 },
     eqEnabled: startupPreset.eqEnabled !== false,
     eq: normalizeEqBands(startupPreset.eq),
     compressor: normalizeCompressor(startupPreset.compressor),

@@ -12,6 +12,7 @@ import {
   DEFAULT_OUTPUT,
   PRIMARY_MASTER_PRESET_IDS
 } from '../shared/presets.js';
+import { DEFAULT_PERFORMANCE_MODE, PERFORMANCE_MODE_LABELS, STABILITY_REVISION, nextPerformanceMode, normalizePerformanceMode } from '../shared/audio-stability.js';
 import { detectAudioOutputDevices, normalizeOutputDeviceId, openBrowserAudioOutputChooser, watchAudioOutputDeviceChanges } from '../shared/audio-devices.js';
 import {
   getEngineState,
@@ -94,7 +95,6 @@ const modulePresetSelections = {
 const CHOOSE_OUTPUT_DEVICE_ID = '__choose_output__';
 const MASARI_PRESET_LABEL = 'MasAri';
 const CUSTOM_PRESET_LABEL = 'Custom';
-const PERFORMANCE_MODES = { normal: 'TURBO', eco: 'ECO' };
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
 const FAVICON_STATE_PATHS = {
@@ -203,7 +203,7 @@ const logFmin = Math.log10(F_MIN);
 const logFspan = Math.log10(F_MAX) - logFmin;
 let drag = null;
 const DRAG_THRESH = 3;
-const METER_POLL_MS = 170;
+const METER_POLL_INTERVALS = Object.freeze({ normal: 170, stable: 320, eco: 620 });
 const VISUAL_FRAME_MS = 34;
 const SPECTRUM_FRAME_MS = 24;
 const PEAK_ATTACK_ALPHA = 0.34;
@@ -535,39 +535,47 @@ function renderChromeState() {
 }
 
 function getPerformanceMode() {
-  return state?.performance?.mode === 'eco' ? 'eco' : 'normal';
+  return normalizePerformanceMode(state?.performance?.mode || DEFAULT_PERFORMANCE_MODE);
+}
+
+function getMeterPollMs() {
+  return METER_POLL_INTERVALS[getPerformanceMode()] || METER_POLL_INTERVALS.stable;
 }
 
 function renderPerformanceToggle() {
   const button = ui.btnPerformanceMode;
   if (!button) return;
   const mode = getPerformanceMode();
-  const isEco = mode === 'eco';
   button.dataset.mode = mode;
-  button.setAttribute('aria-pressed', isEco ? 'true' : 'false');
-  const label = PERFORMANCE_MODES[mode] || PERFORMANCE_MODES.normal;
-  button.title = isEco
-    ? 'Engine quality: ECO — lighter CPU for low-spec laptops'
-    : 'Engine quality: TURBO — full quality processing';
-  button.setAttribute('aria-label', button.title);
+  button.setAttribute('aria-pressed', mode === 'normal' ? 'true' : 'false');
+  const descriptions = {
+    stable: 'Engine quality: STABLE — full sound with lighter analysis for reliable playback',
+    normal: 'Engine quality: TURBO — oversampled adaptive processing for powerful computers',
+    eco: 'Engine quality: ECO — simplified processing for low-spec computers'
+  };
+  const label = PERFORMANCE_MODE_LABELS[mode] || PERFORMANCE_MODE_LABELS.stable;
+  button.title = descriptions[mode];
+  button.setAttribute('aria-label', `${descriptions[mode]}. Click to cycle mode.`);
   const labelEl = button.querySelector('.perf-label');
   if (labelEl) labelEl.textContent = label;
 }
 
 async function togglePerformanceMode() {
   if (!state || busy) return;
-  const nextMode = getPerformanceMode() === 'eco' ? 'normal' : 'eco';
   const previousMode = getPerformanceMode();
+  const nextMode = nextPerformanceMode(previousMode);
   const nextPerformance = {
     ...(state.performance || {}),
     mode: nextMode,
     userSelected: true,
     autoSelected: false,
     source: 'studio-toggle',
+    stabilityRevision: STABILITY_REVISION,
     selectedAt: Date.now()
   };
   state.performance = nextPerformance;
   renderPerformanceToggle();
+  startMeterPolling();
   try {
     await updateEngineState({ performance: nextPerformance });
     await refreshState(false);
@@ -575,6 +583,7 @@ async function togglePerformanceMode() {
     console.error(error);
     state.performance = { ...(state.performance || {}), mode: previousMode };
     renderPerformanceToggle();
+    startMeterPolling();
   }
 }
 
@@ -2250,20 +2259,25 @@ function stepSlope(b, direction) {
 }
 
 function startMeterPolling() {
-  clearInterval(pollingTimer);
-  pollingTimer = setInterval(async () => {
-    if (document.hidden) return;
-    const response = await sendMessage({ target: 'offscreen', type: 'GET_ANALYSIS_FRAME' }).catch(() => null);
-    if (!response?.ok) return;
-    lastMeterPayload = response.frame || null;
-    rtaFrame = normalizeRtaFrame(response.frame?.spectrum);
-    if (response.frame?.state) {
-      state = { ...state, ...response.frame.state, eqEnabled: response.frame.state.eqEnabled !== false };
-      bypassAll = Boolean(state.output?.bypass);
-      renderChromeState();
+  clearTimeout(pollingTimer);
+  const poll = async () => {
+    pollingTimer = null;
+    if (!document.hidden) {
+      const response = await sendMessage({ target: 'offscreen', type: 'GET_ANALYSIS_FRAME' }).catch(() => null);
+      if (response?.ok) {
+        lastMeterPayload = response.frame || null;
+        rtaFrame = normalizeRtaFrame(response.frame?.spectrum);
+        if (response.frame?.state) {
+          state = { ...state, ...response.frame.state, eqEnabled: response.frame.state.eqEnabled !== false };
+          bypassAll = Boolean(state.output?.bypass);
+          renderChromeState();
+        }
+        updateMeters(response.frame?.meters || {});
+      }
     }
-    updateMeters(response.frame?.meters || {});
-  }, METER_POLL_MS);
+    pollingTimer = setTimeout(poll, getMeterPollMs());
+  };
+  pollingTimer = setTimeout(poll, 0);
 }
 
 function updateMeters(meters) {
