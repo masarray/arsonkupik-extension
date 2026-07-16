@@ -1396,6 +1396,33 @@ function setSpectrumMode(mode = 'post') {
   if (layers.specIn) renderRoundedSpectrumPaths();
 }
 
+function renderOutputControls() {
+  if (!state) return;
+  ui.outputControls.innerHTML = '';
+  const controls = [
+    ['inputGain', 'Input', -18, 12, 0.1, 'dB'],
+    ['outputGain', 'Output', -18, 12, 0.1, 'dB'],
+    ['limiterCeiling', 'Ceiling', -12, 0, 0.1, 'dB'],
+    ['limiterDrive', 'Drive', 0, 12, 0.1, 'dB']
+  ];
+  for (const [field, label, min, max, step, unit] of controls) {
+    const control = createSliderControl({
+      label,
+      value: state.output[field],
+      min,
+      max,
+      step,
+      unit,
+      onInput: async (value) => {
+        markModulePresetCustom('limiter');
+        state.output[field] = value;
+        await updateEngineState({ output: { [field]: value } });
+      }
+    });
+    ui.outputControls.appendChild(control);
+  }
+}
+
 let _knobUid = 0;
 const KNOB_A0 = 225;      // arc start (deg, 0=top, cw+)
 const KNOB_SWEEP = 270;   // total sweep

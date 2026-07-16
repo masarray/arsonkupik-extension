@@ -8,6 +8,7 @@ const createdTabUrls = [];
 
 // Simulate an upgrade from an earlier build that persisted an active capture.
 localData.arAudioState = { active: true, tabId: 41, sourceTitle: 'Legacy active capture' };
+localData.arAudioDomainOutputRoutes = { 'legacy.example': { outputDeviceId: 'old-device' } };
 
 function pick(source, keys) {
   if (keys == null) return { ...source };
@@ -91,6 +92,7 @@ const initialState = await sendBackground('GET_STATE');
 assert.equal(initialState.state.active, false);
 assert.equal(initialState.state.tabId, null);
 assert.equal(tabQueryCount, 0, 'Tab metadata must not be queried before privacy consent.');
+assert.equal('arAudioDomainOutputRoutes' in localData, false, 'Legacy output-route storage must be deleted during migration.');
 
 const supportPage = await sendBackground('OPEN_SUPPORT_PAGE');
 assert.equal(supportPage.ok, true);

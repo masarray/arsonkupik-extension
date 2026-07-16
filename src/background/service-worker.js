@@ -237,6 +237,8 @@ function normalizePerformancePatch(patch) {
 
 async function ensureStorageDefaults() {
   const current = await chrome.storage.local.get([STORE_KEYS.state, STORE_KEYS.customPresets, STORE_KEYS.domainEnhancePrefs, STORE_KEYS.privacyConsent]);
+  const legacyRoutes = await chrome.storage.local.get('arAudioDomainOutputRoutes');
+  if (legacyRoutes.arAudioDomainOutputRoutes) await chrome.storage.local.remove('arAudioDomainOutputRoutes');
   if (!current[STORE_KEYS.state]) {
     lastState = migratePerformanceForStability(prepareStateForStorage(applyInitialPerformanceMode(createDefaultState())));
     await chrome.storage.local.set({ [STORE_KEYS.state]: lastState });
@@ -321,6 +323,7 @@ async function acceptPrivacyNotice() {
 
 async function clearSitePreferences() {
   await chrome.storage.local.set({ [STORE_KEYS.domainEnhancePrefs]: {} });
+  await chrome.storage.local.remove('arAudioDomainOutputRoutes');
   return { ok: true, privacy: await getPrivacyStatus(), state: await getStateWithPresets() };
 }
 

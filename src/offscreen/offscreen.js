@@ -123,7 +123,6 @@ async function handleOffscreenMessage(message) {
     case 'GET_STATE':
       return { ok: true, state: host.getPublicState() };
     case 'GET_ANALYSIS_FRAME':
-      host.setMonitoringActive(true);
       return { ok: true, frame: host.getAnalysisFrame() };
     case 'SET_MONITORING_ACTIVE':
       host.setMonitoringActive(Boolean(message.active));
@@ -277,23 +276,7 @@ class AudioEnhancerEngine {
       this.outputMixGain = this.context.createGain();
       this.rtaFftSize = chooseRtaFftSize(this.performanceMode);
       this.meterFftSize = chooseMeterFftSize(this.performanceMode);
-      this.inputAnalyser = this.createRtaAnalyser();
-      this.outputAnalyser = this.createRtaAnalyser();
-      this.leftAnalyser = this.createMeterAnalyser();
-      this.rightAnalyser = this.createMeterAnalyser();
-      this.correlationSplitter = this.context.createChannelSplitter(2);
-      this.meterSink = this.context.createGain();
-      this.meterSink.gain.value = 0;
-      this.createStereoBandMeters();
-
-      this.timeBufferIn = new Float32Array(this.inputAnalyser.fftSize);
-      this.timeBufferInputLeft = new Float32Array(this.inputLeftAnalyser.fftSize);
-      this.timeBufferInputRight = new Float32Array(this.inputRightAnalyser.fftSize);
-      this.timeBufferOut = new Float32Array(this.outputAnalyser.fftSize);
-      this.timeBufferLeft = new Float32Array(this.leftAnalyser.fftSize);
-      this.timeBufferRight = new Float32Array(this.rightAnalyser.fftSize);
-      this.inputFrequencyData = new Float32Array(this.inputAnalyser.frequencyBinCount);
-      this.outputFrequencyData = new Float32Array(this.outputAnalyser.frequencyBinCount);
+      if (this.monitoringActive) this.createMonitoringNodes();
 
       this.applyAllParams();
       this.connectGraph();

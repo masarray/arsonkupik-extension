@@ -12,7 +12,7 @@
 
 ![ArSonKuPik Studio interface](docs/assets/studio-interface.webp)
 
-ArSonKuPik is a privacy-first Chrome extension that transforms browser playback into a controllable mastering chain. It combines precision parametric EQ, stereo-linked dynamics, harmonic color, multiband width control, true-peak-oriented limiting, system-default playback, and carefully voiced listening presets in one compact studio interface.
+ArSonKuPik is a privacy-first Chrome extension that transforms browser playback into a controllable mastering chain. It combines precision parametric EQ, stereo-linked dynamics, harmonic color, multiband width control, true-peak-oriented limiting, output safety, and carefully voiced listening presets in one compact studio interface.
 
 > Audio stays inside the browser. The extension has no host permissions, analytics, telemetry, account system, or cloud audio upload.
 
@@ -22,7 +22,7 @@ ArSonKuPik is a privacy-first Chrome extension that transforms browser playback 
 - **Controlled dynamics** — stereo-linked compression with visible gain reduction and practical listening presets.
 - **Harmonic color** — adjustable body, presence, air, and saturation designed for long listening sessions.
 - **Phase-aware width** — multiband stereo shaping with correlation feedback and a stable center image.
-- **Output safety** — gain staging, limiter protection, clipping feedback, and system-default playback where supported.
+- **Output safety** — gain staging, limiter protection, clipping feedback, and direct system-default playback.
 - **Fast workflow** — master and module presets, A/B comparison, undo/redo, custom local presets, STABLE/ECO/TURBO processing modes.
 - **Privacy by design** — active-tab capture only after user action; local processing and local settings storage.
 
@@ -68,7 +68,7 @@ Offscreen document + Web Audio graph
         └── Output gain + limiter
         │
         ▼
-System default or system default output
+System default audio output
 ```
 
 | Area | Responsibility |
@@ -90,9 +90,9 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for the detailed runtime flow. Chrome Web
 | `activeTab` | Limits user-triggered interaction to the currently selected tab |
 | `tabCapture` | Captures audio from the tab selected by the user |
 | `offscreen` | Keeps the Web Audio processing graph alive outside the popup |
-| `storage` | Saves settings, presets, consent, per-domain preferences, and per-domain preferences locally |
+| `storage` | Saves settings, presets, consent, and per-domain enhancement preferences locally |
 
-ArSonKuPik declares **no host permissions**, does not request microphone access, and uses the browser's user-initiated speaker chooser only when supported. Full explanations are provided in [PRIVACY.md](PRIVACY.md) and [docs/privacy.html](docs/privacy.html).
+ArSonKuPik declares **no host permissions**, does not request microphone access, and always plays through the browser's system-default audio output. Full explanations are provided in [PRIVACY.md](PRIVACY.md) and [docs/privacy.html](docs/privacy.html).
 
 ## Quality checks
 
@@ -105,7 +105,7 @@ The validator checks JSON integrity, required runtime files, referenced local as
 
 ## Project status
 
-ArSonKuPik is under active development. The repository currently tracks the `0.3.104` stability-hardened engine and Indonesia-first voluntary-support interface line. Review [CHANGELOG.md](CHANGELOG.md) and [ROADMAP.md](ROADMAP.md) before integrating experimental branches.
+ArSonKuPik is under active development. The repository currently tracks the `0.3.104` headless-stability engine and Indonesia-first voluntary-support interface line. Review [CHANGELOG.md](CHANGELOG.md) and [ROADMAP.md](ROADMAP.md) before integrating experimental branches.
 
 ## Support development
 

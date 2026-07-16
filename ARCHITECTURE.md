@@ -33,8 +33,8 @@ ArSonKuPik uses a Chrome Manifest V3 service worker to coordinate user actions a
 
 - Builds and updates the Web Audio node graph.
 - Processes the captured tab stream locally.
-- Calculates level, gain-reduction, correlation, and spectrum telemetry.
-- Applies system-default playback through an `HTMLMediaElement` sink where available.
+- Creates level, gain-reduction, correlation, and spectrum telemetry nodes only while Studio monitoring is visible.
+- Connects the audible graph directly to `AudioContext.destination`; no hidden media-element re-clock path is used.
 - Avoids remote code, remote assets, and network transport.
 
 ### Popup
@@ -46,7 +46,6 @@ ArSonKuPik uses a Chrome Manifest V3 service worker to coordinate user actions a
 - Starts or stops enhancement.
 - Clears per-site preferences or resets all extension-local data.
 - Selects a master preset.
-- Exposes local audio-system-default playback.
 - Opens the full Studio panel.
 
 ### Studio
@@ -69,7 +68,7 @@ ArSonKuPik uses a Chrome Manifest V3 service worker to coordinate user actions a
 
 - Defaults are created centrally in `src/shared/presets.js`.
 - Every state write is normalized before it reaches the audio graph or persistent storage.
-- User-selected system-default playback is preserved when sonic presets are applied.
+- Sonic presets contain only audio-processing parameters; playback always remains on the system-default output.
 - Factory-preset revisions can refresh defaults without overwriting unrelated user choices.
 
 ## Privacy boundary
