@@ -1,6 +1,5 @@
 import { FACTORY_PRESETS, PRIMARY_MASTER_PRESET_IDS } from '../shared/presets.js';
 import { getEngineState, startEnhance, stopEnhance, applyPreset, updateEngineState, sendMessage, acceptPrivacyNotice, clearSitePreferences, resetAllLocalData, openPrivacyPolicy, openSupportPage } from '../shared/messaging.js';
-import { detectAudioOutputDevices, normalizeOutputDeviceId, openBrowserAudioOutputChooser } from '../shared/audio-devices.js';
 
 const ui = {
   statusDot: document.getElementById('statusDot'),
@@ -14,8 +13,6 @@ const ui = {
   outputGain: document.getElementById('outputGain'),
   outputGainValue: document.getElementById('outputGainValue'),
   limiterToggle: document.getElementById('limiterToggle'),
-  audioOutputSelect: document.getElementById('audioOutputSelect'),
-  audioOutputHint: document.getElementById('audioOutputHint'),
   privacyNotice: document.getElementById('privacyNotice'),
   acceptPrivacyButton: document.getElementById('acceptPrivacyButton'),
   privacyPolicyNoticeButton: document.getElementById('privacyPolicyNoticeButton'),
@@ -30,9 +27,7 @@ const ui = {
 let state = null;
 let presets = [...FACTORY_PRESETS];
 let busy = false;
-let outputDevicePopulateToken = 0;
 let soundModeToastTimer = 0;
-const CHOOSE_OUTPUT_DEVICE_ID = '__choose_output__';
 const MASARI_PRESET_LABEL = 'MasAri';
 
 const FAVICON_STATE_PATHS = {
@@ -105,19 +100,6 @@ function bindEvents() {
     await updateEngineState({ output: { limiterEnabled } }).catch((error) => setHint(error.message));
   });
 
-  ui.audioOutputSelect.addEventListener('change', async () => {
-    const selected = getSelectedOutputDevice();
-    if (selected.deviceId === CHOOSE_OUTPUT_DEVICE_ID) {
-      await chooseBrowserOutputDevice().catch((error) => {
-        restoreSelectedOutputDevice();
-        setAudioOutputHint(error.message || 'Output device selection was cancelled.');
-      });
-      return;
-    }
-    await applyOutputDeviceSelection(selected).catch((error) => {
-      setAudioOutputHint(error.message || 'Unable to route output.');
-    });
-  });
 
   ui.presetSelect.addEventListener('change', async () => {
     const preset = presets.find((candidate) => candidate.id === ui.presetSelect.value);
@@ -149,7 +131,7 @@ function bindEvents() {
   });
 
   ui.clearSitePreferencesButton?.addEventListener('click', async () => {
-    if (!window.confirm('Clear all saved per-site enhancement and output-routing preferences? Custom presets will be kept.')) return;
+    if (!window.confirm('Clear all saved per-site enhancement preferences? Custom presets will be kept.')) return;
     try {
       const response = await clearSitePreferences();
       if (response.state) state = response.state;
@@ -252,15 +234,6 @@ function render() {
   ui.outputGainValue.textContent = `${outputGain.toFixed(1)} dB`;
   ui.limiterToggle.checked = Boolean(state.output?.limiterEnabled);
   renderPresets();
-  const privacyAccepted = Boolean(state?.privacy?.accepted);
-  ui.audioOutputSelect.disabled = !privacyAccepted;
-  if (privacyAccepted) {
-    autoPopulateOutputDevices(state.output?.outputDeviceId).catch((error) => setAudioOutputHint(error.message));
-    renderOutputRouteHint();
-  } else {
-    ui.audioOutputSelect.replaceChildren(new Option('System Default', 'default', true, true));
-    setAudioOutputHint('Output-device detection is available after accepting the privacy notice.');
-  }
   setHint(isActive && !isCurrentTabCapture
     ? `Enhance is attached to another tab${state.domainEnhanceEnabled && state.currentDomain ? `; ${state.currentDomain} is remembered. Click Enhance This Tab to move it here.` : '. Click Enhance This Tab to move it here.'}`
     : isActive
@@ -343,99 +316,3 @@ function showSoundModeToast(mode) {
   }, 1700);
 }
 
-async function autoPopulateOutputDevices(selectedDeviceId = 'default') {
-  const token = ++outputDevicePopulateToken;
-  const selectedId = normalizeOutputDeviceId(selectedDeviceId);
-  setAudioOutputHint('Checking output devices…');
-
-  const detection = await detectAudioOutputDevices();
-  if (token !== outputDevicePopulateToken) return;
-
-  const devices = detection.devices || [];
-  ui.audioOutputSelect.innerHTML = '';
-  for (const device of devices) {
-    const option = document.createElement('option');
-    option.value = device.deviceId;
-    option.textContent = device.isDefault ? 'System Default' : device.label;
-    option.dataset.label = device.label;
-    option.selected = device.deviceId === selectedId;
-    ui.audioOutputSelect.appendChild(option);
-  }
-  if (![...ui.audioOutputSelect.options].some((option) => option.value === selectedId)) {
-    const option = document.createElement('option');
-    option.value = selectedId;
-    option.textContent = state.output?.outputDeviceLabel || 'Previously selected device';
-    option.dataset.label = option.textContent;
-    option.selected = true;
-    ui.audioOutputSelect.appendChild(option);
-  }
-
-  appendChooseOutputOption(detection.chooserAvailable);
-
-  if (detection.nonDefaultCount === 0) {
-    setAudioOutputHint(detection.chooserAvailable
-      ? 'System Default only. Choose output device… opens the browser speaker chooser.'
-      : 'System Default only. Named output routing is unavailable in this browser; no microphone permission is requested.');
-    return;
-  }
-  renderOutputRouteHint();
-}
-
-function getSelectedOutputDevice() {
-  const option = ui.audioOutputSelect.selectedOptions?.[0];
-  if (option?.value === CHOOSE_OUTPUT_DEVICE_ID) {
-    return { deviceId: CHOOSE_OUTPUT_DEVICE_ID, label: 'Choose output device…' };
-  }
-  return {
-    deviceId: normalizeOutputDeviceId(option?.value || 'default'),
-    label: option?.dataset?.label || option?.textContent || 'System Default'
-  };
-}
-
-function appendChooseOutputOption(chooserAvailable) {
-  if (!chooserAvailable) return;
-  const option = document.createElement('option');
-  option.value = CHOOSE_OUTPUT_DEVICE_ID;
-  option.textContent = 'Choose output device…';
-  option.dataset.label = option.textContent;
-  ui.audioOutputSelect.appendChild(option);
-}
-
-async function chooseBrowserOutputDevice() {
-  setAudioOutputHint('Opening Chrome output chooser…');
-  const selected = await openBrowserAudioOutputChooser();
-  await applyOutputDeviceSelection(selected);
-  await autoPopulateOutputDevices(selected.deviceId);
-}
-
-function restoreSelectedOutputDevice() {
-  const selectedId = normalizeOutputDeviceId(state?.output?.outputDeviceId || 'default');
-  const option = [...ui.audioOutputSelect.options].find((candidate) => candidate.value === selectedId);
-  if (option) option.selected = true;
-}
-
-async function applyOutputDeviceSelection(device) {
-  const outputDeviceId = normalizeOutputDeviceId(device?.deviceId);
-  const outputDeviceLabel = outputDeviceId === 'default' ? 'System Default' : (device?.label || 'Selected output device');
-  state = { ...state, output: { ...state.output, outputDeviceId, outputDeviceLabel } };
-  renderOutputRouteHint();
-  const response = await updateEngineState({ output: { outputDeviceId, outputDeviceLabel } });
-  if (!response?.ok) throw new Error(response?.error || 'Unable to route output device.');
-  if (response.state) state = response.state;
-  renderOutputRouteHint(true);
-}
-
-function renderOutputRouteHint(justSaved = false) {
-  const label = state?.output?.outputDeviceLabel || 'System Default';
-  const status = state?.output?.outputRouteStatus || (state?.output?.outputDeviceId === 'default' ? 'default' : 'selected');
-  const routed = status === 'routed';
-  const failed = status === 'failed' || status === 'unsupported' || status === 'playback-blocked';
-  const prefix = failed ? 'Route issue' : routed ? 'Routed' : 'Output';
-  const domain = state?.currentDomain ? ` · saved for ${state.currentDomain}` : '';
-  const suffix = justSaved ? domain || ' · saved' : domain;
-  setAudioOutputHint(`${prefix}: ${label}${suffix}`);
-}
-
-function setAudioOutputHint(message) {
-  ui.audioOutputHint.textContent = message;
-}

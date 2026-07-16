@@ -4,7 +4,7 @@ This document is the submission checklist for the Chrome Web Store Privacy Pract
 
 ## Single purpose
 
-ArSonKuPik provides user-initiated, local, real-time audio enhancement for a selected browser tab, including equalization, dynamics, harmonic processing, stereo shaping, limiting, metering, presets, and supported output routing.
+ArSonKuPik provides user-initiated, local, real-time audio enhancement for a selected browser tab, including equalization, dynamics, harmonic processing, stereo shaping, limiting, metering, presets, and supported system-default playback.
 
 ## Data-use declarations
 
@@ -64,7 +64,7 @@ The extension declares no host permissions, no `contentSettings` permission, and
 
 Before first use, the popup states:
 
-> Tab audio is processed only on this device and is never recorded or uploaded. When per-site preferences are used, the current site hostname and selected output route may be stored locally in this Chrome profile.
+> Tab audio is processed only on this device and is never recorded or uploaded. When per-site preferences are used, the current site hostname and selected playback preference may be stored locally in this Chrome profile.
 
 The user must choose **Accept & Continue** before `START_ENHANCE` is accepted by the background service worker.
 
@@ -79,7 +79,7 @@ The user must choose **Accept & Continue** before `START_ENHANCE` is accepted by
 
 The popup exposes:
 
-- **Clear Site Preferences** — removes per-site enhancement preferences and output routes.
+- **Clear Site Preferences** — removes per-site enhancement preferences and per-domain preferences.
 - **Reset All Local Data** — removes all extension-local configuration and consent after stopping capture.
 
 ## Submission verification

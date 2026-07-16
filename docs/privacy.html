@@ -22,10 +22,10 @@
         <p>ArSonKuPik processes selected browser-tab audio locally. It does not upload, record, retain, sell, or share audio. Before enhancement can start, the extension presents a local-processing notice and requires an explicit user action.</p>
 
         <h2 id="consent">First-use notice</h2>
-        <p>The popup explains that tab audio remains on the device and that a normalized site hostname and selected output route may be stored locally when per-site preferences are used. The accepted notice version and acceptance time are stored locally so a materially changed notice can require renewed consent.</p>
+        <p>The popup explains that tab audio remains on the device and that a normalized site hostname and selected playback preference may be stored locally when per-site preferences are used. The accepted notice version and acceptance time are stored locally so a materially changed notice can require renewed consent.</p>
 
         <h2 id="audio">Audio processing</h2>
-        <p>Audio capture starts only after the user chooses a normal HTTP or HTTPS tab and starts enhancement. Chrome supplies that tab's audio stream to an offscreen extension document, where the Web Audio API applies equalization, dynamics, harmonic color, stereo shaping, gain, limiting, metering, and supported output routing.</p>
+        <p>Audio capture starts only after the user chooses a normal HTTP or HTTPS tab and starts enhancement. Chrome supplies that tab's audio stream to an offscreen extension document, where the Web Audio API applies equalization, dynamics, harmonic color, stereo shaping, gain, limiting, metering, and supported system-default playback.</p>
         <p>Audio is not sent to a server and is not used for advertising, profiling, analytics, model training, or any unrelated purpose.</p>
 
         <h2 id="local-data">Information handled locally</h2>
@@ -34,7 +34,7 @@
           <li>Audio-engine settings and selected preset.</li>
           <li>Custom preset names and values.</li>
           <li>Output-device identifiers and labels exposed by the browser or operating system.</li>
-          <li>A normalized hostname associated with an enhancement preference or output route.</li>
+          <li>A normalized hostname associated with an enhancement preference or playback preference.</li>
           <li>Preference update times and privacy-consent metadata.</li>
           <li>Active capture state needed to coordinate the service worker and offscreen document.</li>
         </ul>
@@ -61,8 +61,8 @@
         <h2 id="deletion">Retention and deletion</h2>
         <p>Local configuration remains in the current Chrome profile until the user changes or deletes it. The popup provides two direct controls:</p>
         <ul>
-          <li><strong>Clear Site Preferences</strong> removes per-site enhancement preferences and output routes while keeping custom presets and general settings.</li>
-          <li><strong>Reset All Local Data</strong> stops capture and removes settings, custom presets, site preferences, output routes, and privacy consent.</li>
+          <li><strong>Clear Site Preferences</strong> removes per-site enhancement preferences and per-domain preferences while keeping custom presets and general settings.</li>
+          <li><strong>Reset All Local Data</strong> stops capture and removes settings, custom presets, site preferences, per-domain preferences, and privacy consent.</li>
         </ul>
         <p>Uninstalling the extension also removes Chrome-managed extension data according to browser behavior.</p>
 

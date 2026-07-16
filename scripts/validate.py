@@ -238,6 +238,17 @@ def main() -> int:
     if "ACCEPT_PRIVACY_NOTICE" not in runtime_source or "RESET_ALL_LOCAL_DATA" not in runtime_source:
         fail("Required privacy consent and deletion controls are missing from runtime", failures)
     note("P0 privacy gate, deletion controls, and permission minimization validated")
+    forbidden_route_tokens = ("outputDeviceId", "outputRouteStatus", "setSinkId", "createMediaStreamDestination", "processedOutput", "domainOutputRoutes")
+    for token in forbidden_route_tokens:
+        if token in runtime_source:
+            fail(f"Removed output-routing runtime token remains: {token}", failures)
+    if (ROOT / "src/shared/audio-devices.js").exists():
+        fail("Obsolete output-device helper must not be packaged", failures)
+    if "SET_MONITORING_ACTIVE" not in runtime_source or "createMonitoringNodes" not in runtime_source or "destroyMonitoringNodes" not in runtime_source:
+        fail("On-demand Studio monitoring guard is incomplete", failures)
+    if "rebuildGraphSafely" not in runtime_source:
+        fail("Click-safe graph rebuild guard is missing", failures)
+    note("Headless playback path and removed output routing validated")
 
     support_config_text = (ROOT / "docs/support-config.js").read_text(encoding="utf-8")
     qris_enabled = bool(re.search(r"qrisEnabled\s*:\s*true", support_config_text))

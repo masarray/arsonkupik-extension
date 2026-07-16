@@ -24,7 +24,7 @@ The following data may be stored in Chrome extension storage in the current brow
 - Audio-engine settings, module values, and selected preset.
 - Custom preset names and values.
 - Output-device identifiers and labels exposed by the browser or operating system.
-- A normalized site hostname associated with an enhancement preference or output route.
+- A normalized site hostname associated with an enhancement preference or playback preference.
 - The time a site preference or route was last updated.
 - The accepted privacy-notice version and acceptance time.
 - Active capture state needed to coordinate the service worker and offscreen audio document. Tab identifiers and source titles are cleared from active state when capture stops.
@@ -42,7 +42,7 @@ Per-site records contain only the normalized hostname and the minimum preference
 | `activeTab` | Limits user-triggered access to the tab the user currently selects. |
 | `tabCapture` | Obtains audio from the tab the user explicitly chooses to enhance. |
 | `offscreen` | Keeps the local Web Audio processing graph alive after the popup closes. |
-| `storage` | Saves settings, custom presets, consent, output routes, and per-site preferences locally. |
+| `storage` | Saves settings, custom presets, consent, per-domain preferences, and per-site preferences locally. |
 
 ArSonKuPik declares no host permissions and does not request microphone permission. Named speaker selection uses the browser's user-initiated audio-output chooser when available; otherwise the extension uses System Default.
 
@@ -58,8 +58,8 @@ ArSonKuPik can open an optional public support page after the user explicitly se
 
 Local configuration remains in the current Chrome profile until the user changes or deletes it. The popup provides two controls:
 
-- **Clear Site Preferences** removes saved per-site enhancement preferences and output routes while keeping custom presets and general settings.
-- **Reset All Local Data** stops capture and removes settings, custom presets, site preferences, output routes, and privacy consent.
+- **Clear Site Preferences** removes saved per-site enhancement preferences and per-domain preferences while keeping custom presets and general settings.
+- **Reset All Local Data** stops capture and removes settings, custom presets, site preferences, per-domain preferences, and privacy consent.
 
 Uninstalling the extension also removes Chrome-managed extension data according to browser behavior.
 

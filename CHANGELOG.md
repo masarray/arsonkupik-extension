@@ -4,6 +4,20 @@ All notable project changes are documented here. The format follows Keep a Chang
 
 ## [Unreleased]
 
+## [0.3.104] - 2026-07-16
+
+### Changed
+
+- Playback now always uses the browser system-default `AudioContext.destination`; the unfinished output-device selector and routing state were removed.
+- Studio analyser, correlation, FFT, and metering nodes are created only while Studio is visible and are destroyed when monitoring stops.
+- The steady-state playback chain no longer places analyser nodes in series with audible audio.
+
+### Fixed
+
+- Removed the hidden media-element re-clock path that could produce long-session crackle or drift.
+- Topology changes now crossfade temporarily to the raw path before reconnecting, reducing ticks and short dropouts.
+- Headless playback now runs without Studio polling, RTA, correlation, stereo-band meters, or adaptive timers.
+
 ## [0.3.103] - 2026-07-16
 
 ### Added
@@ -72,7 +86,9 @@ All notable project changes are documented here. The format follows Keep a Chang
 - GitHub Pages landing site with English and Indonesian content.
 - SEO metadata, canonical URLs, structured data, sitemap, robots file, and social-sharing image.
 
-[Unreleased]: https://github.com/masarray/arsonkupik-extension/compare/v0.3.102...HEAD
+[Unreleased]: https://github.com/masarray/arsonkupik-extension/compare/v0.3.103...HEAD
+[0.3.104]: https://github.com/masarray/arsonkupik-extension/compare/v0.3.103...v0.3.104
+[0.3.103]: https://github.com/masarray/arsonkupik-extension/compare/v0.3.102...v0.3.103
 [0.3.102]: https://github.com/masarray/arsonkupik-extension/compare/v0.3.101...v0.3.102
 [0.3.101]: https://github.com/masarray/arsonkupik-extension/compare/v0.3.100...v0.3.101
 [0.3.100]: https://github.com/masarray/arsonkupik-extension/releases/tag/v0.3.100
