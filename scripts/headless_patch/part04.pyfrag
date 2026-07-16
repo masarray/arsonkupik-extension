@@ -1,0 +1,54 @@
+s=one(s,'  async applyPreset(preset) {',"  async rebuildGraphSafely() {\n    if (!this.context || !this.state.active) { this.connectGraph(); return; }\n    if (this.graphRebuildPromise) return this.graphRebuildPromise;\n    this.graphRebuildPromise=(async()=>{ const bypassed=Boolean(this.state.output.bypass); this.rampGainParam(this.bypassGain?.gain,1,0.018); this.rampGainParam(this.processedGain?.gain,0,0.018); await new Promise(r=>setTimeout(r,24)); this.connectGraph({preserveCrossfade:true}); this.rampGainParam(this.bypassGain?.gain,bypassed?1:0,0.028); this.rampGainParam(this.processedGain?.gain,bypassed?0:1,0.038); })().finally(()=>{this.graphRebuildPromise=null;});\n    return this.graphRebuildPromise;\n  }\n\n  async applyPreset(preset) {",'safe rebuild')
+s=s.replace('if (this.requiresGraphTopologyChange(previousState, this.state, eqTopologyChanged)) this.connectGraph();','if (this.requiresGraphTopologyChange(previousState, this.state, eqTopologyChanged)) await this.rebuildGraphSafely();').replace('    if (graphTopologyChanged) this.connectGraph();','    if (graphTopologyChanged) await this.rebuildGraphSafely();')
+s=sub(s,r'\n    if \(patch\.output\?\.outputDeviceId.*?\n    \}','', 'route update').replace('    if (patch.performance && this.context) {\n      this.runAdaptiveAudioFrame({ force: true, includeStereoBands: false });','    if (patch.performance && this.context && this.monitoringActive) {\n      this.runAdaptiveAudioFrame({ force: true, includeStereoBands: false });')
+s=s.replace("    if (!this.context || this.context.state === 'closed') return;","    if (!this.context || this.context.state === 'closed' || !this.monitoringActive) return;",1).replace("      if (!this.context || this.context.state === 'closed' || !this.state.active) return;","      if (!this.context || this.context.state === 'closed' || !this.state.active || !this.monitoringActive) return;").replace("      if (this.context && this.context.state !== 'closed' && this.state.active) {","      if (this.context && this.context.state !== 'closed' && this.state.active && this.monitoringActive) {")
+s=s.replace("    const meters = metersOverride || this.state.meters || this.computeMeters({ force: true, includeStereoBands: false });","    const meters = metersOverride || this.state.meters || createSilentMeters();"); wr('src/offscreen/offscreen.js',s)
+
+# Delete obsolete module
+q=R/'src/shared/audio-devices.js'
+if q.exists(): q.unlink()
+
+# Version and metadata
+m=json.loads(rd('manifest.json')); m['version']=m['version_name']='0.3.104'; m['description']='Professional local browser audio enhancer with parametric EQ, dynamics, harmonics, stereo width, and limiting.'; wr('manifest.json',json.dumps(m,indent=2)+'\n')
+pkg=json.loads(rd('package.json')); pkg['version']='0.3.104'; pkg['scripts']['check'] += ' && node scripts/smoke_headless.mjs'; pkg['scripts']['release:check'] += ' && node scripts/smoke_headless.mjs'; pkg['scripts']['test:headless']='node scripts/smoke_headless.mjs'; wr('package.json',json.dumps(pkg,indent=2)+'\n')
+
+# Permanent headless regression test
+wr('scripts/smoke_headless.mjs',r'''import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+const root=path.resolve(import.meta.dirname,'..');
+const read=(p)=>fs.readFileSync(path.join(root,p),'utf8');
+assert.equal(fs.existsSync(path.join(root,'src/shared/audio-devices.js')),false);
+const files=['popup.html','studio.html','offscreen.html','src/popup/popup.js','src/studio/studio.js','src/background/service-worker.js','src/offscreen/offscreen.js','src/shared/presets.js'];
+const runtime=files.map(read).join('\n');
+for (const token of ['outputDeviceId','outputRouteStatus','setSinkId','createMediaStreamDestination','processedOutput','audioOutputSelect','topbarOutputDevice','domainOutputRoutes']) assert.equal(runtime.includes(token),false,`removed output-routing token remains: ${token}`);
+const offscreen=read('src/offscreen/offscreen.js');
+assert.match(offscreen,/SET_MONITORING_ACTIVE/);
+assert.match(offscreen,/monitoringActive = false/);
+assert.match(offscreen,/createMonitoringNodes\(\)/);
+assert.match(offscreen,/destroyMonitoringNodes\(\)/);
+assert.match(offscreen,/this\.source\.connect\(this\.inputGain\)/);
+assert.match(offscreen,/cursor\.connect\(this\.context\.destination\)/);
+assert.match(offscreen,/rebuildGraphSafely/);
+assert.match(offscreen,/!this\.monitoringActive/);
+assert.match(offscreen,/const meters = metersOverride \|\| this\.state\.meters \|\| createSilentMeters\(\)/);
+assert.doesNotMatch(offscreen,/getPublicState\([^)]*\)\s*\{[^}]*computeMeters/s);
+const studio=read('src/studio/studio.js');
+assert.match(studio,/SET_MONITORING_ACTIVE/);
+assert.match(studio,/pagehide/);
+assert.match(studio,/clearTimeout\(pollingTimer\)/);
+const manifest=JSON.parse(read('manifest.json')); const pkg=JSON.parse(read('package.json'));
+assert.equal(manifest.version,'0.3.104'); assert.equal(pkg.version,manifest.version);
+console.log('Headless audio stability smoke test passed.');
+''')
+
+# Update privacy smoke: create and clear domain enhance preference, not output route
+s=rd('scripts/smoke_privacy.mjs')
+s=sub(s,r"const selected = await sendBackground\('UPDATE_STATE'.*?assert\.equal\(cleared\.privacy\.accepted, true\);",r"const started = await sendBackground('START_ENHANCE');\nassert.equal(started.ok, true);\nassert.deepEqual(Object.keys(localData.arAudioDomainEnhancePrefs), ['example.com']);\nassert.equal('lastTitle' in localData.arAudioDomainEnhancePrefs['example.com'], false);\nassert.equal('lastTabId' in localData.arAudioDomainEnhancePrefs['example.com'], false);\n\nconst cleared = await sendBackground('CLEAR_SITE_PREFERENCES');\nassert.equal(cleared.ok, true);\nassert.equal(cleared.privacy.sitePreferenceCount, 0);\nassert.equal(cleared.privacy.accepted, true);",'privacy smoke routes'); wr('scripts/smoke_privacy.mjs',s)
+
+# Existing stability test version
+s=rd('scripts/smoke_stability.mjs').replace("assert.equal(manifest.version, '0.3.103');","assert.equal(manifest.version, '0.3.104');"); wr('scripts/smoke_stability.mjs',s)
+
+# Validator guards
+s=rd('scripts/validate.py')
+anchor='    note("P0 privacy gate, deletion controls, and permission minimization validated")\n'
