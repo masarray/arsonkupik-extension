@@ -37,7 +37,8 @@ jobs:
         run: |
           set -euo pipefail
           if grep -q '"version": "0.3.104"' manifest.json; then
-            cat scripts/headless_patch/part06.pyfrag > scripts/apply_headless_audio.py
+            sed -n '1,13p' scripts/headless_patch/part01.pyfrag > scripts/apply_headless_audio.py
+            cat scripts/headless_patch/part06.pyfrag >> scripts/apply_headless_audio.py
           else
             cat scripts/headless_patch/part*.pyfrag > scripts/apply_headless_audio.py
           fi
