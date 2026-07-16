@@ -208,7 +208,6 @@ class AudioEnhancerEngine {
     this.graphRebuildPromise = null;
     this.retiredEqNodes = [];
     this.outputShellConnected = false;
-    this.outputShellConnected = false;
     this.timeBufferIn = null;
     this.timeBufferInputLeft = null;
     this.timeBufferInputRight = null;
@@ -360,6 +359,7 @@ class AudioEnhancerEngine {
     this.monitoringOutputTap = null;
     this.graphRebuildPromise = null;
     this.retiredEqNodes = [];
+    this.outputShellConnected = false;
     this.timeBufferIn = null;
     this.timeBufferInputLeft = null;
     this.timeBufferInputRight = null;

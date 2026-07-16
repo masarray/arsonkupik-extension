@@ -19,6 +19,7 @@ assert.match(offscreen,/destroyMonitoringNodes\(\)/);
 assert.match(offscreen,/this\.source\.connect\(this\.inputGain\)/);
 assert.match(offscreen,/rebuildGraphSafely/);
 assert.match(offscreen,/ensureOutputShell/);
+assert.equal((offscreen.match(/this\.outputShellConnected = false;/g) || []).length,2);
 assert.match(offscreen,/disconnectProcessingGraph/);
 assert.match(offscreen,/this\.source\.connect\(this\.bypassGain\)\.connect\(this\.outputMixGain\)\.connect\(this\.context\.destination\)/);
 assert.match(offscreen,/this\.source\?\.disconnect\(this\.inputAnalyser\)/);
