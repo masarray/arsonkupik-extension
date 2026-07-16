@@ -1,0 +1,75 @@
+s=one(s,"    for (const node of this.getFlatEqNodes()) {\n      try { node.disconnect(); } catch {}\n    }\n    this.eqNodeGroups = normalized.map((band) => this.createEqNodeGroup(band));","    this.retiredEqNodes.push(...this.getFlatEqNodes());\n    this.eqNodeGroups = normalized.map((band) => this.createEqNodeGroup(band));",'retired eq').replace('      ...this.getFlatEqNodes(),\n','      ...this.getFlatEqNodes(),\n      ...this.retiredEqNodes,\n',1).replace('      this.outputRouteDestination\n','      this.monitoringOutputTap\n')
+newgraph='''  connectGraph({ preserveCrossfade = false } = {}) {
+    if (!this.context || !this.source) return;
+    for (const node of this.getAllNodes()) { try { node.disconnect(); } catch {} }
+    const leanAudio = isLeanAudioMode(this.performanceMode);
+    const isBypassed = Boolean(this.state.output.bypass);
+    if (this.bypassGain && this.processedGain && this.outputMixGain) {
+      if (!preserveCrossfade) { this.bypassGain.gain.value = isBypassed ? 1 : 0; this.processedGain.gain.value = isBypassed ? 0 : 1; }
+      this.outputMixGain.gain.value = 1;
+      this.source.connect(this.bypassGain).connect(this.outputMixGain);
+    }
+    let cursor = this.source.connect(this.inputGain).connect(this.smartHeadroomGain).connect(this.safetyHighPass);
+    if (this.state.eqEnabled !== false) for (const eqNode of this.getFlatEqNodes()) cursor = cursor.connect(eqNode);
+    if (this.state.compressor.enabled) cursor = this.connectCompressor(cursor);
+    if (!leanAudio && this.state.color.enabled && this.state.color.mix > 0) cursor = this.connectColor(cursor);
+    if (!leanAudio && this.state.width.enabled) cursor = this.connectWidth(cursor);
+    if (this.smartMakeupGain) cursor = cursor.connect(this.smartMakeupGain);
+    if (this.state.output.limiterEnabled) cursor = cursor.connect(this.limiterDrive).connect(this.softClipper).connect(this.limiter);
+    cursor = cursor.connect(this.outputGain);
+    if (this.processedGain && this.outputMixGain) { cursor.connect(this.processedGain).connect(this.outputMixGain); this.connectOutputDestination(this.outputMixGain); }
+    else this.connectOutputDestination(cursor);
+    this.retiredEqNodes = [];
+  }
+
+  connectOutputDestination(cursor) {
+    if (!cursor || !this.context) return;
+    this.monitoringOutputTap = cursor;
+    cursor.connect(this.context.destination);
+    this.connectMonitoringTaps(cursor);
+  }
+
+  createMonitoringNodes() {
+    if (!this.context || this.inputAnalyser) return;
+    this.inputChannelSplitter = this.context.createChannelSplitter(2);
+    this.inputLeftAnalyser = this.createMeterAnalyser(); this.inputRightAnalyser = this.createMeterAnalyser();
+    this.inputAnalyser = this.createRtaAnalyser(); this.outputAnalyser = this.createRtaAnalyser();
+    this.leftAnalyser = this.createMeterAnalyser(); this.rightAnalyser = this.createMeterAnalyser();
+    this.correlationSplitter = this.context.createChannelSplitter(2);
+    this.meterSink = this.context.createGain(); this.meterSink.gain.value = 0; this.stereoBands = [];
+    if (getPerfConfig(this.performanceMode).stereoBandsInAnalysis) this.createStereoBandMeters();
+    this.timeBufferIn = new Float32Array(this.inputAnalyser.fftSize); this.timeBufferInputLeft = new Float32Array(this.inputLeftAnalyser.fftSize); this.timeBufferInputRight = new Float32Array(this.inputRightAnalyser.fftSize);
+    this.timeBufferOut = new Float32Array(this.outputAnalyser.fftSize); this.timeBufferLeft = new Float32Array(this.leftAnalyser.fftSize); this.timeBufferRight = new Float32Array(this.rightAnalyser.fftSize);
+    this.inputFrequencyData = new Float32Array(this.inputAnalyser.frequencyBinCount); this.outputFrequencyData = new Float32Array(this.outputAnalyser.frequencyBinCount);
+  }
+
+  disconnectMonitoringTaps() {
+    for (const node of [this.inputAnalyser,this.inputChannelSplitter,this.inputLeftAnalyser,this.inputRightAnalyser,this.outputAnalyser,this.correlationSplitter,this.leftAnalyser,this.rightAnalyser,...this.getStereoBandNodes(),this.meterSink].filter(Boolean)) { try { node.disconnect(); } catch {} }
+  }
+
+  destroyMonitoringNodes() {
+    this.disconnectMonitoringTaps();
+    this.inputChannelSplitter=this.inputLeftAnalyser=this.inputRightAnalyser=this.inputAnalyser=this.outputAnalyser=this.correlationSplitter=this.leftAnalyser=this.rightAnalyser=this.meterSink=null;
+    this.stereoBands=[]; this.timeBufferIn=this.timeBufferInputLeft=this.timeBufferInputRight=this.timeBufferOut=this.timeBufferLeft=this.timeBufferRight=this.inputFrequencyData=this.outputFrequencyData=null;
+    this.lastRtaFrame={source:'sfeq-rta-v93',pointCount:RTA_POINT_COUNT,input:[],output:[],updatedAt:0};
+  }
+
+  connectMonitoringTaps(outputCursor = this.monitoringOutputTap) {
+    this.disconnectMonitoringTaps();
+    if (!this.monitoringActive || !this.context || !this.source || !outputCursor) return;
+    this.source.connect(this.inputAnalyser); this.inputAnalyser.connect(this.meterSink);
+    this.source.connect(this.inputChannelSplitter); this.inputChannelSplitter.connect(this.inputLeftAnalyser,0); this.inputChannelSplitter.connect(this.inputRightAnalyser,1); this.inputLeftAnalyser.connect(this.meterSink); this.inputRightAnalyser.connect(this.meterSink);
+    outputCursor.connect(this.outputAnalyser); this.outputAnalyser.connect(this.meterSink);
+    outputCursor.connect(this.correlationSplitter); this.correlationSplitter.connect(this.leftAnalyser,0); this.correlationSplitter.connect(this.rightAnalyser,1); this.leftAnalyser.connect(this.meterSink); this.rightAnalyser.connect(this.meterSink);
+    this.meterSink.connect(this.context.destination);
+  }
+
+  setMonitoringActive(active) {
+    const next=Boolean(active); if (this.monitoringActive===next) return; this.monitoringActive=next;
+    if (!next) { this.stopAdaptiveAudioLoop(); this.destroyMonitoringNodes(); return; }
+    this.createMonitoringNodes(); this.connectMonitoringTaps(); this.runAdaptiveAudioFrame({force:true,includeStereoBands:false}); this.startAdaptiveAudioLoop();
+  }
+
+  createStereoBandMeters() {'''
+s=sub(s,r'  connectGraph\(\) \{.*?\n  createStereoBandMeters\(\) \{',newgraph,'graph replacement')
+s=sub(s,r'\n  createOutputRoute\(\) \{.*?\n  connectCompressor\(cursor\) \{','\n  connectCompressor(cursor) {','output route engine')
