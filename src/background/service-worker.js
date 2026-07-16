@@ -1012,7 +1012,7 @@ function prepareStateForStorage(state) {
     performance: {
       ...(state.performance || {}),
       mode: normalizePerformanceMode(state.performance?.mode || DEFAULT_PERFORMANCE_MODE),
-      stabilityRevision: Number(state.performance?.stabilityRevision || STABILITY_REVISION)
+      stabilityRevision: Number(state.performance?.stabilityRevision || 0)
     }
   };
 }

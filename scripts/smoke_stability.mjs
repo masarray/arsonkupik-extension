@@ -38,6 +38,7 @@ assert.doesNotMatch(offscreen, /if \(patch\.eq && this\.context\) this\.eqNodeGr
 const worker = read('src/background/service-worker.js');
 assert.match(worker, /migratePerformanceForStability/);
 assert.match(worker, /STABILITY_REVISION/);
+assert.match(worker, /stabilityRevision: Number\(state\.performance\?\.stabilityRevision \|\| 0\)/);
 assert.match(worker, /mode:\s*eco \? 'eco' : 'stable'/);
 
 const studio = read('src/studio/studio.js');
