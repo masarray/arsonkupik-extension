@@ -1,0 +1,43 @@
+extra='''    forbidden_route_tokens = ("outputDeviceId", "outputRouteStatus", "setSinkId", "createMediaStreamDestination", "processedOutput", "domainOutputRoutes")
+    for token in forbidden_route_tokens:
+        if token in runtime_source:
+            fail(f"Removed output-routing runtime token remains: {token}", failures)
+    if (ROOT / "src/shared/audio-devices.js").exists():
+        fail("Obsolete output-device helper must not be packaged", failures)
+    if "SET_MONITORING_ACTIVE" not in runtime_source or "createMonitoringNodes" not in runtime_source or "destroyMonitoringNodes" not in runtime_source:
+        fail("On-demand Studio monitoring guard is incomplete", failures)
+    if "rebuildGraphSafely" not in runtime_source:
+        fail("Click-safe graph rebuild guard is missing", failures)
+    note("Headless playback path and removed output routing validated")
+'''
+s=one(s,anchor,anchor+extra,'validator anchor'); wr('scripts/validate.py',s)
+
+# Changelog and current docs
+s=rd('CHANGELOG.md')
+entry='''## [0.3.104] - 2026-07-16
+
+### Changed
+
+- Playback now always uses the browser system-default `AudioContext.destination`; the unfinished output-device selector and routing state were removed.
+- Studio analyser, correlation, FFT, and metering nodes are created only while Studio is visible and are destroyed when monitoring stops.
+- The steady-state playback chain no longer places analyser nodes in series with audible audio.
+
+### Fixed
+
+- Removed the hidden media-element re-clock path that could produce long-session crackle or drift.
+- Topology changes now crossfade temporarily to the raw path before reconnecting, reducing ticks and short dropouts.
+- Headless playback now runs without Studio polling, RTA, correlation, stereo-band meters, or adaptive timers.
+
+'''
+s=s.replace('## [Unreleased]\n\n','## [Unreleased]\n\n'+entry).replace('[Unreleased]: https://github.com/masarray/arsonkupik-extension/compare/v0.3.102...HEAD','[Unreleased]: https://github.com/masarray/arsonkupik-extension/compare/v0.3.103...HEAD\n[0.3.104]: https://github.com/masarray/arsonkupik-extension/compare/v0.3.103...v0.3.104\n[0.3.103]: https://github.com/masarray/arsonkupik-extension/compare/v0.3.102...v0.3.103'); wr('CHANGELOG.md',s)
+
+# Documentation consistency
+repls={
+'output routing':'system-default playback','output-device routing':'system-default playback','output-device controls':'playback controls','output routes':'per-domain preferences','output route':'playback preference','selected output device':'system default output','System default or selected output device':'System default output','device helpers':'stability helpers','ECO/TURBO processing modes':'STABLE/ECO/TURBO processing modes','`0.3.103` stability-hardened engine':'`0.3.104` headless-stability engine'}
+for name in ['README.md','ARCHITECTURE.md','PRIVACY.md','CHROME_WEB_STORE_PRIVACY_DISCLOSURE.md','docs/index.html','docs/id/index.html','docs/privacy.html','docs/support.html']:
+    p=R/name
+    if not p.exists(): continue
+    t=p.read_text(encoding='utf-8').replace('0.3.103','0.3.104')
+    for a,b in repls.items(): t=t.replace(a,b).replace(a.title(),b.title())
+    p.write_text(t,encoding='utf-8')
+print('Applied v0.3.104 headless stability patch')
