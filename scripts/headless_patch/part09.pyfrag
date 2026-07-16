@@ -1,0 +1,10 @@
+s=rd('src/offscreen/offscreen.js')
+s=s.replace("    this.outputShellConnected = false;\n    this.outputShellConnected = false;","    this.outputShellConnected = false;",1)
+old="    this.monitoringOutputTap = null;\n    this.graphRebuildPromise = null;\n    this.retiredEqNodes = [];\n    this.timeBufferIn = null;"
+new="    this.monitoringOutputTap = null;\n    this.graphRebuildPromise = null;\n    this.retiredEqNodes = [];\n    this.outputShellConnected = false;\n    this.timeBufferIn = null;"
+s=one(s,old,new,'shell reset')
+wr('src/offscreen/offscreen.js',s)
+s=rd('scripts/smoke_headless.mjs')
+s=s.replace("assert.match(offscreen,/ensureOutputShell/);","assert.match(offscreen,/ensureOutputShell/);\nassert.equal((offscreen.match(/this\\.outputShellConnected = false;/g) || []).length,2);")
+wr('scripts/smoke_headless.mjs',s)
+print('Applied lifecycle correction')
