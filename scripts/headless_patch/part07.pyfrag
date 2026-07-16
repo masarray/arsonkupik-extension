@@ -1,0 +1,83 @@
+# Persistent output shell and complete monitoring detachment
+s=rd('src/offscreen/offscreen.js')
+s=one(s,"    this.graphRebuildPromise = null;\n    this.retiredEqNodes = [];","    this.graphRebuildPromise = null;\n    this.retiredEqNodes = [];\n    this.outputShellConnected = false;",'constructor output shell')
+s=one(s,"    this.monitoringOutputTap = null;\n    this.graphRebuildPromise = null;\n    this.retiredEqNodes = [];","    this.monitoringOutputTap = null;\n    this.graphRebuildPromise = null;\n    this.retiredEqNodes = [];\n    this.outputShellConnected = false;",'stop output shell reset')
+new_graph='''  ensureOutputShell() {
+    if (this.outputShellConnected || !this.context || !this.source || !this.bypassGain || !this.outputMixGain) return;
+    this.source.connect(this.bypassGain).connect(this.outputMixGain).connect(this.context.destination);
+    this.outputShellConnected = true;
+  }
+
+  disconnectProcessingGraph() {
+    try { this.source?.disconnect(this.inputGain); } catch {}
+    const nodes = [
+      this.inputGain,
+      this.smartHeadroomGain,
+      this.safetyHighPass,
+      ...this.getFlatEqNodes(),
+      ...this.retiredEqNodes,
+      ...Object.values(this.compNodes || {}),
+      this.compressor,
+      this.makeupGain,
+      ...Object.values(this.colorNodes || {}),
+      ...this.getFlatWidthNodes(),
+      this.smartMakeupGain,
+      this.limiterDrive,
+      this.softClipper,
+      this.limiter,
+      this.outputGain,
+      this.processedGain
+    ].filter(Boolean);
+    for (const node of nodes) { try { node.disconnect(); } catch {} }
+  }
+
+  connectGraph({ preserveCrossfade = false } = {}) {
+    if (!this.context || !this.source) return;
+    const leanAudio = isLeanAudioMode(this.performanceMode);
+    const isBypassed = Boolean(this.state.output.bypass);
+    if (!preserveCrossfade) {
+      this.bypassGain.gain.value = isBypassed ? 1 : 0;
+      this.processedGain.gain.value = isBypassed ? 0 : 1;
+    }
+    this.outputMixGain.gain.value = 1;
+    this.ensureOutputShell();
+    this.disconnectProcessingGraph();
+
+    let cursor = this.source.connect(this.inputGain).connect(this.smartHeadroomGain).connect(this.safetyHighPass);
+    if (this.state.eqEnabled !== false) for (const eqNode of this.getFlatEqNodes()) cursor = cursor.connect(eqNode);
+    if (this.state.compressor.enabled) cursor = this.connectCompressor(cursor);
+    if (!leanAudio && this.state.color.enabled && this.state.color.mix > 0) cursor = this.connectColor(cursor);
+    if (!leanAudio && this.state.width.enabled) cursor = this.connectWidth(cursor);
+    if (this.smartMakeupGain) cursor = cursor.connect(this.smartMakeupGain);
+    if (this.state.output.limiterEnabled) cursor = cursor.connect(this.limiterDrive).connect(this.softClipper).connect(this.limiter);
+    cursor.connect(this.outputGain).connect(this.processedGain).connect(this.outputMixGain);
+    this.monitoringOutputTap = this.outputMixGain;
+    this.connectMonitoringTaps(this.monitoringOutputTap);
+    this.retiredEqNodes = [];
+  }
+
+  createMonitoringNodes() {'''
+s=sub(s,r'  connectGraph\(\{ preserveCrossfade = false \} = \{\}\) \{.*?\n  createMonitoringNodes\(\) \{',new_graph,'persistent output graph')
+old_disconnect="""  disconnectMonitoringTaps() {
+    for (const node of [this.inputAnalyser,this.inputChannelSplitter,this.inputLeftAnalyser,this.inputRightAnalyser,this.outputAnalyser,this.correlationSplitter,this.leftAnalyser,this.rightAnalyser,...this.getStereoBandNodes(),this.meterSink].filter(Boolean)) { try { node.disconnect(); } catch {} }
+  }
+"""
+new_disconnect="""  disconnectMonitoringTaps() {
+    try { this.source?.disconnect(this.inputAnalyser); } catch {}
+    try { this.source?.disconnect(this.inputChannelSplitter); } catch {}
+    try { this.monitoringOutputTap?.disconnect(this.outputAnalyser); } catch {}
+    try { this.monitoringOutputTap?.disconnect(this.correlationSplitter); } catch {}
+    for (const node of [this.inputAnalyser,this.inputChannelSplitter,this.inputLeftAnalyser,this.inputRightAnalyser,this.outputAnalyser,this.correlationSplitter,this.leftAnalyser,this.rightAnalyser,...this.getStereoBandNodes(),this.meterSink].filter(Boolean)) {
+      try { node.disconnect(); } catch {}
+    }
+  }
+"""
+s=one(s,old_disconnect,new_disconnect,'monitor upstream disconnect')
+s=s.replace("    this.lastRtaFrame={source:'sfeq-rta-v93',pointCount:RTA_POINT_COUNT,input:[],output:[],updatedAt:0};\n  }","    this.lastRtaFrame={source:'sfeq-rta-v93',pointCount:RTA_POINT_COUNT,input:[],output:[],updatedAt:0};\n    this.state.meters = createSilentMeters();\n  }",1)
+wr('src/offscreen/offscreen.js',s)
+
+s=rd('scripts/smoke_headless.mjs')
+s=s.replace("assert.match(offscreen,/rebuildGraphSafely/);","assert.match(offscreen,/rebuildGraphSafely/);\nassert.match(offscreen,/ensureOutputShell/);\nassert.match(offscreen,/disconnectProcessingGraph/);\nassert.match(offscreen,/this\\.source\\.connect\\(this\\.bypassGain\\)\\.connect\\(this\\.outputMixGain\\)\\.connect\\(this\\.context\\.destination\\)/);\nassert.match(offscreen,/this\\.source\\?\\.disconnect\\(this\\.inputAnalyser\\)/);\nassert.match(offscreen,/this\\.monitoringOutputTap\\?\\.disconnect\\(this\\.outputAnalyser\\)/);")
+s=s.replace("assert.doesNotMatch(offscreen,/getPublicState\\([^)]*\\)\\s*\\{[^}]*computeMeters/s);","assert.doesNotMatch(offscreen,/getPublicState\\([^)]*\\)\\s*\\{[^}]*computeMeters/s);\nconst graphSection=offscreen.slice(offscreen.indexOf('connectGraph({'),offscreen.indexOf('createMonitoringNodes()'));\nassert.doesNotMatch(graphSection,/getAllNodes\\(\\)/);\nassert.doesNotMatch(graphSection,/source\\.disconnect\\(\\)/);")
+wr('scripts/smoke_headless.mjs',s)
+print('Applied persistent output-shell correction')
