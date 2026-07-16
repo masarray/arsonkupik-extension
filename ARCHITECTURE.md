@@ -9,7 +9,7 @@ ArSonKuPik uses a Chrome Manifest V3 service worker to coordinate user actions a
 3. The service worker verifies consent before accepting `START_ENHANCE` and requests a stream identifier for the selected tab.
 4. The offscreen document consumes the tab stream through `getUserMedia` using Chrome's tab-capture constraints.
 5. The Web Audio graph applies the enabled mastering modules.
-6. Meter, spectrum, correlation, and routing state are returned to Studio through extension messages.
+6. Meter, spectrum, and correlation state are returned to Studio through extension messages only while Studio monitoring is visible.
 7. User settings and custom presets are stored in `chrome.storage.local`; short-lived coordination data may use `chrome.storage.session`.
 
 ## Major boundaries
@@ -35,6 +35,7 @@ ArSonKuPik uses a Chrome Manifest V3 service worker to coordinate user actions a
 - Processes the captured tab stream locally.
 - Creates level, gain-reduction, correlation, and spectrum telemetry nodes only while Studio monitoring is visible.
 - Connects the audible graph directly to `AudioContext.destination`; no hidden media-element re-clock path is used.
+- Keeps a raw continuity path connected while topology changes rebuild the processed chain.
 - Avoids remote code, remote assets, and network transport.
 
 ### Popup
@@ -55,13 +56,14 @@ ArSonKuPik uses a Chrome Manifest V3 service worker to coordinate user actions a
 - Provides advanced visual editing for the complete chain.
 - Owns parametric EQ interaction, module controls, A/B slots, history, preset editing, and meters.
 - Polls analysis frames only while visible.
+- Explicitly disables offscreen monitoring when hidden or closed.
 
 ### Shared modules
 
 `src/shared/*`
 
 - Keep preset normalization and message contracts consistent across contexts.
-- Isolate output-device compatibility logic.
+- Centralize performance-mode and audio-stability guards.
 - Convert FFT data into the visual spectrum representation.
 
 ## State principles
@@ -73,4 +75,4 @@ ArSonKuPik uses a Chrome Manifest V3 service worker to coordinate user actions a
 
 ## Privacy boundary
 
-No runtime source file performs an HTTP request, opens a WebSocket, loads remote code, declares a host permission, requests microphone access, or uses `chrome.contentSettings`. Audio frames remain inside the browser's local media and Web Audio pipeline. Named speaker selection is user-initiated through the browser chooser when supported; otherwise routing remains on System Default.
+No runtime source file performs an HTTP request, opens a WebSocket, loads remote code, declares a host permission, requests microphone access, or uses `chrome.contentSettings`. Audio frames remain inside the browser's local media and Web Audio pipeline. Playback is connected directly to the browser's system-default audio output, and no speaker identifier is read or stored.
