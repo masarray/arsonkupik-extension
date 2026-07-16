@@ -187,23 +187,19 @@ button{font:inherit;user-select:none}
 .btn-icon{width:32px;min-width:32px;padding:0;border-radius:10px}
 .btn-icon svg{width:14px;height:14px}
 
-/* v0.3.82 Engine performance guard — compact Eco/Turbo slide toggle. */
-.perf-toggle{
-  height:32px;min-width:128px;padding:0 8px;border-radius:999px;gap:6px;
-  background:linear-gradient(180deg,#1B1209,#080A0F);
-  border-color:rgba(249,115,22,.34);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 8px 22px -16px #000,0 0 18px -14px rgba(249,115,22,.82);
-}
+/* v0.3.103 three-stage performance guard: ECO · STABLE · TURBO. */
+.perf-toggle{height:32px;min-width:128px;padding:0 8px;border-radius:999px;gap:6px;background:linear-gradient(180deg,#081923,#070A11);border-color:rgba(95,227,214,.36);box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 8px 22px -16px #000,0 0 18px -14px rgba(95,227,214,.72)}
 .perf-toggle .perf-icon{width:18px;height:18px;border-radius:999px;display:grid;place-items:center;color:rgba(255,255,255,.38);transition:color .18s var(--ease),filter .18s var(--ease),transform .18s var(--ease)}
-.perf-toggle .perf-icon svg{width:14px;height:14px}
-.perf-icon-eco{color:rgba(34,197,94,.40)}
-.perf-icon-turbo{color:#f97316;filter:drop-shadow(0 0 8px rgba(249,115,22,.58));transform:scale(1.04)}
-.perf-track{position:relative;width:36px;height:16px;border-radius:999px;background:linear-gradient(90deg,rgba(34,197,94,.24),rgba(249,115,22,.30));border:1px solid rgba(255,255,255,.10);box-shadow:inset 0 1px 4px rgba(0,0,0,.44)}
-.perf-track i{position:absolute;top:2px;left:2px;width:10px;height:10px;border-radius:999px;transform:translateX(20px);background:linear-gradient(135deg,#f59e0b,#f97316);box-shadow:0 0 12px -2px rgba(249,115,22,.9);transition:transform .18s var(--ease),background .18s var(--ease),box-shadow .18s var(--ease)}
-.perf-label{font-family:var(--mono);font-size:8px;letter-spacing:.12em;font-weight:900;color:#fbbf24;min-width:40px;text-align:left;text-shadow:0 0 10px rgba(249,115,22,.28)}
+.perf-toggle .perf-icon svg{width:14px;height:14px}.perf-icon-eco{color:rgba(34,197,94,.55)}.perf-icon-turbo{color:rgba(249,115,22,.55)}
+.perf-track{position:relative;width:36px;height:16px;border-radius:999px;background:linear-gradient(90deg,rgba(34,197,94,.26),rgba(95,227,214,.32),rgba(249,115,22,.30));border:1px solid rgba(255,255,255,.10);box-shadow:inset 0 1px 4px rgba(0,0,0,.44)}
+.perf-track i{position:absolute;top:2px;left:2px;width:10px;height:10px;border-radius:999px;transform:translateX(10px);background:linear-gradient(135deg,#5FE3D6,#6EA8FF);box-shadow:0 0 12px -2px rgba(95,227,214,.9);transition:transform .18s var(--ease),background .18s var(--ease),box-shadow .18s var(--ease)}
+.perf-label{font-family:var(--mono);font-size:8px;letter-spacing:.12em;font-weight:900;color:#9FF7EF;min-width:40px;text-align:left;text-shadow:0 0 10px rgba(95,227,214,.28)}
+.perf-toggle[data-mode="normal"]{border-color:rgba(249,115,22,.34);background:linear-gradient(180deg,#1B1209,#080A0F);box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 8px 22px -16px #000,0 0 18px -14px rgba(249,115,22,.82)}
+.perf-toggle[data-mode="normal"] .perf-icon-turbo{color:#f97316;filter:drop-shadow(0 0 8px rgba(249,115,22,.58));transform:scale(1.04)}
+.perf-toggle[data-mode="normal"] .perf-track i{transform:translateX(20px);background:linear-gradient(135deg,#f59e0b,#f97316);box-shadow:0 0 12px -2px rgba(249,115,22,.9)}
+.perf-toggle[data-mode="normal"] .perf-label{color:#fbbf24;text-shadow:0 0 10px rgba(249,115,22,.28)}
 .perf-toggle[data-mode="eco"]{border-color:rgba(34,197,94,.34);background:linear-gradient(180deg,#07180F,#070A11);box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 8px 22px -16px #000,0 0 18px -14px rgba(34,197,94,.82)}
 .perf-toggle[data-mode="eco"] .perf-icon-eco{color:#22c55e;filter:drop-shadow(0 0 8px rgba(34,197,94,.58));transform:scale(1.04)}
-.perf-toggle[data-mode="eco"] .perf-icon-turbo{color:rgba(249,115,22,.36);filter:none;transform:none}
 .perf-toggle[data-mode="eco"] .perf-track i{transform:translateX(0);background:linear-gradient(135deg,#22c55e,#16a34a);box-shadow:0 0 12px -2px rgba(34,197,94,.9)}
 .perf-toggle[data-mode="eco"] .perf-label{color:#86efac;text-shadow:0 0 10px rgba(34,197,94,.28)}
 .perf-toggle:hover{transform:translateY(-1px);filter:brightness(1.08)}

@@ -33,6 +33,8 @@ REQUIRED_FILES = [
     ROOT / "src/offscreen/offscreen.js",
     ROOT / "src/popup/popup.js",
     ROOT / "src/shared/presets.js",
+    ROOT / "src/shared/audio-stability.js",
+    ROOT / "scripts/smoke_stability.mjs",
     ROOT / "icons/icon-128.png",
     ROOT / "README.md",
     ROOT / "PRIVACY.md",
