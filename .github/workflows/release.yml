@@ -80,7 +80,7 @@ jobs:
           unzip -t "$ZIP"
           (cd dist && sha256sum -c SHA256SUMS.txt)
 
-      - name: Create or refresh GitHub release
+      - name: Publish immutable GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ steps.release.outputs.tag }}
@@ -91,11 +91,41 @@ jobs:
         run: |
           set -euo pipefail
           ZIP="dist/ArSonKuPik-v${VERSION}-chrome-web-store.zip"
-          ASSETS=("$ZIP" "dist/SHA256SUMS.txt")
+          SUMS="dist/SHA256SUMS.txt"
+          ASSETS=("$ZIP" "$SUMS")
+
+          verify_tag_target() {
+            local tag_sha
+            tag_sha=$(git rev-list -n 1 "$TAG")
+            test -n "$tag_sha"
+            if [[ "$tag_sha" != "$GITHUB_SHA" ]]; then
+              echo "Release tag $TAG points to $tag_sha, not current commit $GITHUB_SHA." >&2
+              exit 1
+            fi
+          }
 
           if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            gh release upload "$TAG" "${ASSETS[@]}" --clobber --repo "$GITHUB_REPOSITORY"
+            verify_tag_target
+            tmp_dir=$(mktemp -d)
+            trap 'rm -rf "$tmp_dir"' EXIT
+            existing_assets=$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json assets --jq '.assets[].name')
+
+            for asset in "${ASSETS[@]}"; do
+              name=$(basename "$asset")
+              if grep -Fxq "$name" <<< "$existing_assets"; then
+                gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --pattern "$name" --dir "$tmp_dir"
+                cmp -- "$asset" "$tmp_dir/$name"
+              else
+                gh release upload "$TAG" "$asset" --repo "$GITHUB_REPOSITORY"
+              fi
+            done
+
+            echo "Existing release assets are byte-identical; no asset was overwritten."
             exit 0
+          fi
+
+          if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
+            verify_tag_target
           fi
 
           FLAGS=(--repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "$TITLE" --generate-notes)
