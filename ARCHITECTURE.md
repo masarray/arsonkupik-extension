@@ -70,7 +70,7 @@ ArSonKuPik uses a Chrome Manifest V3 service worker to coordinate user actions a
 
 - Defaults are created centrally in `src/shared/presets.js`.
 - Every state write is normalized before it reaches the audio graph or persistent storage.
-- Rapid UI edits pass through a serialized latest-value queue so only one engine update is in flight and newer nested patches are coalesced.
+- Rapid UI edits first coalesce inside each page, then pass through a service-worker global command scheduler so popup, Studio, presets, lifecycle events, and offscreen notifications share one ordered state writer.
 - Sonic presets contain only audio-processing parameters; playback always remains on the system-default output.
 - Factory-preset revisions can refresh defaults without overwriting unrelated user choices.
 

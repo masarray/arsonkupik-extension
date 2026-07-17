@@ -4,6 +4,25 @@ All notable project changes are documented here. The format follows Keep a Chang
 
 ## [Unreleased]
 
+## [0.3.106] - 2026-07-17
+
+### Added
+
+- Service-worker global state-command scheduler that serializes popup, Studio, preset, lifecycle, and offscreen state mutations.
+- Cross-context stress test covering coalescing, command barriers, and single-writer persistence.
+
+### Changed
+
+- Rapid state patches are debounced and coalesced before the service worker persists one final normalized state.
+- `UPDATE_STATE` now returns lightweight acknowledgement metadata instead of rebuilding the complete preset-bearing state response.
+- Stable GitHub release assets are immutable and cannot be overwritten with `--clobber`.
+
+### Fixed
+
+- Prevented popup and Studio contexts from writing extension state concurrently.
+- Ignored stale offscreen state notifications using monotonic update timestamps.
+- Updated Chrome Web Store listing guidance to remove obsolete output-routing and output-route storage claims.
+
 ## [0.3.105] - 2026-07-17
 
 ### Added
@@ -103,7 +122,8 @@ All notable project changes are documented here. The format follows Keep a Chang
 - GitHub Pages landing site with English and Indonesian content.
 - SEO metadata, canonical URLs, structured data, sitemap, robots file, and social-sharing image.
 
-[Unreleased]: https://github.com/masarray/arsonkupik-extension/compare/v0.3.105...HEAD
+[Unreleased]: https://github.com/masarray/arsonkupik-extension/compare/v0.3.106...HEAD
+[0.3.106]: https://github.com/masarray/arsonkupik-extension/compare/v0.3.105...v0.3.106
 [0.3.105]: https://github.com/masarray/arsonkupik-extension/compare/v0.3.102...v0.3.105
 [0.3.104]: https://github.com/masarray/arsonkupik-extension/pull/12
 [0.3.103]: https://github.com/masarray/arsonkupik-extension/pull/11

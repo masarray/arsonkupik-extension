@@ -6,7 +6,7 @@
 
 ## Short description
 
-Professional local browser audio enhancer with parametric EQ, dynamics, harmonics, stereo width, limiting, presets, and output routing.
+Professional local browser audio enhancer with parametric EQ, dynamics, harmonics, stereo width, limiting, presets, and system-default playback.
 
 ## Detailed description
 
@@ -22,13 +22,13 @@ Shape music, video, and other audible browser tabs with an interactive parametri
 - Harmonic body, presence, air, and saturation controls
 - Frequency-aware stereo-width shaping with correlation feedback
 - Output gain, clipping feedback, and limiter protection
-- Output-device routing where supported by the browser and operating system
+- Direct playback through the browser and operating system default audio output
 - Master and module presets, A/B comparison, undo/redo, and custom local presets
 - ECO and TURBO processing modes
 
 ### Privacy-first design
 
-ArSonKuPik processes audio locally in the browser. It does not record or upload audio, does not include analytics or advertising, and does not declare host permissions. Settings, custom presets, consent metadata, output routes, and optional normalized per-site preferences are stored locally in the user's Chrome profile. The extension can derive the selected site's hostname only to restore a user-requested per-site preference.
+ArSonKuPik processes audio locally in the browser. It does not record or upload audio, does not include analytics or advertising, and does not declare host permissions. Settings, custom presets, consent metadata and optional normalized per-site preferences are stored locally in the user's Chrome profile. The extension can derive the selected site's hostname only to restore a user-requested per-site preference.
 
 Before first use, ArSonKuPik explains this local processing and storage and requires the user to choose **Accept & Continue**. Audio capture then begins only after the user selects a tab and starts enhancement.
 
@@ -62,7 +62,7 @@ Required to keep the local Web Audio processing graph running after the popup cl
 
 ### storage
 
-Used to save audio settings, custom presets, consent metadata, output routes, and normalized per-site preferences locally. Users can clear site preferences separately or reset all local data from the popup.
+Used to save audio settings, custom presets, consent metadata and normalized per-site preferences locally. Users can clear site preferences separately or reset all local data from the popup.
 
 ## Required public URLs
 
