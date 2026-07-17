@@ -24,6 +24,8 @@ const queue = createLatestPatchQueue((patch) => new Promise((resolve) => {
   });
 }));
 
+await queue.flush();
+
 const first = queue({ eq: { gain: 1, q: 0.7 } });
 await new Promise(setImmediate);
 assert.equal(sends.length, 1);
@@ -31,7 +33,10 @@ assert.equal(sends.length, 1);
 const second = queue({ eq: { gain: 2 }, output: { gainDb: -1 } });
 const third = queue({ eq: { gain: 3, frequency: 1000 } });
 const fourth = queue({ output: { ceilingDb: -0.5 } });
+let barrierResolved = false;
+const barrier = queue.flush().then(() => { barrierResolved = true; });
 assert.equal(sends.length, 1, 'only one update may be in flight');
+assert.equal(barrierResolved, false, 'barrier must wait for the in-flight update');
 
 releases.shift()();
 await new Promise(setImmediate);
@@ -41,8 +46,10 @@ assert.deepEqual(sends[1], {
   output: { gainDb: -1, ceilingDb: -0.5 }
 });
 assert.equal(maxActive, 1, 'engine-state writes must remain serialized');
+assert.equal(barrierResolved, false, 'barrier must also wait for the coalesced follow-up');
 
 releases.shift()();
-await Promise.all([first, second, third, fourth]);
+await Promise.all([first, second, third, fourth, barrier]);
 assert.equal(active, 0);
-console.log('Latest-value engine update queue smoke test passed.');
+assert.equal(barrierResolved, true);
+console.log('Latest-value engine update queue and barrier smoke test passed.');
