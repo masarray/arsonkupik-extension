@@ -1,5 +1,6 @@
 import { createDefaultState, FACTORY_PRESETS, DEFAULT_MASTER_REVISION, applyPresetToState, normalizeEqBands, normalizeCompressor, normalizeColor, normalizeWidth, normalizeOutput } from '../shared/presets.js';
 import { DEFAULT_PERFORMANCE_MODE, STABILITY_REVISION, normalizePerformanceMode } from '../shared/audio-stability.js';
+import { createStateCommandScheduler } from '../shared/state-command-scheduler.js';
 
 const OFFSCREEN_URL = 'offscreen.html';
 const STORE_KEYS = {
@@ -18,6 +19,7 @@ let lastState = createDefaultState();
 let creatingOffscreenDocument = null;
 let studioTabId = null;
 let openingStudioPromise = null;
+let storageReadyPromise = null;
 
 const CLASSIC_ACTION_ICON_PATHS = {
   16: 'icons/icon-16.png',
@@ -101,6 +103,39 @@ async function updateActionVisual(state = lastState) {
   }
 }
 
+const stateCommandScheduler = createStateCommandScheduler(
+  async (patch) => {
+    await ensureStorageDefaults();
+    return updateStateCommand(patch);
+  },
+  { patchDebounceMs: 24 }
+);
+
+function dispatchBackgroundMessage(message, sender = null) {
+  if (message.type === 'UPDATE_STATE') {
+    return stateCommandScheduler.enqueuePatch(message.patch || {});
+  }
+  return stateCommandScheduler.enqueueCommand(() => handleBackgroundMessage(message, sender));
+}
+
+async function applyOffscreenStateChanged(state) {
+  await ensureStorageDefaults();
+  const incomingUpdatedAt = Number(state?.updatedAt || 0);
+  const currentUpdatedAt = Number(lastState?.updatedAt || 0);
+  if (incomingUpdatedAt && incomingUpdatedAt < currentUpdatedAt) {
+    return { ok: true, ignored: true };
+  }
+  lastState = prepareStateForStorage({
+    ...lastState,
+    ...state,
+    output: { ...lastState.output, ...state?.output },
+    updatedAt: Math.max(Date.now(), incomingUpdatedAt, currentUpdatedAt)
+  });
+  await chrome.storage.local.set({ [STORE_KEYS.state]: lastState });
+  await updateActionVisual(lastState);
+  return { ok: true };
+}
+
 chrome.runtime.onInstalled.addListener(async () => {
   await ensureStorageDefaults();
   await updateActionVisual(lastState);
@@ -116,7 +151,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return false;
   }
 
-  handleBackgroundMessage(message, sender)
+  dispatchBackgroundMessage(message, sender)
     .then((response) => sendResponse(response))
     .catch((error) => sendResponse({ ok: false, error: error.message || String(error) }));
   return true;
@@ -124,27 +159,31 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 chrome.runtime.onMessage.addListener((message) => {
   if (message?.target === 'background-state' && message.type === 'STATE_CHANGED') {
-    lastState = prepareStateForStorage({ ...lastState, ...message.state });
-    chrome.storage.local.set({ [STORE_KEYS.state]: lastState });
-    updateActionVisual(lastState).catch(() => {});
+    stateCommandScheduler.enqueueCommand(() => applyOffscreenStateChanged(message.state || {})).catch(() => {});
   }
   return false;
 });
 
 chrome.tabCapture?.onStatusChanged?.addListener((info) => {
   if (info.status === 'stopped' || info.status === 'error') {
-    safeSendMessage({ target: 'offscreen', type: 'CAPTURE_STOPPED', tabId: info.tabId });
-    markCaptureInactiveIfMatches(info.tabId).catch(() => {});
+    stateCommandScheduler.enqueueCommand(async () => {
+      await ensureStorageDefaults();
+      await safeSendMessage({ target: 'offscreen', type: 'CAPTURE_STOPPED', tabId: info.tabId });
+      await markCaptureInactiveIfMatches(info.tabId);
+    }).catch(() => {});
   }
 });
 
 chrome.tabs?.onRemoved?.addListener((tabId) => {
-  if (Number(tabId) === Number(studioTabId)) {
-    studioTabId = null;
-    safeSendMessage({ target: 'offscreen', type: 'SET_MONITORING_ACTIVE', active: false });
-    clearStoredStudioTabId().catch(() => {});
-  }
-  markCaptureInactiveIfMatches(tabId).catch(() => {});
+  stateCommandScheduler.enqueueCommand(async () => {
+    await ensureStorageDefaults();
+    if (Number(tabId) === Number(studioTabId)) {
+      studioTabId = null;
+      await safeSendMessage({ target: 'offscreen', type: 'SET_MONITORING_ACTIVE', active: false });
+      await clearStoredStudioTabId();
+    }
+    await markCaptureInactiveIfMatches(tabId);
+  }).catch(() => {});
 });
 
 chrome.tabs?.onActivated?.addListener(() => {
@@ -235,7 +274,17 @@ function normalizePerformancePatch(patch) {
   };
 }
 
-async function ensureStorageDefaults() {
+function ensureStorageDefaults() {
+  if (!storageReadyPromise) {
+    storageReadyPromise = initializeStorageDefaults().catch((error) => {
+      storageReadyPromise = null;
+      throw error;
+    });
+  }
+  return storageReadyPromise;
+}
+
+async function initializeStorageDefaults() {
   const current = await chrome.storage.local.get([STORE_KEYS.state, STORE_KEYS.customPresets, STORE_KEYS.domainEnhancePrefs, STORE_KEYS.privacyConsent]);
   const legacyRoutes = await chrome.storage.local.get('arAudioDomainOutputRoutes');
   if (legacyRoutes.arAudioDomainOutputRoutes) await chrome.storage.local.remove('arAudioDomainOutputRoutes');
@@ -333,6 +382,7 @@ async function resetAllLocalData() {
   if (chrome.storage?.session) await chrome.storage.session.clear().catch(() => {});
   lastState = createDefaultState();
   studioTabId = null;
+  storageReadyPromise = null;
   await ensureStorageDefaults();
   return { ok: true, privacy: await getPrivacyStatus(), state: await getStateWithPresets() };
 }
@@ -756,8 +806,7 @@ async function stopEnhance() {
 }
 
 async function markCaptureInactiveIfMatches(tabId) {
-  const stored = await chrome.storage.local.get(STORE_KEYS.state);
-  const current = prepareStateForStorage({ ...createDefaultState(), ...(stored[STORE_KEYS.state] || lastState) });
+  const current = prepareStateForStorage({ ...createDefaultState(), ...lastState });
   if (!current.active || Number(current.tabId) !== Number(tabId)) return;
   lastState = prepareStateForStorage({
     ...current,
@@ -775,8 +824,7 @@ async function applyPresetCommand(preset) {
   if (!preset) {
     throw new Error('Preset not found.');
   }
-  const stored = await chrome.storage.local.get(STORE_KEYS.state);
-  lastState = prepareStateForStorage(applyPresetToState({ ...createDefaultState(), ...(stored[STORE_KEYS.state] || lastState) }, preset));
+  lastState = prepareStateForStorage(applyPresetToState({ ...createDefaultState(), ...lastState }, preset));
   await chrome.storage.local.set({ [STORE_KEYS.state]: lastState });
   await sendToOffscreenIfActive({ target: 'offscreen', type: 'APPLY_PRESET', preset }).catch(() => {});
   return { ok: true, state: await getStateWithPresets() };
@@ -784,20 +832,21 @@ async function applyPresetCommand(preset) {
 
 async function updateStateCommand(patch) {
   const normalizedPatch = normalizePerformancePatch(patch);
-  const stored = await chrome.storage.local.get(STORE_KEYS.state);
-  lastState = migratePerformanceForStability(prepareStateForStorage(deepMerge({ ...createDefaultState(), ...(stored[STORE_KEYS.state] || lastState) }, normalizedPatch)));
-  lastState.updatedAt = Date.now();
-  await chrome.storage.local.set({ [STORE_KEYS.state]: lastState });
+  lastState = migratePerformanceForStability(prepareStateForStorage(deepMerge({ ...createDefaultState(), ...lastState }, normalizedPatch)));
 
   const offscreenResponse = await sendToOffscreenIfActive({ target: 'offscreen', type: 'UPDATE_STATE', patch: normalizedPatch }).catch(() => null);
   if (offscreenResponse?.ok && offscreenResponse.state) {
-    lastState = migratePerformanceForStability(prepareStateForStorage({ ...lastState, ...offscreenResponse.state, output: { ...lastState.output, ...offscreenResponse.state.output } }));
-    lastState.updatedAt = Date.now();
-    await chrome.storage.local.set({ [STORE_KEYS.state]: lastState });
+    lastState = migratePerformanceForStability(prepareStateForStorage({
+      ...lastState,
+      ...offscreenResponse.state,
+      output: { ...lastState.output, ...offscreenResponse.state.output }
+    }));
   }
 
+  lastState.updatedAt = Math.max(Date.now(), Number(lastState.updatedAt || 0));
+  await chrome.storage.local.set({ [STORE_KEYS.state]: lastState });
   await updateActionVisual(lastState);
-  return { ok: true, state: await getStateWithPresets() };
+  return { ok: true, updatedAt: lastState.updatedAt };
 }
 
 

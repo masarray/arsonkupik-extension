@@ -84,7 +84,7 @@ The popup exposes:
 
 ## Submission verification
 
-Before every Web Store upload:
+Before every Web Store upload, including v0.3.106:
 
 1. Run `npm run release:check`.
 2. Confirm `manifest.json` has no undeclared permission.
@@ -92,3 +92,5 @@ Before every Web Store upload:
 4. Test the first-use consent gate in a new Chrome profile.
 5. Test both deletion controls and confirm storage contents are removed as described.
 6. Confirm the public privacy-policy URL is live and matches the submitted build.
+7. Confirm the listing does not mention output-device routing or stored output routes.
+8. Confirm **Website content** is declared **No** and browsing activity is limited to the selected hostname used for optional local preferences.
