@@ -4,6 +4,23 @@ All notable project changes are documented here. The format follows Keep a Chang
 
 ## [Unreleased]
 
+## [0.3.105] - 2026-07-17
+
+### Added
+
+- Serialized latest-value engine-state update queue with nested-patch coalescing and regression coverage.
+- Release metadata guard that requires manifest, package, descriptor, tag, title, and changelog alignment.
+
+### Changed
+
+- GitHub Pages and core checkout/setup-node actions are pinned to verified release commits.
+- Website output copy now matches direct system-default playback.
+
+### Fixed
+
+- Prevented rapid knob gestures from creating overlapping storage and offscreen update operations.
+- Synchronized the release descriptor and public version metadata with the current runtime.
+
 ## [0.3.104] - 2026-07-16
 
 ### Changed
@@ -86,9 +103,10 @@ All notable project changes are documented here. The format follows Keep a Chang
 - GitHub Pages landing site with English and Indonesian content.
 - SEO metadata, canonical URLs, structured data, sitemap, robots file, and social-sharing image.
 
-[Unreleased]: https://github.com/masarray/arsonkupik-extension/compare/v0.3.103...HEAD
-[0.3.104]: https://github.com/masarray/arsonkupik-extension/compare/v0.3.103...v0.3.104
-[0.3.103]: https://github.com/masarray/arsonkupik-extension/compare/v0.3.102...v0.3.103
+[Unreleased]: https://github.com/masarray/arsonkupik-extension/compare/v0.3.105...HEAD
+[0.3.105]: https://github.com/masarray/arsonkupik-extension/compare/v0.3.102...v0.3.105
+[0.3.104]: https://github.com/masarray/arsonkupik-extension/pull/12
+[0.3.103]: https://github.com/masarray/arsonkupik-extension/pull/11
 [0.3.102]: https://github.com/masarray/arsonkupik-extension/compare/v0.3.101...v0.3.102
 [0.3.101]: https://github.com/masarray/arsonkupik-extension/compare/v0.3.100...v0.3.101
 [0.3.100]: https://github.com/masarray/arsonkupik-extension/releases/tag/v0.3.100
