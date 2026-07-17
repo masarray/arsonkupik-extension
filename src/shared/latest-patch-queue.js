@@ -25,6 +25,14 @@ export function createLatestPatchQueue(sendPatch) {
   let running = false;
   let pendingPatch = null;
   let pendingWaiters = [];
+  let idleWaiters = [];
+
+  function resolveIdleWaiters() {
+    if (running || pendingPatch) return;
+    const waiters = idleWaiters;
+    idleWaiters = [];
+    for (const resolve of waiters) resolve();
+  }
 
   async function drain() {
     if (running) return;
@@ -45,15 +53,26 @@ export function createLatestPatchQueue(sendPatch) {
       }
     } finally {
       running = false;
-      if (pendingPatch) queueMicrotask(drain);
+      if (pendingPatch) {
+        queueMicrotask(drain);
+      } else {
+        resolveIdleWaiters();
+      }
     }
   }
 
-  return function enqueueLatestPatch(patch) {
+  function enqueueLatestPatch(patch) {
     return new Promise((resolve, reject) => {
       pendingPatch = mergeLatestPatch(pendingPatch || {}, patch || {});
       pendingWaiters.push({ resolve, reject });
       void drain();
     });
+  }
+
+  enqueueLatestPatch.flush = function flushLatestPatches() {
+    if (!running && !pendingPatch) return Promise.resolve();
+    return new Promise((resolve) => idleWaiters.push(resolve));
   };
+
+  return enqueueLatestPatch;
 }
