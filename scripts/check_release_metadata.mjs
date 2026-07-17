@@ -32,6 +32,26 @@ for (const filename of fs.readdirSync(workflowDir).filter((name) => /\.ya?ml$/i.
   }
 }
 
-assert.equal(fs.existsSync(path.join(root, 'scripts', 'apply_v0_3_105_patch.py')), false, 'temporary patch script must be removed');
-assert.equal(fs.existsSync(path.join(workflowDir, 'apply-v0.3.105-patch.yml')), false, 'temporary patch workflow must be removed');
-console.log(`Release metadata and immutable workflow pins aligned for v${manifest.version}.`);
+const temporaryPatchScripts = fs.readdirSync(path.join(root, 'scripts')).filter((name) => /^apply_v.+_patch\.py$/i.test(name));
+const temporaryPatchWorkflows = fs.readdirSync(workflowDir).filter((name) => /^apply-v.+-patch\.ya?ml$/i.test(name));
+assert.deepEqual(temporaryPatchScripts, [], `temporary patch scripts remain: ${temporaryPatchScripts.join(', ')}`);
+assert.deepEqual(temporaryPatchWorkflows, [], `temporary patch workflows remain: ${temporaryPatchWorkflows.join(', ')}`);
+
+const releaseWorkflow = read('.github/workflows/release.yml');
+assert.doesNotMatch(releaseWorkflow, /--clobber/, 'stable release assets must never be overwritten');
+assert.match(releaseWorkflow, /git rev-list -n 1 "\$TAG"/, 'release workflow must verify the tag target');
+assert.match(releaseWorkflow, /cmp -- "\$asset" "\$tmp_dir\/\$name"/, 'existing release assets must be compared byte-for-byte');
+
+const worker = read('src/background/service-worker.js');
+assert.match(worker, /createStateCommandScheduler/);
+assert.match(worker, /dispatchBackgroundMessage/);
+assert.match(worker, /stateCommandScheduler\.enqueuePatch/);
+assert.match(worker, /return \{ ok: true, updatedAt: lastState\.updatedAt \}/);
+
+const listing = read('CHROME_WEB_STORE_LISTING.md');
+assert.doesNotMatch(listing, /output-device routing|output routes/i, 'Web Store listing still contains obsolete output-routing claims');
+const privacyDisclosure = read('CHROME_WEB_STORE_PRIVACY_DISCLOSURE.md');
+assert.match(privacyDisclosure, /### Website content[\s\S]*?\*\*Declare handling:\*\* No\./);
+assert.match(privacyDisclosure, /listing does not mention output-device routing or stored output routes/);
+
+console.log(`Release metadata, global state scheduling, immutable assets, and Web Store guidance aligned for v${manifest.version}.`);
