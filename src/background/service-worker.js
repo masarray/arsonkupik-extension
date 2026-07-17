@@ -157,11 +157,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   return true;
 });
 
-chrome.runtime.onMessage.addListener((message) => {
-  if (message?.target === 'background-state' && message.type === 'STATE_CHANGED') {
-    stateCommandScheduler.enqueueCommand(() => applyOffscreenStateChanged(message.state || {})).catch(() => {});
+chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+  if (message?.target !== 'background-state' || message.type !== 'STATE_CHANGED') {
+    return false;
   }
-  return false;
+
+  stateCommandScheduler.enqueueCommand(() => applyOffscreenStateChanged(message.state || {}))
+    .then((response) => sendResponse(response))
+    .catch((error) => sendResponse({ ok: false, error: error.message || String(error) }));
+  return true;
 });
 
 chrome.tabCapture?.onStatusChanged?.addListener((info) => {

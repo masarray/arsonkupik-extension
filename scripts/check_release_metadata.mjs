@@ -46,6 +46,7 @@ const worker = read('src/background/service-worker.js');
 assert.match(worker, /createStateCommandScheduler/);
 assert.match(worker, /dispatchBackgroundMessage/);
 assert.match(worker, /stateCommandScheduler\.enqueuePatch/);
+assert.match(worker, /background-state[\s\S]*sendResponse[\s\S]*return true;/, 'STATE_CHANGED listener must keep the service worker alive until persistence completes');
 assert.match(worker, /return \{ ok: true, updatedAt: lastState\.updatedAt \}/);
 
 const listing = read('CHROME_WEB_STORE_LISTING.md');
