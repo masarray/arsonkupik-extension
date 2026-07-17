@@ -1,3 +1,5 @@
+import { createLatestPatchQueue } from './latest-patch-queue.js';
+
 export function sendMessage(message) {
   return new Promise((resolve, reject) => {
     try {
@@ -42,8 +44,12 @@ export async function applyPreset(preset) {
   return assertOk(await sendMessage({ target: 'background', type: 'APPLY_PRESET', presetId: preset?.id, preset }), 'Unable to apply preset.');
 }
 
-export async function updateEngineState(patch) {
+const enqueueEngineStatePatch = createLatestPatchQueue(async (patch) => {
   return assertOk(await sendMessage({ target: 'background', type: 'UPDATE_STATE', patch }), 'Unable to update audio engine.');
+});
+
+export function updateEngineState(patch) {
+  return enqueueEngineStatePatch(patch);
 }
 
 export async function saveCustomPreset(preset) {

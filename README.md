@@ -101,11 +101,11 @@ npm run check
 npm run release:check
 ```
 
-The validator checks JSON integrity, required runtime files, referenced local assets, version alignment, forbidden remote runtime code, privacy hardening, and release metadata. A Node-based smoke test verifies consent gating, per-site deletion, and total local-data reset. GitHub Actions runs these checks on pushes and pull requests. The completed privacy-hardening evidence is recorded in [RELEASE_AUDIT_0.3.101.md](RELEASE_AUDIT_0.3.101.md), and the Indonesia-first support implementation is recorded in [RELEASE_AUDIT_0.3.102.md](RELEASE_AUDIT_0.3.102.md).
+The validator checks JSON integrity, required runtime files, referenced local assets, version alignment, forbidden remote runtime code, privacy hardening, and release metadata. Node-based smoke tests verify consent gating, per-site deletion, total local-data reset, audio stability, headless playback, and serialized latest-value engine updates. GitHub Actions runs these checks on pushes and pull requests. The completed privacy-hardening evidence is recorded in [RELEASE_AUDIT_0.3.101.md](RELEASE_AUDIT_0.3.101.md), and the Indonesia-first support implementation is recorded in [RELEASE_AUDIT_0.3.102.md](RELEASE_AUDIT_0.3.102.md).
 
 ## Project status
 
-ArSonKuPik is under active development. The repository currently tracks the `0.3.104` headless-stability engine and Indonesia-first voluntary-support interface line. Review [CHANGELOG.md](CHANGELOG.md) and [ROADMAP.md](ROADMAP.md) before integrating experimental branches.
+ArSonKuPik is under active development. The repository currently tracks the `0.3.105` headless-stability engine and Indonesia-first voluntary-support interface line. Review [CHANGELOG.md](CHANGELOG.md) and [ROADMAP.md](ROADMAP.md) before integrating experimental branches.
 
 ## Support development
 
