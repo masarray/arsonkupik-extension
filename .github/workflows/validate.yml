@@ -30,20 +30,41 @@ jobs:
           node-version: "22"
 
       - name: Apply audited v0.3.105 patch
+        id: apply_patch
         if: github.event_name == 'pull_request'
+        continue-on-error: true
         shell: bash
         run: |
-          set -euo pipefail
+          set +e
           if grep -q '"version": "0.3.105"' manifest.json; then
-            echo "Patch already applied."
+            echo "Patch already applied." | tee /tmp/patch.log
             exit 0
           fi
-          python3 scripts/apply_v0_3_105_patch.py
+          python3 -u scripts/apply_v0_3_105_patch.py > /tmp/patch.log 2>&1
+          STATUS=$?
+          cat /tmp/patch.log
+          if [ "$STATUS" -ne 0 ]; then
+            exit "$STATUS"
+          fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
           git commit -m "Fix release stability and publish metadata for v0.3.105"
           git push origin HEAD:${GITHUB_HEAD_REF}
+
+      - name: Upload patch diagnostics
+        if: steps.apply_patch.outcome == 'failure'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: patch-diagnostics-${{ github.sha }}
+          path: /tmp/patch.log
+          if-no-files-found: error
+          retention-days: 2
+          compression-level: 0
+
+      - name: Stop after patch failure
+        if: steps.apply_patch.outcome == 'failure'
+        run: exit 1
 
       - name: Run complete repository checks
         run: npm run check
