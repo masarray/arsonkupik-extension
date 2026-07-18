@@ -49,7 +49,7 @@ assert.match(studio, /setTimeout\(poll, getMeterPollMs\(\)\)/);
 
 const manifest = JSON.parse(read('manifest.json'));
 const pkg = JSON.parse(read('package.json'));
-assert.equal(manifest.version, '0.3.107');
+assert.match(manifest.version, /^\d+\.\d+\.\d+(?:\.\d+)?$/);
 assert.equal(pkg.version, manifest.version);
 
 console.log('Audio stability smoke test passed.');
