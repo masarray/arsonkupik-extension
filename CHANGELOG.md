@@ -4,6 +4,18 @@ All notable project changes are documented here. The format follows Keep a Chang
 
 ## [Unreleased]
 
+## [0.3.107] - 2026-07-18
+
+### Added
+
+- Runtime-startup regression test covering the offscreen silent-meter helper and popup preset selector styling.
+
+### Fixed
+
+- Restored the missing `createSilentMeters()` helper in the offscreen audio engine, preventing startup from failing before tab capture begins.
+- Restored the complete Quick Preset selector CSS block so the popup dropdown uses the intended full-width premium dark styling.
+
+
 ### Added
 
 - Verified Indonesia merchant QRIS support for `SONKUPIK, AUDIO DEVELOPER, DIGITAL & KREATIF`, hosted only on the first-party GitHub Pages support page.
@@ -133,7 +145,8 @@ All notable project changes are documented here. The format follows Keep a Chang
 - GitHub Pages landing site with English and Indonesian content.
 - SEO metadata, canonical URLs, structured data, sitemap, robots file, and social-sharing image.
 
-[Unreleased]: https://github.com/masarray/arsonkupik-extension/compare/v0.3.106...HEAD
+[Unreleased]: https://github.com/masarray/arsonkupik-extension/compare/v0.3.107...HEAD
+[0.3.107]: https://github.com/masarray/arsonkupik-extension/compare/v0.3.106...v0.3.107
 [0.3.106]: https://github.com/masarray/arsonkupik-extension/compare/v0.3.105...v0.3.106
 [0.3.105]: https://github.com/masarray/arsonkupik-extension/compare/v0.3.102...v0.3.105
 [0.3.104]: https://github.com/masarray/arsonkupik-extension/pull/12

@@ -3,7 +3,7 @@
   "name": "ArSonKuPik",
   "short_name": "ArSonKuPik",
   "description": "Professional local browser audio enhancer with parametric EQ, dynamics, harmonics, stereo width, and limiting.",
-  "version": "0.3.106",
+  "version": "0.3.107",
   "minimum_chrome_version": "116",
   "action": {
     "default_popup": "popup.html",
@@ -35,6 +35,6 @@
     "512": "icons/icon-512.png"
   },
   "options_page": "studio.html",
-  "version_name": "0.3.106",
+  "version_name": "0.3.107",
   "homepage_url": "https://masarray.github.io/arsonkupik-extension/"
 }

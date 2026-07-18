@@ -100,6 +100,38 @@ function chooseMeterFftSize(mode = DEFAULT_PERFORMANCE_MODE) {
   return getPerfConfig(mode).meterFftSize;
 }
 
+function createSilentMeters() {
+  return {
+    inputPeak: 0,
+    outputPeak: 0,
+    gainReduction: 0,
+    compressorGainReduction: 0,
+    compressorGainReductionLeft: 0,
+    compressorGainReductionRight: 0,
+    limiterGainReduction: 0,
+    inputPeakLeft: 0,
+    inputPeakRight: 0,
+    outputPeakLeft: 0,
+    outputPeakRight: 0,
+    correlation: 1,
+    inputCorrelation: 1,
+    inputStereoWidth: 0,
+    widthAdaptiveFactor: 0.35,
+    stereoBands: {
+      low: { width: 0, correlation: 1 },
+      mid: { width: 0, correlation: 1 },
+      high: { width: 0, correlation: 1 }
+    },
+    clipping: false,
+    smartHeadroomDb: 0,
+    smartMakeupDb: 0,
+    dopamineToneMap: null,
+    adaptiveRuntime: 'idle',
+    performanceMode: DEFAULT_PERFORMANCE_MODE,
+    adaptiveUpdatedAt: 0
+  };
+}
+
 let engine = null;
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
