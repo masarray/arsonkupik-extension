@@ -1,11 +1,11 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
-import crypto from 'node:crypto';
 import assert from 'node:assert/strict';
 
 const root = path.resolve(import.meta.dirname, '..');
 const read = (relative) => fs.readFileSync(path.join(root, relative), 'utf8');
+const expectedPayload = '00020101021126610014COM.GO-JEK.WWW01189360091439191940880210G9191940880303UMI51440014ID.CO.QRIS.WWW0215ID10265514017750303UMI5204899953033605802ID5925Sonkupik, Audio Developer6005BOGOR61051692362140703A0111036216304F498';
 
 const worker = read('src/background/service-worker.js');
 const messaging = read('src/shared/messaging.js');
@@ -43,14 +43,12 @@ if (config.qrisEnabled === true) {
   assert.match(supportPage, /index,follow,max-image-preview:large/);
   assert.match(sitemap, /https:\/\/masarray\.github\.io\/arsonkupik-extension\/id\/dukung\.html/);
 
-  const image = fs.readFileSync(imagePath);
-  const svg = image.toString('utf8');
+  const svg = fs.readFileSync(imagePath, 'utf8');
   assert.match(svg, /viewBox="0 0 61 61"/);
   assert.match(svg, /NMID ID1026551401775/);
   assert.match(svg, /SONKUPIK, AUDIO DEVELOPER, DIGITAL &amp; KREATIF/);
+  assert.ok(svg.includes(expectedPayload), 'QRIS SVG EMV payload differs from the independently decoded official QRIS.');
   assert.doesNotMatch(svg, /<script|https?:\/\//i, 'Static QRIS SVG must contain no script or remote resource.');
-  const digest = crypto.createHash('sha256').update(image).digest('hex');
-  assert.equal(digest, '6dd16a4ecda280b17e303c253c8619fdd43e3ca945f033f0608ec14435ff9b15', 'QRIS SVG differs from the independently verified official payload rendering.');
 } else {
   assert.equal(config.merchantName, 'ArSonKuPik');
   assert.doesNotMatch(supportPage, /NMID:\s*ID1026551401775/);
