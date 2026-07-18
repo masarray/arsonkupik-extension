@@ -73,8 +73,11 @@ def enable(args: argparse.Namespace) -> None:
     if not source.is_file():
         raise FileNotFoundError(f"QRIS PNG not found: {source}")
     width, height = png_dimensions(source)
-    if width != height or min(width, height) < 600:
-        raise ValueError(f"QRIS PNG must be square and at least 600×600; received {width}×{height}")
+    if min(width, height) < 600:
+        raise ValueError(f"QRIS PNG shortest side must be at least 600 pixels; received {width}×{height}")
+    ratio = max(width, height) / min(width, height)
+    if ratio > 2.0:
+        raise ValueError(f"QRIS artwork aspect ratio is unexpectedly extreme: {width}×{height}")
     merchant = args.merchant_name.strip()
     if not merchant:
         raise ValueError("Merchant name must match the name shown by the QRIS scanner")
@@ -101,7 +104,7 @@ def disable() -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--image", help="Path to the official static merchant QRIS PNG")
+    parser.add_argument("--image", help="Path to the complete official static merchant QRIS PNG")
     parser.add_argument("--merchant-name", default="", help="Exact merchant name shown by QRIS apps")
     parser.add_argument("--merchant-city", default="", help="Optional merchant city")
     parser.add_argument("--verified-date", default="", help="Verification date in YYYY-MM-DD")
