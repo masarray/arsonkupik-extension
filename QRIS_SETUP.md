@@ -1,43 +1,61 @@
 # QRIS Support Setup
 
-The repository accepts only a valid payment QR issued by an authorized merchant QRIS provider. It must never be fabricated, redrawn, reconstructed from ordinary text, or altered in a way that changes the QR geometry.
+ArSonKuPik accepts only a valid static merchant QRIS issued by an authorized provider. A payment QR must never be fabricated, reconstructed from text, or manually redrawn from its decoded payload.
 
-## Activate the support page
+## Current production QRIS
+
+- Merchant: `SONKUPIK, AUDIO DEVELOPER, DIGITAL & KREATIF`
+- NMID: `ID1026551401775`
+- Merchant city: `BOGOR`
+- Verification date: `2026-07-18`
+- Web PNG SHA-256: `832e363510443475bdc45062a2fd3156516957d0ac118f846c02ffe71bbbe0c6`
+
+The production image is a QR-only crop derived directly from the provider-issued sheet. Its complete quiet zone is preserved and it was independently decoded after web optimization. It is embedded locally in `docs/support-config.js` as a PNG data URI, so the page makes no external image request.
+
+## Replace or reactivate the QRIS
 
 1. Obtain an official **static merchant QRIS** from a bank, payment service provider, or other authorized provider.
-2. Confirm that scanning it displays the intended merchant name and destination. Do not use a temporary or expiring dynamic QR.
-3. Export the complete provider-issued artwork as PNG. The shortest side must be at least 600 pixels. A portrait provider sheet is allowed and should be preserved when it contains official merchant, NMID, QRIS, or GPN information.
-4. Do not crop into the QR quiet zone, stretch, redraw, sharpen, overlay, recolor, or generate a replacement QR.
-5. Run the guarded configuration command:
+2. Scan the provider image and confirm the merchant name, NMID, city, and payment destination.
+3. Prepare a square PNG containing the QR and its complete quiet zone. Do not stretch, redraw, overlay, recolor, or regenerate the QR from decoded text.
+4. Scan the final PNG using at least two banking or e-wallet applications.
+5. Run:
 
 ```bash
 python3 scripts/configure_qris.py \
-  --image "/path/to/official-qris.png" \
-  --merchant-name "THE EXACT NAME SHOWN BY QRIS" \
-  --merchant-city "OPTIONAL CITY"
+  --image "/path/to/verified-qris-web.png" \
+  --merchant-name "THE EXACT MERCHANT NAME" \
+  --merchant-city "CITY" \
+  --nmid "EXACT NMID" \
+  --verified-date "YYYY-MM-DD"
 ```
 
-The script validates the PNG dimensions, copies it to `docs/assets/qris-arsonkupik.png`, enables the first-party support config, changes the page from `noindex` to indexable, and adds the canonical URL to `sitemap.xml`.
+The script validates the PNG, computes its SHA-256, embeds the bytes into the first-party support configuration, enables indexing, displays the NMID, and adds the support page to the sitemap.
 
-6. Run `npm run release:check`.
-7. Preview the GitHub Pages site and scan the displayed image using at least two different banking/e-wallet applications.
-8. Verify the merchant name, NMID, city, and destination before publishing.
+Then run:
 
-To revoke or replace the QRIS safely:
+```bash
+npm run check
+npm run release:check
+npm run package
+```
+
+Confirm the generated extension ZIP contains no `qris`, `dukung`, `docs`, or support-page asset.
+
+## Disable support payments
 
 ```bash
 python3 scripts/configure_qris.py --disable
 ```
 
-This removes the image, disables the page, restores `noindex`, and removes its sitemap entry.
+This disables the QRIS panel, restores `noindex`, and removes the support-page entry from the sitemap. It does not alter the extension runtime.
 
 ## Security rules
 
 - Never commit API keys, merchant secrets, bank credentials, transaction exports, phone numbers, or identity documents.
-- Do not add tracking parameters, analytics, auto-redirects, or payment confirmation claims.
-- Do not advertise supporter-only core functionality unless a separately reviewed licensing system is intentionally introduced.
-- Replace the image and update `lastVerified` immediately if the provider reissues or revokes the QRIS.
-- Keep the old image out of the active site when it is invalid or points to the wrong merchant.
-- Keep the QRIS asset under `docs/`; it must not be included in the Chrome extension runtime ZIP.
+- Do not add analytics, tracking parameters, auto-redirects, payment-status checks, or payment confirmation claims.
+- Support must never unlock, restrict, or modify core extension functionality.
+- Replace or disable the QRIS immediately if the provider reissues or revokes it.
+- Pin the active image SHA-256 in the support smoke test and activation audit.
+- Keep QRIS configuration under `docs/`; it must not enter the Chrome Web Store runtime ZIP.
 
-The extension does not require a new runtime release when only the GitHub Pages QRIS image or support configuration changes.
+A documentation-only QRIS update does not require a new extension version, provided the runtime ZIP remains byte-identical to the published release.
