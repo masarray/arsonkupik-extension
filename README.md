@@ -48,7 +48,7 @@ Chrome 116 or newer is required by the current manifest.
 npm run package
 ```
 
-The release archive is created in `dist/` and includes only Chrome Web Store runtime files. Documentation, repository metadata, development scripts, and local-only files are excluded.
+The release archive is created in `dist/` and includes only Chrome Web Store runtime files. Documentation, repository metadata, development scripts, QRIS support material, and local-only files are excluded.
 
 ## Architecture
 
@@ -101,7 +101,7 @@ npm run check
 npm run release:check
 ```
 
-The validator checks JSON integrity, required runtime files, referenced local assets, version alignment, forbidden remote runtime code, privacy hardening, and release metadata. Node-based smoke tests verify consent gating, per-site deletion, total local-data reset, audio stability, headless playback, per-page coalescing, and global popup/Studio state serialization. GitHub Actions runs these checks on pushes and pull requests. The completed privacy-hardening evidence is recorded in [RELEASE_AUDIT_0.3.101.md](RELEASE_AUDIT_0.3.101.md), and the Indonesia-first support implementation is recorded in [RELEASE_AUDIT_0.3.102.md](RELEASE_AUDIT_0.3.102.md).
+The validator checks JSON integrity, required runtime files, referenced local assets, version alignment, forbidden remote runtime code, privacy hardening, release metadata, and the byte-pinned QRIS support image. Node-based smoke tests verify consent gating, per-site deletion, total local-data reset, audio stability, headless playback, per-page coalescing, global popup/Studio state serialization, and voluntary-support isolation. GitHub Actions runs these checks on pushes and pull requests.
 
 ## Project status
 
@@ -109,7 +109,7 @@ ArSonKuPik is under active development. The repository currently tracks the `0.3
 
 ## Support development
 
-ArSonKuPik remains free to use. The optional [Indonesia support page](https://masarray.github.io/arsonkupik-extension/id/dukung.html) is prepared for an official merchant QRIS and clearly remains inactive until that QRIS is verified. The link is user-initiated, contains no analytics or payment SDK, and never unlocks or restricts core features. Activation instructions are documented in [QRIS_SETUP.md](QRIS_SETUP.md).
+ArSonKuPik remains free to use. The optional [Indonesia support page](https://masarray.github.io/arsonkupik-extension/id/dukung.html) uses a verified static merchant QRIS for **SONKUPIK, AUDIO DEVELOPER, DIGITAL & KREATIF** with NMID `ID1026551401775`. The link opens only after a user action, contains no analytics or payment SDK, sends no extension or tab data, and never unlocks or restricts core features. Verification and replacement procedures are documented in [QRIS_SETUP.md](QRIS_SETUP.md) and [QRIS_ACTIVATION_AUDIT.md](QRIS_ACTIVATION_AUDIT.md).
 
 ## Contributing and security
 
