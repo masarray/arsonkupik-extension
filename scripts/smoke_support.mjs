@@ -1,11 +1,16 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
+import crypto from 'node:crypto';
 import assert from 'node:assert/strict';
 
 const root = path.resolve(import.meta.dirname, '..');
 const read = (relative) => fs.readFileSync(path.join(root, relative), 'utf8');
-const expectedPayload = '00020101021126610014COM.GO-JEK.WWW01189360091439191940880210G9191940880303UMI51440014ID.CO.QRIS.WWW0215ID10265514017750303UMI5204899953033605802ID5925Sonkupik, Audio Developer6005BOGOR61051692362140703A0111036216304F498';
+const approvedImageHashes = new Set([
+  '0095ddce62265f7a42795bb75a1077267a0873da75c84b745e23712cf53c4a11', // exact provider-issued JPEG
+  '2ef5a3045a829868e0da3dce7432d7e6e4ca01224581f30769a561180d28f188', // lossless PNG conversion of the full provider sheet
+  'a89088b7ebadd3feaeadaf87cf5084295ce238e135738527e7138b193b460aea'  // independently decoded web PNG
+]);
 
 const worker = read('src/background/service-worker.js');
 const messaging = read('src/shared/messaging.js');
@@ -33,9 +38,10 @@ const config = context.globalThis.ARSONKUPIK_SUPPORT_CONFIG;
 assert.ok(Array.isArray(config.suggestedAmounts));
 
 if (config.qrisEnabled === true) {
-  const imagePath = path.join(root, 'docs/assets/qris-arsonkupik.svg');
-  assert.ok(fs.existsSync(imagePath), 'Enabled QRIS requires the verified first-party SVG.');
-  assert.equal(config.qrisImage, '../assets/qris-arsonkupik.svg');
+  assert.match(config.qrisImage, /^\.\.\/assets\/qris-arsonkupik\.(?:jpg|png)$/);
+  const relativeImagePath = config.qrisImage.replace(/^\.\.\//, 'docs/');
+  const imagePath = path.join(root, relativeImagePath);
+  assert.ok(fs.existsSync(imagePath), 'Enabled QRIS requires the approved first-party provider artwork.');
   assert.equal(config.merchantName, 'SONKUPIK, AUDIO DEVELOPER, DIGITAL & KREATIF');
   assert.equal(config.merchantCity, 'Bogor');
   assert.match(config.lastVerified, /^\d{4}-\d{2}-\d{2}$/);
@@ -43,16 +49,16 @@ if (config.qrisEnabled === true) {
   assert.match(supportPage, /index,follow,max-image-preview:large/);
   assert.match(sitemap, /https:\/\/masarray\.github\.io\/arsonkupik-extension\/id\/dukung\.html/);
 
-  const svg = fs.readFileSync(imagePath, 'utf8');
-  assert.match(svg, /viewBox="0 0 61 61"/);
-  assert.match(svg, /NMID ID1026551401775/);
-  assert.match(svg, /SONKUPIK, AUDIO DEVELOPER, DIGITAL &amp; KREATIF/);
-  assert.ok(svg.includes(expectedPayload), 'QRIS SVG EMV payload differs from the independently decoded official QRIS.');
-  assert.doesNotMatch(svg, /<script|https?:\/\//i, 'Static QRIS SVG must contain no script or remote resource.');
+  const imageBytes = fs.readFileSync(imagePath);
+  const digest = crypto.createHash('sha256').update(imageBytes).digest('hex');
+  assert.ok(approvedImageHashes.has(digest), `Unapproved QRIS artwork hash: ${digest}`);
+  const signature = imageBytes.subarray(0, 8).toString('hex');
+  assert.ok(signature.startsWith('ffd8ff') || signature === '89504e470d0a1a0a', 'QRIS artwork must be JPEG or PNG.');
+  assert.doesNotMatch(config.qrisImage, /\.svg$/i, 'QRIS must use the original provider artwork, not a reconstructed vector QR.');
 } else {
   assert.equal(config.merchantName, 'ArSonKuPik');
   assert.doesNotMatch(supportPage, /NMID:\s*ID1026551401775/);
   assert.match(supportPage, /noindex,follow/);
 }
 
-console.log(`Support-flow smoke test passed with QRIS ${config.qrisEnabled ? 'enabled and verified' : 'safely disabled'}.`);
+console.log(`Support-flow smoke test passed with QRIS ${config.qrisEnabled ? 'enabled and byte-verified' : 'safely disabled'}.`);
