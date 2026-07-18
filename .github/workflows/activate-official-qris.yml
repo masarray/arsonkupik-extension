@@ -29,17 +29,13 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Fetch and verify official QRIS blob
-        env:
-          GH_TOKEN: ${{ github.token }}
-          BLOB_SHA: b6ff071353604511c3feb45f3c98963b61be8f7e
-          EXPECTED_SHA256: a89088b7ebadd3feaeadaf87cf5084295ce238e135738527e7138b193b460aea
+      - name: Verify and activate official QRIS
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p docs/assets
-          gh api "repos/${GITHUB_REPOSITORY}/git/blobs/${BLOB_SHA}" --jq -r '.content' | tr -d '\n' | base64 -d > docs/assets/qris-arsonkupik.png
-          echo "${EXPECTED_SHA256}  docs/assets/qris-arsonkupik.png" | sha256sum -c -
+          echo '6dd16a4ecda280b17e303c253c8619fdd43e3ca945f033f0608ec14435ff9b15  docs/assets/qris-arsonkupik.svg' | sha256sum -c -
+          grep -Fq 'NMID ID1026551401775' docs/assets/qris-arsonkupik.svg
+          grep -Fq 'SONKUPIK, AUDIO DEVELOPER, DIGITAL &amp; KREATIF' docs/assets/qris-arsonkupik.svg
           python3 scripts/activate_official_qris.py
           npm run check
 
@@ -49,7 +45,7 @@ jobs:
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add docs/assets/qris-arsonkupik.png docs/support-config.js docs/id/dukung.html docs/sitemap.xml
+          git add docs/support-config.js docs/id/dukung.html docs/sitemap.xml
           if git diff --cached --quiet; then
             echo 'QRIS activation already committed.'
             exit 0
