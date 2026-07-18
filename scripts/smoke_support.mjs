@@ -33,8 +33,9 @@ const config = context.globalThis.ARSONKUPIK_SUPPORT_CONFIG;
 assert.ok(Array.isArray(config.suggestedAmounts));
 
 if (config.qrisEnabled === true) {
-  const imagePath = path.join(root, 'docs/assets/qris-arsonkupik.png');
-  assert.ok(fs.existsSync(imagePath), 'Enabled QRIS requires the verified first-party image.');
+  const imagePath = path.join(root, 'docs/assets/qris-arsonkupik.svg');
+  assert.ok(fs.existsSync(imagePath), 'Enabled QRIS requires the verified first-party SVG.');
+  assert.equal(config.qrisImage, '../assets/qris-arsonkupik.svg');
   assert.equal(config.merchantName, 'SONKUPIK, AUDIO DEVELOPER, DIGITAL & KREATIF');
   assert.equal(config.merchantCity, 'Bogor');
   assert.match(config.lastVerified, /^\d{4}-\d{2}-\d{2}$/);
@@ -43,12 +44,13 @@ if (config.qrisEnabled === true) {
   assert.match(sitemap, /https:\/\/masarray\.github\.io\/arsonkupik-extension\/id\/dukung\.html/);
 
   const image = fs.readFileSync(imagePath);
-  assert.equal(image.subarray(0, 8).toString('hex'), '89504e470d0a1a0a', 'QRIS image must be PNG.');
-  const width = image.readUInt32BE(16);
-  const height = image.readUInt32BE(20);
-  assert.ok(width >= 600 && height >= 600, `QRIS image is too small: ${width}x${height}`);
+  const svg = image.toString('utf8');
+  assert.match(svg, /viewBox="0 0 61 61"/);
+  assert.match(svg, /NMID ID1026551401775/);
+  assert.match(svg, /SONKUPIK, AUDIO DEVELOPER, DIGITAL &amp; KREATIF/);
+  assert.doesNotMatch(svg, /<script|https?:\/\//i, 'Static QRIS SVG must contain no script or remote resource.');
   const digest = crypto.createHash('sha256').update(image).digest('hex');
-  assert.equal(digest, 'a89088b7ebadd3feaeadaf87cf5084295ce238e135738527e7138b193b460aea', 'QRIS image differs from the independently decoded official image.');
+  assert.equal(digest, '6dd16a4ecda280b17e303c253c8619fdd43e3ca945f033f0608ec14435ff9b15', 'QRIS SVG differs from the independently verified official payload rendering.');
 } else {
   assert.equal(config.merchantName, 'ArSonKuPik');
   assert.doesNotMatch(supportPage, /NMID:\s*ID1026551401775/);
