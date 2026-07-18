@@ -1193,7 +1193,12 @@ class AudioEnhancerEngine {
   }
 
   disconnectProcessingGraph() {
-    try { this.source?.disconnect(this.inputGain); } catch {}
+    // Chromium treats disconnect(null) as the zero-argument overload and removes
+    // every outgoing connection. Never call the destination overload unless
+    // both endpoints exist, otherwise tabCapture audio can be silenced entirely.
+    if (this.source && this.inputGain) {
+      try { this.source.disconnect(this.inputGain); } catch {}
+    }
     const nodes = [
       this.inputGain,
       this.smartHeadroomGain,
@@ -1255,10 +1260,21 @@ class AudioEnhancerEngine {
   }
 
   disconnectMonitoringTaps() {
-    try { this.source?.disconnect(this.inputAnalyser); } catch {}
-    try { this.source?.disconnect(this.inputChannelSplitter); } catch {}
-    try { this.monitoringOutputTap?.disconnect(this.outputAnalyser); } catch {}
-    try { this.monitoringOutputTap?.disconnect(this.correlationSplitter); } catch {}
+    // Do not pass null/undefined as a destination. Chromium resolves
+    // disconnect(null) like disconnect(), which tears down the complete audible
+    // source/output route when Studio monitoring has not been created yet.
+    if (this.source && this.inputAnalyser) {
+      try { this.source.disconnect(this.inputAnalyser); } catch {}
+    }
+    if (this.source && this.inputChannelSplitter) {
+      try { this.source.disconnect(this.inputChannelSplitter); } catch {}
+    }
+    if (this.monitoringOutputTap && this.outputAnalyser) {
+      try { this.monitoringOutputTap.disconnect(this.outputAnalyser); } catch {}
+    }
+    if (this.monitoringOutputTap && this.correlationSplitter) {
+      try { this.monitoringOutputTap.disconnect(this.correlationSplitter); } catch {}
+    }
     for (const node of [this.inputAnalyser,this.inputChannelSplitter,this.inputLeftAnalyser,this.inputRightAnalyser,this.outputAnalyser,this.correlationSplitter,this.leftAnalyser,this.rightAnalyser,...this.getStereoBandNodes(),this.meterSink].filter(Boolean)) {
       try { node.disconnect(); } catch {}
     }

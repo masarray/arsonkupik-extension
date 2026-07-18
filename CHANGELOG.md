@@ -4,6 +4,17 @@ All notable project changes are documented here. The format follows Keep a Chang
 
 ## [Unreleased]
 
+## [0.3.108] - 2026-07-18
+
+### Added
+
+- Functional Web Audio route regression test that emulates Chromium's destructive `disconnect(null)` behavior and proves a non-zero path remains from captured tab audio to `AudioContext.destination`.
+
+### Fixed
+
+- Prevented inactive Studio-monitoring cleanup from calling `AudioNode.disconnect()` with null destinations, which disconnected the complete tab-capture and speaker route and caused immediate total silence after Enhance.
+- Guarded processing-graph destination disconnects so future partial-startup states cannot accidentally invoke the zero-argument disconnect overload.
+
 ## [0.3.107] - 2026-07-18
 
 ### Added

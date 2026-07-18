@@ -1,12 +1,12 @@
 {
   "name": "arsonkupik",
-  "version": "0.3.107",
+  "version": "0.3.108",
   "private": true,
   "description": "Privacy-first professional browser audio enhancer built on the Web Audio API.",
   "scripts": {
-    "check": "node scripts/check_repository_identity.mjs && node scripts/check_release_metadata.mjs && node scripts/run-python.mjs scripts/validate.py && node scripts/smoke_privacy.mjs && node scripts/smoke_support.mjs && node scripts/smoke_stability.mjs && node scripts/smoke_headless.mjs && node scripts/smoke_update_queue.mjs && node scripts/smoke_global_state_queue.mjs && node scripts/smoke_runtime_startup.mjs",
+    "check": "node scripts/check_repository_identity.mjs && node scripts/check_release_metadata.mjs && node scripts/run-python.mjs scripts/validate.py && node scripts/smoke_privacy.mjs && node scripts/smoke_support.mjs && node scripts/smoke_stability.mjs && node scripts/smoke_headless.mjs && node scripts/smoke_update_queue.mjs && node scripts/smoke_global_state_queue.mjs && node scripts/smoke_runtime_startup.mjs && node scripts/smoke_audio_route.mjs",
     "package": "node scripts/run-python.mjs scripts/package_extension.py",
-    "release:check": "node scripts/check_repository_identity.mjs && node scripts/check_release_metadata.mjs && node scripts/run-python.mjs scripts/validate.py --release && node scripts/smoke_privacy.mjs && node scripts/smoke_support.mjs && node scripts/smoke_stability.mjs && node scripts/smoke_headless.mjs && node scripts/smoke_update_queue.mjs && node scripts/smoke_global_state_queue.mjs && node scripts/smoke_runtime_startup.mjs",
+    "release:check": "node scripts/check_repository_identity.mjs && node scripts/check_release_metadata.mjs && node scripts/run-python.mjs scripts/validate.py --release && node scripts/smoke_privacy.mjs && node scripts/smoke_support.mjs && node scripts/smoke_stability.mjs && node scripts/smoke_headless.mjs && node scripts/smoke_update_queue.mjs && node scripts/smoke_global_state_queue.mjs && node scripts/smoke_runtime_startup.mjs && node scripts/smoke_audio_route.mjs",
     "test:privacy": "node scripts/smoke_privacy.mjs",
     "test:support": "node scripts/smoke_support.mjs",
     "test:stability": "node scripts/smoke_stability.mjs",
@@ -14,7 +14,8 @@
     "check:release-metadata": "node scripts/check_release_metadata.mjs",
     "test:update-queue": "node scripts/smoke_update_queue.mjs",
     "test:global-state-queue": "node scripts/smoke_global_state_queue.mjs",
-    "test:runtime-startup": "node scripts/smoke_runtime_startup.mjs"
+    "test:runtime-startup": "node scripts/smoke_runtime_startup.mjs",
+    "test:audio-route": "node scripts/smoke_audio_route.mjs"
   },
   "engines": {
     "node": ">=20"
