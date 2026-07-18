@@ -47,7 +47,10 @@ jobs:
             5e351c235ebed02a44c90f7c30478d4dae2dd9f0
           do
             candidate="/tmp/qris-candidates/${blob}.bin"
-            gh api "repos/${GITHUB_REPOSITORY}/git/blobs/${blob}" --jq -r '.content' | tr -d '\n' | base64 -d > "$candidate"
+            if ! gh api -H 'Accept: application/vnd.github.raw+json' "repos/${GITHUB_REPOSITORY}/git/blobs/${blob}" > "$candidate"; then
+              echo "Unable to fetch candidate ${blob}; skipping."
+              continue
+            fi
             digest=$(sha256sum "$candidate" | awk '{print $1}')
             priority=99
             ext=''
@@ -130,10 +133,10 @@ jobs:
 
           npm run check
           npm run package
-          unzip -l dist/ArSonKuPik-v0.3.106-chrome-web-store.zip | grep -Eqi 'qris|dukung' && {
+          if unzip -l dist/ArSonKuPik-v0.3.106-chrome-web-store.zip | grep -Eqi 'qris|dukung'; then
             echo 'QRIS support assets must not enter the extension runtime ZIP.' >&2
             exit 1
-          } || true
+          fi
 
       - name: Commit activated support page
         shell: bash
