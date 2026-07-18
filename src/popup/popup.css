@@ -287,11 +287,58 @@ h1 {
   pointer-events: none;
 }
 
-.preset-select-row select,
+.preset-select-row select {
+  width: 100%;
+  min-height: 44px;
+  appearance: none;
+  -webkit-appearance: none;
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  padding: 0 44px 0 14px;
+  background:
+    linear-gradient(180deg, rgba(28, 35, 50, .96), rgba(11, 16, 25, .98));
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -.01em;
+  cursor: pointer;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.07),
+    0 8px 20px rgba(0,0,0,.18);
+  transition: border-color .16s ease, box-shadow .16s ease, background .16s ease;
+}
+
+.preset-select-row select:hover {
+  border-color: rgba(112, 234, 216, .34);
+  background:
+    linear-gradient(180deg, rgba(32, 41, 58, .98), rgba(12, 18, 28, .99));
+}
 
 .preset-select-row select:focus,
+.preset-select-row select:focus-visible {
+  border-color: rgba(112, 234, 216, .72);
+  outline: none;
+  box-shadow:
+    0 0 0 3px rgba(112, 234, 216, .12),
+    inset 0 1px 0 rgba(255,255,255,.09),
+    0 10px 24px rgba(0,0,0,.22);
+}
 
-.preset-select-row select option,
+.preset-select-row select:disabled {
+  cursor: not-allowed;
+  opacity: .55;
+}
+
+.preset-select-row select option {
+  background: #0b0f17;
+  color: #f7f9fc;
+  font-weight: 600;
+}
+
+.preset-select-row:focus-within::after {
+  border-color: var(--accent-2);
+}
 
 .compact-controls {
   display: grid;

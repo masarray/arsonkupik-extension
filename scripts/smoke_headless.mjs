@@ -41,5 +41,6 @@ assert.match(studio,/pagehide/);
 assert.match(studio,/clearTimeout\(pollingTimer\)/);
 assert.doesNotMatch(offscreen,/GET_ANALYSIS_FRAME':\s*host\.setMonitoringActive/);
 const manifest=JSON.parse(read('manifest.json')); const pkg=JSON.parse(read('package.json'));
-assert.equal(manifest.version,'0.3.106'); assert.equal(pkg.version,manifest.version);
+assert.match(manifest.version,/^\d+\.\d+\.\d+(?:\.\d+)?$/);
+assert.equal(pkg.version,manifest.version);
 console.log('Headless audio stability smoke test passed.');
