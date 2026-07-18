@@ -1,0 +1,48 @@
+name: Diagnose v0.3.107 hotfix
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    if: github.head_ref == 'fix/runtime-startup-dropdown-v0.3.107'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.13'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: '22'
+
+      - name: Capture complete repository check
+        shell: bash
+        run: |
+          set +e
+          npm run check > v0.3.107-check.log 2>&1
+          echo $? > v0.3.107-check.exit
+          exit 0
+
+      - name: Upload diagnostics
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: v0.3.107-check-${{ github.sha }}
+          path: |
+            v0.3.107-check.log
+            v0.3.107-check.exit
+          if-no-files-found: error
+          retention-days: 2
+          compression-level: 0
