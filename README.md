@@ -105,7 +105,7 @@ The validator checks JSON integrity, required runtime files, referenced local as
 
 ## Project status
 
-ArSonKuPik is under active development. The repository currently tracks the `0.3.108` headless-stability engine and Indonesia-first voluntary-support interface line. Review [CHANGELOG.md](CHANGELOG.md) and [ROADMAP.md](ROADMAP.md) before integrating experimental branches.
+ArSonKuPik is under active development. The repository currently tracks the `0.3.109` headless-stability engine and Indonesia-first voluntary-support interface line. Review [CHANGELOG.md](CHANGELOG.md) and [ROADMAP.md](ROADMAP.md) before integrating experimental branches.
 
 ## Support development
 

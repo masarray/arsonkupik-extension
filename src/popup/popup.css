@@ -672,3 +672,110 @@ summary:focus-visible {
   color: #fff;
   background: rgba(255,146,194,.07);
 }
+
+
+/* Optional local QRIS support reminder. */
+body.support-modal-open { overflow: hidden; }
+.support-modal[hidden] { display: none !important; }
+.support-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: grid;
+  place-items: center;
+  padding: 8px;
+}
+.support-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgba(2, 5, 10, .84);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+.support-modal-card {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 324px);
+  max-height: calc(100vh - 16px);
+  overflow: auto;
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  border: 1px solid rgba(255,255,255,.13);
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(15,20,31,.99), rgba(7,11,18,.99));
+  box-shadow: 0 24px 70px rgba(0,0,0,.58), inset 0 1px 0 rgba(255,255,255,.05);
+}
+.support-modal-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 30px;
+  height: 30px;
+  border: 1px solid rgba(255,255,255,.11);
+  border-radius: 999px;
+  background: rgba(255,255,255,.05);
+  color: #dce4ef;
+  cursor: pointer;
+  font-size: 20px;
+  line-height: 1;
+}
+.support-modal-kicker {
+  padding-right: 36px;
+  color: var(--accent-2);
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+.support-modal-card h2 {
+  margin: 0;
+  padding-right: 30px;
+  font-size: 19px;
+  line-height: 1.15;
+  letter-spacing: -.03em;
+}
+.support-modal-card > p {
+  margin: 0;
+  color: #aab4c5;
+  font-size: 11.5px;
+  line-height: 1.45;
+}
+.support-qris-frame {
+  justify-self: center;
+  width: min(100%, 238px);
+  padding: 5px;
+  border-radius: 16px;
+  background: #f7f8fa;
+  box-shadow: 0 10px 30px rgba(0,0,0,.34);
+}
+.support-qris-frame img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 12px;
+}
+.support-merchant {
+  display: grid;
+  gap: 3px;
+  text-align: center;
+}
+.support-merchant strong { font-size: 12px; }
+.support-merchant span { color: var(--muted); font-size: 10.5px; }
+.support-local-note {
+  padding: 9px 10px;
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 10px;
+  background: rgba(255,255,255,.035);
+  color: #929daf !important;
+  font-size: 10px !important;
+}
+.support-modal-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.support-modal-actions .primary-button,
+.support-modal-actions .secondary-button { min-height: 40px; height: auto; padding: 8px; font-size: 10.5px; }
+.support-page-button { justify-self: center; }
