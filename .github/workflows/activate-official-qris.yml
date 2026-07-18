@@ -1,0 +1,58 @@
+name: Activate official QRIS
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  activate:
+    if: github.head_ref == 'feat/activate-official-qris'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout activation branch
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.13'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: '22'
+
+      - name: Fetch and verify official QRIS blob
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BLOB_SHA: b6ff071353604511c3feb45f3c98963b61be8f7e
+          EXPECTED_SHA256: a89088b7ebadd3feaeadaf87cf5084295ce238e135738527e7138b193b460aea
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p docs/assets
+          gh api "repos/${GITHUB_REPOSITORY}/git/blobs/${BLOB_SHA}" --jq -r '.content' | tr -d '\n' | base64 -d > docs/assets/qris-arsonkupik.png
+          echo "${EXPECTED_SHA256}  docs/assets/qris-arsonkupik.png" | sha256sum -c -
+          python3 scripts/activate_official_qris.py
+          npm run check
+
+      - name: Commit activated support page
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add docs/assets/qris-arsonkupik.png docs/support-config.js docs/id/dukung.html docs/sitemap.xml
+          if git diff --cached --quiet; then
+            echo 'QRIS activation already committed.'
+            exit 0
+          fi
+          git commit -m 'Activate official SonkuPik merchant QRIS'
+          git push origin HEAD:${GITHUB_HEAD_REF}
