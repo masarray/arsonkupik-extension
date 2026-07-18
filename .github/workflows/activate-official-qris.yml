@@ -5,10 +5,10 @@ on:
     branches: [main]
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  activate:
+  inventory:
     if: github.head_ref == 'feat/activate-official-qris'
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -17,137 +17,39 @@ jobs:
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
         with:
           ref: ${{ github.head_ref }}
-          fetch-depth: 0
+          persist-credentials: false
 
-      - name: Set up Python
-        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
-        with:
-          python-version: '3.13'
-
-      - name: Set up Node.js
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
-        with:
-          node-version: '22'
-
-      - name: Restore approved provider artwork and activate support page
+      - name: Inventory candidate QRIS blobs
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
-          set -euo pipefail
-          mkdir -p /tmp/qris-candidates docs/assets
-          selected=''
-          selected_ext=''
-          selected_hash=''
-          selected_priority=99
-
+          set -u
+          mkdir -p qris-inventory/files
+          : > qris-inventory/hashes.txt
           for blob in \
             850a627211512e2b047c38dc81a4461645a28e24 \
             b6ff071353604511c3feb45f3c98963b61be8f7e \
             5e351c235ebed02a44c90f7c30478d4dae2dd9f0
           do
-            candidate="/tmp/qris-candidates/${blob}.bin"
-            if ! gh api -H 'Accept: application/vnd.github.raw+json' "repos/${GITHUB_REPOSITORY}/git/blobs/${blob}" > "$candidate"; then
-              echo "Unable to fetch candidate ${blob}; skipping."
-              continue
-            fi
-            digest=$(sha256sum "$candidate" | awk '{print $1}')
-            priority=99
-            ext=''
-            case "$digest" in
-              0095ddce62265f7a42795bb75a1077267a0873da75c84b745e23712cf53c4a11) priority=1; ext=jpg ;;
-              2ef5a3045a829868e0da3dce7432d7e6e4ca01224581f30769a561180d28f188) priority=2; ext=png ;;
-              a89088b7ebadd3feaeadaf87cf5084295ce238e135738527e7138b193b460aea) priority=3; ext=png ;;
-            esac
-            echo "Candidate ${blob}: ${digest}"
-            if (( priority < selected_priority )); then
-              selected="$candidate"
-              selected_ext="$ext"
-              selected_hash="$digest"
-              selected_priority=$priority
+            candidate="qris-inventory/files/${blob}.bin"
+            if gh api -H 'Accept: application/vnd.github.raw+json' "repos/${GITHUB_REPOSITORY}/git/blobs/${blob}" > "$candidate"; then
+              digest=$(sha256sum "$candidate" | awk '{print $1}')
+              bytes=$(wc -c < "$candidate")
+              kind=$(file -b "$candidate")
+              printf '%s  %s  %s bytes  %s\n' "$blob" "$digest" "$bytes" "$kind" >> qris-inventory/hashes.txt
+            else
+              printf '%s  FETCH_FAILED\n' "$blob" >> qris-inventory/hashes.txt
+              rm -f "$candidate"
             fi
           done
+          cat qris-inventory/hashes.txt
 
-          test -n "$selected"
-          rm -f docs/assets/qris-arsonkupik.svg docs/assets/qris-arsonkupik.jpg docs/assets/qris-arsonkupik.png
-          target="docs/assets/qris-arsonkupik.${selected_ext}"
-          cp "$selected" "$target"
-
-          QRIS_TARGET="$target" QRIS_HASH="$selected_hash" python3 - <<'PY'
-          import os
-          from pathlib import Path
-
-          root = Path.cwd()
-          target = Path(os.environ['QRIS_TARGET'])
-          digest = os.environ['QRIS_HASH']
-          extension = target.suffix.lower()
-          if extension not in {'.jpg', '.png'}:
-              raise RuntimeError(f'Unexpected QRIS format: {extension}')
-
-          (root / 'docs/support-config.js').write_text(
-              "globalThis.ARSONKUPIK_SUPPORT_CONFIG = Object.freeze({\n"
-              "  qrisEnabled: true,\n"
-              f"  qrisImage: '../assets/{target.name}',\n"
-              "  merchantName: 'SONKUPIK, AUDIO DEVELOPER, DIGITAL & KREATIF',\n"
-              "  merchantCity: 'Bogor',\n"
-              "  lastVerified: '2026-07-18',\n"
-              "  suggestedAmounts: [10000, 25000, 50000]\n"
-              "});\n",
-              encoding='utf-8'
-          )
-
-          page_path = root / 'docs/id/dukung.html'
-          page = page_path.read_text(encoding='utf-8')
-          page = page.replace('<meta name="robots" content="noindex,follow">', '<meta name="robots" content="index,follow,max-image-preview:large">')
-          page = page.replace('<div class="qris-image-frame"><img data-qris-image width="720" height="720" alt=""></div>', '<div class="qris-image-frame"><img data-qris-image width="1090" height="1536" alt=""></div>')
-          page = page.replace('<strong data-merchant-name>ArSonKuPik</strong>', '<strong data-merchant-name>SONKUPIK, AUDIO DEVELOPER, DIGITAL &amp; KREATIF</strong>\n              <small class="qris-nmid">NMID: ID1026551401775</small>')
-          page = page.replace('QRIS merchant sedang disiapkan', 'QRIS sementara tidak dapat ditampilkan')
-          page = page.replace('QRIS merchant belum tersedia', 'QRIS sementara tidak dapat ditampilkan')
-          page = page.replace('Halaman dukungan sudah siap, tetapi kode pembayaran belum diaktifkan. Jangan mengirim pembayaran ke QR lain yang mengatasnamakan ArSonKuPik.', 'Muat ulang halaman atau gunakan tautan ini kembali beberapa saat lagi. Jangan membayar ke QR lain yang mengatasnamakan ArSonKuPik.')
-          page_path.write_text(page, encoding='utf-8')
-
-          sitemap_path = root / 'docs/sitemap.xml'
-          sitemap = sitemap_path.read_text(encoding='utf-8')
-          url = 'https://masarray.github.io/arsonkupik-extension/id/dukung.html'
-          if url not in sitemap:
-              block = f'  <url>\n    <loc>{url}</loc>\n    <lastmod>2026-07-18</lastmod>\n    <changefreq>monthly</changefreq>\n    <priority>0.6</priority>\n  </url>\n'
-              sitemap = sitemap.replace('</urlset>', block + '</urlset>')
-          sitemap_path.write_text(sitemap, encoding='utf-8')
-
-          (root / 'QRIS_ACTIVATION_AUDIT.md').write_text(
-              '# Official QRIS Activation Audit\n\n'
-              '- Source: provider-issued merchant QRIS sheet supplied by the maintainer.\n'
-              '- Display merchant: `SONKUPIK, AUDIO DEVELOPER, DIGITAL & KREATIF`.\n'
-              '- NMID: `ID1026551401775`.\n'
-              '- Merchant city decoded from the QR payload: `BOGOR`.\n'
-              '- Provider artwork dimensions: `1090 × 1536` pixels.\n'
-              f'- Active artwork: `{target.as_posix()}`.\n'
-              f'- Active artwork SHA-256: `{digest}`.\n'
-              '- The complete provider sheet is preserved; no QR reconstruction, crop, overlay, recolor, or geometry change is used.\n'
-              '- The source and active web artwork were independently decoded before activation.\n'
-              '- Support remains voluntary and does not unlock, restrict, or alter extension functionality.\n'
-              '- The QRIS artwork is hosted only under `docs/` and is excluded from the Chrome extension runtime ZIP.\n',
-              encoding='utf-8'
-          )
-          PY
-
-          npm run check
-          npm run package
-          if unzip -l dist/ArSonKuPik-v0.3.106-chrome-web-store.zip | grep -Eqi 'qris|dukung'; then
-            echo 'QRIS support assets must not enter the extension runtime ZIP.' >&2
-            exit 1
-          fi
-
-      - name: Commit activated support page
-        shell: bash
-        run: |
-          set -euo pipefail
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -A docs/assets/qris-arsonkupik.* docs/support-config.js docs/id/dukung.html docs/sitemap.xml QRIS_ACTIVATION_AUDIT.md
-          if git diff --cached --quiet; then
-            echo 'QRIS activation already committed.'
-            exit 0
-          fi
-          git commit -m 'Use byte-verified provider QRIS artwork'
-          git push origin HEAD:${GITHUB_HEAD_REF}
+      - name: Upload candidate inventory
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: qris-candidate-inventory-${{ github.sha }}
+          path: qris-inventory
+          if-no-files-found: error
+          retention-days: 2
+          compression-level: 0
