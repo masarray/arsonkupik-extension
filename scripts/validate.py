@@ -4,6 +4,8 @@
 from __future__ import annotations
 
 import argparse
+import base64
+import hashlib
 import json
 import re
 import sys
@@ -108,12 +110,10 @@ def validate_local_references(path: Path, failures: list[str]) -> None:
             fail(f"Reference escapes repository root: {path.relative_to(ROOT)} -> {value}", failures)
             continue
         if not target.exists():
-            # Optional font binaries intentionally use system fallbacks in source builds.
             if "src/assets/fonts/" in target.as_posix() and target.suffix in {".woff", ".woff2"}:
                 print(f"WARN: Optional local font not bundled: {target.relative_to(ROOT)}")
                 continue
             fail(f"Missing local asset: {path.relative_to(ROOT)} -> {value}", failures)
-
 
 
 class SiteHTMLParser(HTMLParser):
@@ -252,24 +252,46 @@ def main() -> int:
 
     support_config_text = (ROOT / "docs/support-config.js").read_text(encoding="utf-8")
     qris_enabled = bool(re.search(r"qrisEnabled\s*:\s*true", support_config_text))
-    qris_image = ROOT / "docs/assets/qris-arsonkupik.png"
+    qris_image_match = re.search(r"qrisImage\s*:\s*['\"]([^'\"]*)", support_config_text)
+    qris_image_value = qris_image_match.group(1) if qris_image_match else ""
+    qris_hash_match = re.search(r"qrisImageSha256\s*:\s*['\"]([0-9a-f]{64})", support_config_text)
+    qris_hash_value = qris_hash_match.group(1) if qris_hash_match else ""
+    qris_nmid_match = re.search(r"nmid\s*:\s*['\"]([^'\"]*)", support_config_text)
+    qris_nmid_value = qris_nmid_match.group(1).strip() if qris_nmid_match else ""
     support_page_text = (ROOT / "docs/id/dukung.html").read_text(encoding="utf-8")
     sitemap_text = (ROOT / "docs/sitemap.xml").read_text(encoding="utf-8")
     support_url = PROJECT_SUPPORT_URL
     qris_verified = re.search(r"lastVerified\s*:\s*['\"]([^'\"]*)", support_config_text)
     qris_verified_value = qris_verified.group(1).strip() if qris_verified else ""
+
     if qris_enabled:
-        if not qris_image.is_file():
-            fail("QRIS is enabled but docs/assets/qris-arsonkupik.png is missing", failures)
+        prefix = "data:image/png;base64,"
+        if not qris_image_value.startswith(prefix):
+            fail("Enabled QRIS must use a local embedded PNG data URI", failures)
         else:
-            raw = qris_image.read_bytes()[:24]
-            if len(raw) < 24 or raw[:8] != b"\x89PNG\r\n\x1a\n" or raw[12:16] != b"IHDR":
-                fail("Enabled QRIS asset is not a valid PNG", failures)
-            else:
-                width = int.from_bytes(raw[16:20], "big")
-                height = int.from_bytes(raw[20:24], "big")
-                if width != height or min(width, height) < 600:
-                    fail(f"Enabled QRIS PNG must be square and at least 600×600; received {width}×{height}", failures)
+            try:
+                image_bytes = base64.b64decode(qris_image_value[len(prefix):], validate=True)
+            except Exception as exc:  # noqa: BLE001
+                fail(f"Enabled QRIS contains invalid base64 image data: {exc}", failures)
+                image_bytes = b""
+            if image_bytes:
+                digest = hashlib.sha256(image_bytes).hexdigest()
+                if not qris_hash_value or digest != qris_hash_value:
+                    fail("Enabled QRIS image SHA-256 does not match qrisImageSha256", failures)
+                raw = image_bytes[:24]
+                if len(raw) < 24 or raw[:8] != b"\x89PNG\r\n\x1a\n" or raw[12:16] != b"IHDR":
+                    fail("Enabled QRIS embedded image is not a valid PNG", failures)
+                else:
+                    width = int.from_bytes(raw[16:20], "big")
+                    height = int.from_bytes(raw[20:24], "big")
+                    if width != height or min(width, height) < 600:
+                        fail(f"Enabled QRIS PNG must be square and at least 600×600; received {width}×{height}", failures)
+        if not re.fullmatch(r"ID\d{13}", qris_nmid_value):
+            fail("Enabled QRIS config must include a valid NMID", failures)
+        if qris_nmid_value and f"NMID: {qris_nmid_value}" not in support_page_text:
+            fail("Enabled QRIS page NMID does not match support configuration", failures)
+        if (ROOT / "docs/assets/qris-arsonkupik.svg").exists():
+            fail("Reconstructed QRIS SVG is forbidden; use the audited provider-derived PNG", failures)
         if 'name="robots" content="index,follow' not in support_page_text:
             fail("Enabled QRIS support page must be indexable", failures)
         if support_url not in sitemap_text:
@@ -281,6 +303,7 @@ def main() -> int:
             fail("Disabled QRIS support page must remain noindex", failures)
         if support_url in sitemap_text:
             fail("Disabled QRIS support page must not be listed in sitemap.xml", failures)
+
     if "OPEN_SUPPORT_PAGE" not in runtime_source or "supportDevelopmentButton" not in runtime_source or "btnSupportDevelopment" not in runtime_source:
         fail("User-initiated support entry points are incomplete", failures)
     if "Dukungan sepenuhnya sukarela" not in support_page_text or "Semua fitur utama tetap tersedia" not in support_page_text:
