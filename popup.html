@@ -81,6 +81,29 @@
     </footer>
   </main>
 
+  <div id="supportModal" class="support-modal" hidden aria-hidden="true">
+    <button id="supportModalBackdrop" class="support-modal-backdrop" type="button" aria-label="Close support dialog"></button>
+    <section class="support-modal-card" role="dialog" aria-modal="true" aria-labelledby="supportModalTitle" aria-describedby="supportModalDescription">
+      <button id="supportModalCloseButton" class="support-modal-close" type="button" aria-label="Close support dialog">×</button>
+      <span class="support-modal-kicker">Optional support · QRIS Indonesia</span>
+      <h2 id="supportModalTitle">Support SonkuPik development</h2>
+      <p id="supportModalDescription">ArSonKuPik stays fully functional and free. After 90 days of use, this optional reminder helps fund continued DSP development, testing, and support.</p>
+      <div class="support-qris-frame">
+        <img id="supportQrisImage" src="src/popup/qris-support.svg" width="280" height="306" alt="Static QRIS for voluntary SonkuPik support">
+      </div>
+      <div class="support-merchant">
+        <strong>SonkuPik, Audio Developer</strong>
+        <span>NMID ID1026551401775 · Bogor</span>
+      </div>
+      <p class="support-local-note">Payments are not tracked by the extension. “I’ve supported” only hides this reminder on the current Chrome profile.</p>
+      <div class="support-modal-actions">
+        <button id="supportLaterButton" class="secondary-button" type="button">Remind me in 30 days</button>
+        <button id="supportConfirmedButton" class="primary-button" type="button">I’ve supported</button>
+      </div>
+      <button id="supportPageButton" class="text-button support-page-button" type="button">Open full support page</button>
+    </section>
+  </div>
+
   <div id="soundModeToast" class="sound-mode-toast" hidden aria-live="polite" aria-atomic="true">
     <div class="sound-mode-card">
       <span class="sound-mode-kicker">Sound Enhancer</span>

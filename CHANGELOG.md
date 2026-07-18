@@ -4,6 +4,19 @@ All notable project changes are documented here. The format follows Keep a Chang
 
 ## [Unreleased]
 
+## [0.3.109] - 2026-07-18
+
+### Added
+
+- Optional static QRIS support dialog inside the popup, available immediately from the Support button and shown automatically only after 90 days from the first successful Enhance session.
+- Local-only reminder controls: remind again after 30 days or permanently hide the prompt on the current Chrome profile after the user confirms support.
+- Scan-verified local QRIS SVG for `Sonkupik, Audio Developer`, NMID `ID1026551401775`, with no remote image or payment API.
+- Support-prompt regression checks covering timing, local persistence, disclosure copy, QR payload metadata, and absence of transaction tracking.
+
+### Changed
+
+- Voluntary support remains completely optional and never unlocks, limits, or changes audio features.
+
 ## [0.3.108] - 2026-07-18
 
 ### Added

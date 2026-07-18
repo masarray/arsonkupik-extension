@@ -77,3 +77,8 @@ Material changes will be documented in the repository and reflected by an update
 ## Contact
 
 Use the repository's private security-reporting channel for privacy or security concerns. Do not include sensitive personal or account information in a public issue.
+
+
+## Voluntary support reminder
+
+The popup may store the timestamp of the first successful Enhance session, the next reminder date, and a local “I’ve supported” dismissal flag in `chrome.storage.local`. These values never leave the browser profile. ArSonKuPik does not verify payments, receive transaction status, or change feature access based on support.

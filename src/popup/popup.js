@@ -21,7 +21,13 @@ const ui = {
   resetAllLocalDataButton: document.getElementById('resetAllLocalDataButton'),
   localDataSummary: document.getElementById('localDataSummary'),
   openStudioButton: document.getElementById('openStudioButton'),
-  supportDevelopmentButton: document.getElementById('supportDevelopmentButton')
+  supportDevelopmentButton: document.getElementById('supportDevelopmentButton'),
+  supportModal: document.getElementById('supportModal'),
+  supportModalBackdrop: document.getElementById('supportModalBackdrop'),
+  supportModalCloseButton: document.getElementById('supportModalCloseButton'),
+  supportLaterButton: document.getElementById('supportLaterButton'),
+  supportConfirmedButton: document.getElementById('supportConfirmedButton'),
+  supportPageButton: document.getElementById('supportPageButton')
 };
 
 let state = null;
@@ -29,6 +35,11 @@ let presets = [...FACTORY_PRESETS];
 let busy = false;
 let soundModeToastTimer = 0;
 const MASARI_PRESET_LABEL = 'MasAri';
+const DAY_MS = 24 * 60 * 60 * 1000;
+const SUPPORT_PROMPT_DELAY_MS = 90 * DAY_MS;
+const SUPPORT_REMINDER_DELAY_MS = 30 * DAY_MS;
+const SUPPORT_PROMPT_STORAGE_KEY = 'arsonkupikSupportPrompt';
+let supportModalAutomatic = false;
 
 const FAVICON_STATE_PATHS = {
   active: { png: 'icons/icon-32.png', ico: 'icons/favicon.ico' },
@@ -48,6 +59,7 @@ init();
 async function init() {
   bindEvents();
   await refreshState();
+  await maybeShowSupportPrompt();
 }
 
 function bindEvents() {
@@ -79,6 +91,7 @@ function bindEvents() {
           : await startEnhanceWithAutoBypassOff(state?.currentTabId);
       if (!response?.ok) throw new Error(response?.error || 'Command failed');
       await refreshState();
+      if (shouldAttachThisTab && state?.active) await recordSuccessfulEnhanceUsage();
       showSoundModeToast(toastMode);
     } catch (error) {
       setHint(error.message);
@@ -126,8 +139,16 @@ function bindEvents() {
     button?.addEventListener('click', () => openPrivacyPolicy().catch((error) => setHint(error.message)));
   }
 
-  ui.supportDevelopmentButton?.addEventListener('click', () => {
-    openSupportPage().catch((error) => setHint(error.message));
+  ui.supportDevelopmentButton?.addEventListener('click', () => showSupportPrompt({ automatic: false }));
+  ui.supportModalCloseButton?.addEventListener('click', () => closeSupportPrompt({ snooze: supportModalAutomatic }));
+  ui.supportModalBackdrop?.addEventListener('click', () => closeSupportPrompt({ snooze: supportModalAutomatic }));
+  ui.supportLaterButton?.addEventListener('click', () => closeSupportPrompt({ snooze: true }));
+  ui.supportConfirmedButton?.addEventListener('click', confirmSupportLocally);
+  ui.supportPageButton?.addEventListener('click', () => openSupportPage().catch((error) => setHint(error.message)));
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && ui.supportModal && !ui.supportModal.hidden) {
+      closeSupportPrompt({ snooze: supportModalAutomatic });
+    }
   });
 
   ui.clearSitePreferencesButton?.addEventListener('click', async () => {
@@ -157,6 +178,80 @@ function bindEvents() {
   ui.openStudioButton.addEventListener('click', () => {
     sendMessage({ target: 'background', type: 'OPEN_STUDIO' }).catch((error) => setHint(error.message));
   });
+}
+
+
+async function readSupportPromptState() {
+  const result = await chrome.storage.local.get(SUPPORT_PROMPT_STORAGE_KEY);
+  return result?.[SUPPORT_PROMPT_STORAGE_KEY] || {};
+}
+
+async function writeSupportPromptState(next) {
+  await chrome.storage.local.set({ [SUPPORT_PROMPT_STORAGE_KEY]: next });
+  return next;
+}
+
+async function recordSuccessfulEnhanceUsage() {
+  const current = await readSupportPromptState();
+  if (Number(current.firstSuccessfulEnhanceAt) > 0) return current;
+  const now = Date.now();
+  return writeSupportPromptState({
+    ...current,
+    firstSuccessfulEnhanceAt: now,
+    nextPromptAt: now + SUPPORT_PROMPT_DELAY_MS,
+    permanentlyDismissed: false
+  });
+}
+
+async function maybeShowSupportPrompt() {
+  if (!state?.privacy?.accepted) return;
+  let current = await readSupportPromptState();
+  if (!Number(current.firstSuccessfulEnhanceAt) && state?.active) {
+    current = await recordSuccessfulEnhanceUsage();
+  }
+  if (current.permanentlyDismissed) return;
+  const firstAt = Number(current.firstSuccessfulEnhanceAt || 0);
+  if (!firstAt) return;
+  const dueAt = Math.max(firstAt + SUPPORT_PROMPT_DELAY_MS, Number(current.nextPromptAt || 0));
+  if (Date.now() >= dueAt) showSupportPrompt({ automatic: true });
+}
+
+function showSupportPrompt({ automatic = false } = {}) {
+  if (!ui.supportModal) return;
+  supportModalAutomatic = automatic;
+  ui.supportModal.hidden = false;
+  ui.supportModal.setAttribute('aria-hidden', 'false');
+  document.body.classList.add('support-modal-open');
+  requestAnimationFrame(() => ui.supportModalCloseButton?.focus());
+}
+
+async function closeSupportPrompt({ snooze = false } = {}) {
+  if (snooze) {
+    const current = await readSupportPromptState();
+    await writeSupportPromptState({
+      ...current,
+      nextPromptAt: Date.now() + SUPPORT_REMINDER_DELAY_MS,
+      lastDismissedAt: Date.now()
+    });
+  }
+  supportModalAutomatic = false;
+  if (ui.supportModal) {
+    ui.supportModal.hidden = true;
+    ui.supportModal.setAttribute('aria-hidden', 'true');
+  }
+  document.body.classList.remove('support-modal-open');
+}
+
+async function confirmSupportLocally() {
+  const current = await readSupportPromptState();
+  await writeSupportPromptState({
+    ...current,
+    permanentlyDismissed: true,
+    supporterConfirmedAt: Date.now(),
+    nextPromptAt: null
+  });
+  await closeSupportPrompt({ snooze: false });
+  setHint('Thank you for supporting SonkuPik. This reminder is disabled on this Chrome profile.');
 }
 
 async function refreshState() {
