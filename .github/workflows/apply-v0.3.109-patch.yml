@@ -1,0 +1,63 @@
+name: Apply v0.3.109 static QRIS popup
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.head_ref == 'agent/static-qris-popup-v0.3.109'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout feature branch
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.13'
+
+      - name: Apply product patch
+        run: python3 scripts/apply_v0_3_109_patch.py
+
+      - name: Validate patched runtime files
+        run: |
+          node --check src/popup/popup.js
+          node --check scripts/smoke_support_prompt.mjs
+          node scripts/smoke_support_prompt.mjs
+          python3 scripts/package_extension.py
+          unzip -t dist/ArSonKuPik-v0.3.109-chrome-web-store.zip
+          (cd dist && sha256sum -c SHA256SUMS.txt)
+
+      - name: Commit product changes
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add \
+            manifest.json \
+            package.json \
+            .release/release.json \
+            CHANGELOG.md \
+            README.md \
+            PRIVACY.md \
+            RELEASE_AUDIT_0.3.109.md \
+            docs/index.html \
+            docs/id/index.html \
+            popup.html \
+            src/popup/popup.js \
+            src/popup/popup.css \
+            src/popup/qris-support.svg \
+            scripts/smoke_support_prompt.mjs
+          if git diff --cached --quiet; then
+            echo 'Product patch already applied.'
+            exit 0
+          fi
+          git commit -m 'Add optional static QRIS support reminder for v0.3.109'
+          git push origin HEAD:${GITHUB_HEAD_REF}
