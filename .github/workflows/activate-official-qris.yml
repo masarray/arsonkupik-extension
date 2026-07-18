@@ -24,18 +24,22 @@ jobs:
         with:
           python-version: '3.13'
 
-      - name: Set up Node.js
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
-        with:
-          node-version: '22'
-
-      - name: Verify and activate official QRIS
+      - name: Generate verified QRIS support files
         shell: bash
         run: |
           set -euo pipefail
           python3 scripts/activate_official_qris.py
           grep -Fq '00020101021126610014COM.GO-JEK.WWW01189360091439191940880210G9191940880303UMI51440014ID.CO.QRIS.WWW0215ID10265514017750303UMI5204899953033605802ID5925Sonkupik, Audio Developer6005BOGOR61051692362140703A0111036216304F498' docs/assets/qris-arsonkupik.svg
-          npm run check
+          grep -Fq "qrisEnabled: true" docs/support-config.js
+          grep -Fq 'NMID: ID1026551401775' docs/id/dukung.html
+          grep -Fq 'id/dukung.html' docs/sitemap.xml
+          python3 - <<'PY'
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+          ET.parse(Path('docs/assets/qris-arsonkupik.svg'))
+          ET.parse(Path('docs/sitemap.xml'))
+          print('Generated QRIS SVG and sitemap are valid XML.')
+          PY
 
       - name: Commit activated support page
         shell: bash
