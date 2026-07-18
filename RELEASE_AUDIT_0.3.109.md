@@ -20,6 +20,20 @@
 - NMID: ID1026551401775
 - City: BOGOR
 - SVG SHA-256: `79339bcc248eafbfe5db259779bce90f60add55bbc80ce2ee8d82d5b9665d325`
+- Independent SVG render/decode: passed
+
+## Final CI artifact
+
+- Runtime archive: `ArSonKuPik-v0.3.109-chrome-web-store.zip`
+- Runtime files: 27
+- Archive size: 453,556 bytes
+- SHA-256: `776362df878553e69f65d79296296d0845f47f6133ee2531534455b35ee8db38`
+- ZIP integrity: passed
+- JavaScript syntax: passed
+- Remote code/network APIs: none
+- Permissions unchanged: `activeTab`, `tabCapture`, `offscreen`, `storage`
+- Host permissions: none
+- Audio engine and service-worker routing files: byte-identical to v0.3.108
 
 ## Manual gate
 
