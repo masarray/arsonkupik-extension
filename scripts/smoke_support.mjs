@@ -6,11 +6,7 @@ import assert from 'node:assert/strict';
 
 const root = path.resolve(import.meta.dirname, '..');
 const read = (relative) => fs.readFileSync(path.join(root, relative), 'utf8');
-const approvedImageHashes = new Set([
-  '0095ddce62265f7a42795bb75a1077267a0873da75c84b745e23712cf53c4a11', // exact provider-issued JPEG
-  '2ef5a3045a829868e0da3dce7432d7e6e4ca01224581f30769a561180d28f188', // lossless PNG conversion of the full provider sheet
-  'a89088b7ebadd3feaeadaf87cf5084295ce238e135738527e7138b193b460aea'  // independently decoded web PNG
-]);
+const expectedImageHash = '832e363510443475bdc45062a2fd3156516957d0ac118f846c02ffe71bbbe0c6';
 
 const worker = read('src/background/service-worker.js');
 const messaging = read('src/shared/messaging.js');
@@ -38,23 +34,24 @@ const config = context.globalThis.ARSONKUPIK_SUPPORT_CONFIG;
 assert.ok(Array.isArray(config.suggestedAmounts));
 
 if (config.qrisEnabled === true) {
-  assert.match(config.qrisImage, /^\.\.\/assets\/qris-arsonkupik\.(?:jpg|png)$/);
-  const relativeImagePath = config.qrisImage.replace(/^\.\.\//, 'docs/');
-  const imagePath = path.join(root, relativeImagePath);
-  assert.ok(fs.existsSync(imagePath), 'Enabled QRIS requires the approved first-party provider artwork.');
+  assert.match(config.qrisImage, /^data:image\/png;base64,/);
+  assert.equal(config.qrisImageSha256, expectedImageHash);
   assert.equal(config.merchantName, 'SONKUPIK, AUDIO DEVELOPER, DIGITAL & KREATIF');
   assert.equal(config.merchantCity, 'Bogor');
+  assert.equal(config.nmid, 'ID1026551401775');
+  assert.match(config.qrisSource, /provider-issued QRIS image/);
   assert.match(config.lastVerified, /^\d{4}-\d{2}-\d{2}$/);
   assert.match(supportPage, /NMID:\s*ID1026551401775/);
   assert.match(supportPage, /index,follow,max-image-preview:large/);
   assert.match(sitemap, /https:\/\/masarray\.github\.io\/arsonkupik-extension\/id\/dukung\.html/);
 
-  const imageBytes = fs.readFileSync(imagePath);
+  const encoded = config.qrisImage.slice('data:image/png;base64,'.length);
+  const imageBytes = Buffer.from(encoded, 'base64');
   const digest = crypto.createHash('sha256').update(imageBytes).digest('hex');
-  assert.ok(approvedImageHashes.has(digest), `Unapproved QRIS artwork hash: ${digest}`);
-  const signature = imageBytes.subarray(0, 8).toString('hex');
-  assert.ok(signature.startsWith('ffd8ff') || signature === '89504e470d0a1a0a', 'QRIS artwork must be JPEG or PNG.');
-  assert.doesNotMatch(config.qrisImage, /\.svg$/i, 'QRIS must use the original provider artwork, not a reconstructed vector QR.');
+  assert.equal(digest, expectedImageHash, 'Embedded QRIS image bytes changed.');
+  assert.equal(imageBytes.subarray(0, 8).toString('hex'), '89504e470d0a1a0a', 'Embedded QRIS image must be PNG.');
+  assert.ok(imageBytes.length > 6000 && imageBytes.length < 20000, 'Embedded QRIS web image size is outside the audited range.');
+  assert.doesNotMatch(config.qrisImage, /https?:\/\//i, 'QRIS image must not load from a remote origin.');
 } else {
   assert.equal(config.merchantName, 'ArSonKuPik');
   assert.doesNotMatch(supportPage, /NMID:\s*ID1026551401775/);
