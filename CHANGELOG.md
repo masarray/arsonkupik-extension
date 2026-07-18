@@ -4,6 +4,17 @@ All notable project changes are documented here. The format follows Keep a Chang
 
 ## [Unreleased]
 
+### Added
+
+- Verified Indonesia merchant QRIS support for `SONKUPIK, AUDIO DEVELOPER, DIGITAL & KREATIF`, hosted only on the first-party GitHub Pages support page.
+- Byte-pinned support smoke test and QRIS activation audit covering merchant identity, NMID, local image bytes, indexing, and runtime-package isolation.
+- Chrome Web Store submission checklist for the audited v0.3.106 runtime package.
+
+### Changed
+
+- QRIS web presentation now uses a scan-verified PNG derived directly from the provider-issued QRIS sheet and embedded locally without a remote image request.
+- QRIS replacement tooling now embeds and hashes a verified square PNG instead of copying an unchecked public asset.
+
 ## [0.3.106] - 2026-07-17
 
 ### Added
