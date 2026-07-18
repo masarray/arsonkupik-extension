@@ -33,10 +33,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          echo '6dd16a4ecda280b17e303c253c8619fdd43e3ca945f033f0608ec14435ff9b15  docs/assets/qris-arsonkupik.svg' | sha256sum -c -
-          grep -Fq 'NMID ID1026551401775' docs/assets/qris-arsonkupik.svg
-          grep -Fq 'SONKUPIK, AUDIO DEVELOPER, DIGITAL &amp; KREATIF' docs/assets/qris-arsonkupik.svg
           python3 scripts/activate_official_qris.py
+          grep -Fq '00020101021126610014COM.GO-JEK.WWW01189360091439191940880210G9191940880303UMI51440014ID.CO.QRIS.WWW0215ID10265514017750303UMI5204899953033605802ID5925Sonkupik, Audio Developer6005BOGOR61051692362140703A0111036216304F498' docs/assets/qris-arsonkupik.svg
           npm run check
 
       - name: Commit activated support page
@@ -45,7 +43,7 @@ jobs:
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add docs/support-config.js docs/id/dukung.html docs/sitemap.xml
+          git add docs/assets/qris-arsonkupik.svg docs/support-config.js docs/id/dukung.html docs/sitemap.xml
           if git diff --cached --quiet; then
             echo 'QRIS activation already committed.'
             exit 0
