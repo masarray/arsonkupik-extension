@@ -105,11 +105,11 @@ The validator checks JSON integrity, required runtime files, referenced local as
 
 ## Project status
 
-ArSonKuPik is under active development. The repository currently tracks the `0.3.110` headless-stability engine and Indonesia-first voluntary-support interface line. Review [CHANGELOG.md](CHANGELOG.md) and [ROADMAP.md](ROADMAP.md) before integrating experimental branches.
+ArSonKuPik is under active development. The repository currently tracks the `0.3.111` Web Store release-hardening line with bilingual UI, artifact validation, and manual-only voluntary support. Review [CHANGELOG.md](CHANGELOG.md) and [ROADMAP.md](ROADMAP.md) before integrating experimental branches.
 
 ## Support development
 
-ArSonKuPik remains free to use. The optional [Indonesia support page](https://masarray.github.io/arsonkupik-extension/id/dukung.html) uses a verified static merchant QRIS for **SONKUPIK, AUDIO DEVELOPER, DIGITAL & KREATIF** with NMID `ID1026551401775`. The link opens only after a user action, contains no analytics or payment SDK, sends no extension or tab data, and never unlocks or restricts core features. Verification and replacement procedures are documented in [QRIS_SETUP.md](QRIS_SETUP.md) and [QRIS_ACTIVATION_AUDIT.md](QRIS_ACTIVATION_AUDIT.md).
+ArSonKuPik remains free to use. The manually opened [Indonesia support page](https://masarray.github.io/arsonkupik-extension/id/dukung.html) uses a verified static merchant QRIS for **SONKUPIK, AUDIO DEVELOPER, DIGITAL & KREATIF** with NMID `ID1026551401775`. The link opens only after a user action, contains no analytics or payment SDK, sends no extension or tab data, and never unlocks or restricts core features. Verification and replacement procedures are documented in [QRIS_SETUP.md](QRIS_SETUP.md) and [QRIS_ACTIVATION_AUDIT.md](QRIS_ACTIVATION_AUDIT.md).
 
 ## Contributing and security
 

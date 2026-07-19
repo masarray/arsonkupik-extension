@@ -36,6 +36,9 @@ REQUIRED_FILES = [
     ROOT / "src/popup/popup.js",
     ROOT / "src/shared/presets.js",
     ROOT / "src/shared/audio-stability.js",
+    ROOT / "_locales/en/messages.json",
+    ROOT / "_locales/id/messages.json",
+    ROOT / "scripts/validate_release_artifact.py",
     ROOT / "scripts/smoke_stability.mjs",
     ROOT / "icons/icon-128.png",
     ROOT / "README.md",
@@ -209,6 +212,19 @@ def main() -> int:
         fail("contentSettings permission is forbidden by the P0 privacy hardening policy", failures)
     if not re.fullmatch(r"\d+\.\d+\.\d+(?:\.\d+)?", str(manifest.get("version", ""))):
         fail("Manifest version is not Chrome-compatible numeric dot notation", failures)
+    if manifest.get("default_locale") != "en":
+        fail("default_locale must be en", failures)
+    locale_catalogs = {
+        locale: validate_json(ROOT / "_locales" / locale / "messages.json", failures)
+        for locale in ("en", "id")
+    }
+    if set(locale_catalogs["en"]) != set(locale_catalogs["id"]):
+        fail("English and Indonesian locale keys differ", failures)
+    for locale, catalog in locale_catalogs.items():
+        description = str(catalog.get("extension_description", {}).get("message", ""))
+        if not description or len(description) > 132:
+            fail(f"{locale} extension description must contain 1-132 characters", failures)
+    note("English and Indonesian manifest localization validated")
 
     package = validate_json(ROOT / "package.json", failures)
     if package.get("version") != manifest.get("version"):

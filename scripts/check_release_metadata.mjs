@@ -52,7 +52,7 @@ assert.match(worker, /return \{ ok: true, updatedAt: lastState\.updatedAt \}/);
 const listing = read('CHROME_WEB_STORE_LISTING.md');
 assert.doesNotMatch(listing, /output-device routing|output routes/i, 'Web Store listing still contains obsolete output-routing claims');
 const privacyDisclosure = read('CHROME_WEB_STORE_PRIVACY_DISCLOSURE.md');
-assert.match(privacyDisclosure, /### Website content[\s\S]*?\*\*Declare handling:\*\* No\./);
+assert.match(privacyDisclosure, /### Website content[\s\S]*?\*\*Declare handling: Yes\.\*\*/);
 assert.match(privacyDisclosure, /listing does not mention output-device routing or stored output routes/);
 
 console.log(`Release metadata, global state scheduling, immutable assets, and Web Store guidance aligned for v${manifest.version}.`);

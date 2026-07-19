@@ -16,7 +16,7 @@ VERSION = MANIFEST["version"]
 OUTPUT = DIST / f"ArSonKuPik-v{VERSION}-chrome-web-store.zip"
 
 INCLUDE_ROOT_FILES = ["manifest.json", "popup.html", "studio.html", "offscreen.html"]
-INCLUDE_DIRS = ["src"]
+INCLUDE_DIRS = ["src", "_locales"]
 INCLUDE_ICON_FILES = [
     "icons/favicon.ico",
     "icons/icon-16.png",

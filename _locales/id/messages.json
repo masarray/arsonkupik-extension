@@ -3,7 +3,7 @@
     "message": "ArSonKuPik"
   },
   "extension_description": {
-    "message": "Peningkat audio browser profesional yang memproses suara secara lokal dengan EQ parametrik, dinamika, harmonik, stereo width, dan limiter."
+    "message": "Peningkat audio browser lokal dengan EQ parametrik, dinamika, harmonik, stereo width, preset, dan limiter."
   },
   "extension_action_title": {
     "message": "Peningkat Suara ArSonKuPik"
@@ -116,42 +116,6 @@
   "support_footer_note": {
     "message": "Opsional · QRIS Indonesia"
   },
-  "close_support_dialog": {
-    "message": "Tutup dialog dukungan"
-  },
-  "support_kicker": {
-    "message": "Dukungan opsional · QRIS Indonesia"
-  },
-  "support_title": {
-    "message": "Dukung pengembangan SonkuPik"
-  },
-  "support_title_before_studio": {
-    "message": "Dukung SonkuPik sebelum membuka Studio"
-  },
-  "support_description": {
-    "message": "ArSonKuPik tetap berfungsi penuh dan gratis. Setelah 90 hari penggunaan, pengingat opsional ini membantu pengembangan DSP, pengujian, dan dukungan."
-  },
-  "support_description_before_studio": {
-    "message": "Studio tetap sepenuhnya gratis. Pindai QRIS hanya bila Anda ingin mendukung pengembangan DSP, lalu lanjutkan langsung."
-  },
-  "support_qris_alt": {
-    "message": "QRIS statis untuk dukungan sukarela SonkuPik"
-  },
-  "support_local_note": {
-    "message": "Pembayaran tidak dilacak oleh extension. “Saya sudah mendukung” hanya menyembunyikan pengingat ini pada profil Chrome saat ini."
-  },
-  "continue_to_studio": {
-    "message": "Lanjut ke Studio"
-  },
-  "remind_30_days": {
-    "message": "Ingatkan 30 hari lagi"
-  },
-  "ive_supported": {
-    "message": "Saya sudah mendukung"
-  },
-  "open_full_support_page": {
-    "message": "Buka halaman dukungan lengkap"
-  },
   "sound_enhancer": {
     "message": "Peningkat Suara"
   },
@@ -196,9 +160,6 @@
   },
   "data_reset_failed": {
     "message": "Gagal mereset data lokal."
-  },
-  "support_thanks": {
-    "message": "Terima kasih telah mendukung SonkuPik. Pengingat ini dinonaktifkan pada profil Chrome ini."
   },
   "reactivating_chain": {
     "message": "Mengaktifkan kembali mastering chain…"
