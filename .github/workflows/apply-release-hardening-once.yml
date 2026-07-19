@@ -49,13 +49,21 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
 
-          path = Path('scripts/check_release_metadata.mjs')
-          text = path.read_text(encoding='utf-8')
-          old = r'''assert.match(privacyDisclosure, /### Website content[\s\S]*?\*\*Declare handling:\*\* No\./);'''
-          new = r'''assert.match(privacyDisclosure, /### Website content[\s\S]*?\*\*Declare handling: Yes\.\*\*/);'''
-          if old not in text:
+          metadata_path = Path('scripts/check_release_metadata.mjs')
+          metadata = metadata_path.read_text(encoding='utf-8')
+          old_assertion = r'''assert.match(privacyDisclosure, /### Website content[\s\S]*?\*\*Declare handling:\*\* No\./);'''
+          new_assertion = r'''assert.match(privacyDisclosure, /### Website content[\s\S]*?\*\*Declare handling: Yes\.\*\*/);'''
+          if old_assertion not in metadata:
             raise SystemExit('Expected legacy Website content assertion was not found')
-          path.write_text(text.replace(old, new, 1), encoding='utf-8')
+          metadata_path.write_text(metadata.replace(old_assertion, new_assertion, 1), encoding='utf-8')
+
+          disclosure_path = Path('CHROME_WEB_STORE_PRIVACY_DISCLOSURE.md')
+          disclosure = disclosure_path.read_text(encoding='utf-8')
+          old_check = 'Confirm the listing does not mention output-device routing.'
+          new_check = 'Confirm the listing does not mention output-device routing or stored output routes.'
+          if old_check not in disclosure:
+            raise SystemExit('Expected output-routing checklist wording was not found')
+          disclosure_path.write_text(disclosure.replace(old_check, new_check, 1), encoding='utf-8')
           PY
 
           rm -f .github/release-hardening.payload
