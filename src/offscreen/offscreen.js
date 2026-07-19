@@ -255,6 +255,8 @@ class AudioEnhancerEngine {
     this.lastMeterAt = 0;
     this.lastAdaptiveFrameAt = 0;
     this.adaptiveAudioTimer = null;
+    this.audioMutationPromise = null;
+    this.audioTransitionActive = false;
   }
 
   async start(streamId, tabId, sourceTitle, initialState = null) {
@@ -1656,7 +1658,7 @@ class AudioEnhancerEngine {
   }
 
 
-  applyAllParams() {
+  applyAllParams({ updateCurves = true } = {}) {
     if (!this.context) return;
     const now = this.context.currentTime;
     const ramp = 0.018;
@@ -1673,7 +1675,8 @@ class AudioEnhancerEngine {
       const group = this.eqNodeGroups[bandIndex] || [];
       const qValues = isCutType(band.type) ? (BUTTERWORTH_Q[band.slope] || BUTTERWORTH_Q[12]) : [band.q];
       group.forEach((node, nodeIndex) => {
-        node.type = band.enabled !== false ? toWebAudioType(band.type) : 'allpass';
+        const nextType = band.enabled !== false ? toWebAudioType(band.type) : 'allpass';
+        if (node.type !== nextType) node.type = nextType;
         node.frequency.setTargetAtTime(Number(band.frequency), now, ramp);
         node.gain.setTargetAtTime(isCutType(band.type) ? 0 : Number(band.gain || 0), now, ramp);
         node.Q.setTargetAtTime(qValues[nodeIndex] || Number(band.q || 1), now, ramp);
@@ -1690,7 +1693,7 @@ class AudioEnhancerEngine {
     }
     if (this.makeupGain) this.makeupGain.gain.setTargetAtTime(dbToGain(this.state.compressor.makeupGain), now, ramp);
 
-    this.applyColorParams(now, ramp);
+    this.applyColorParams(now, ramp, { updateCurves });
     this.applyWidthParams(now, ramp);
 
     if (this.limiterDrive) this.limiterDrive.gain.setTargetAtTime(dbToGain(this.state.output.limiterDrive), now, ramp);
@@ -1703,7 +1706,7 @@ class AudioEnhancerEngine {
     if (this.outputGain) this.outputGain.gain.setTargetAtTime(dbToGain(this.state.output.outputGain), now, ramp);
   }
 
-  applyColorParams(now, ramp) {
+  applyColorParams(now, ramp, { updateCurves = true } = {}) {
     if (!this.colorNodes?.bassDrive) return;
     const color = this.state.color;
     const c = this.colorNodes;
@@ -1720,6 +1723,15 @@ class AudioEnhancerEngine {
     const airCenter = clamp(Number(color.airFreq ?? 11200), 6500, 16000);
     const velvetTrebleAmt = clamp01((Number(color.velvetTreble ?? 66) || 0) / 100);
     const highRepairAmt = clamp01((Number(color.aiHighRepair ?? 48) || 0) / 100);
+    if (updateCurves) {
+      // Adaptive audio must never replace WaveShaper curves while the wet path is
+      // audible. Keep a stable transfer function per state/preset and steer the
+      // perceived amount with smoothed drive, filters and wet gains instead.
+      const stableSilkDrive = 0.28 + highRepairAmt * 0.72 + velvetTrebleAmt * 0.24 + harmonicAmount * 0.18;
+      const stableEdgeDrive = 0.24 + highRepairAmt * 0.48 + harmonicAmount * 0.20;
+      c.aiSilkShaper.curve = makeAirExciterCurve(stableSilkDrive, color.mode || 'mastering');
+      c.aiEdgeShaper.curve = makePresenceExciterCurve(stableEdgeDrive, color.mode || 'mastering');
+    }
     // v27 Rounded Particle Air: keep generated brightness away from the fragile
     // 6–12 kHz treble-artifact zone. That zone is allowed to remain mostly
     // original; added air/particles are shifted higher, smaller, and more gloss-like.
@@ -1768,7 +1780,7 @@ class AudioEnhancerEngine {
     c.bassPunch.gain.setTargetAtTime(((voiceSafe ? 0.25 : 1.35) + Math.max(0, color.body) * (0.145 + horegIntent * 0.020) + harmonicAmount * (0.42 + horegIntent * 0.22)) * (1 + turboReward * 0.055), now, ramp);
     c.bassDrive.gain.setTargetAtTime(dbToGain((driveDb * (voiceSafe ? 0.22 : 0.36 + horegIntent * 0.035) + Math.max(0, color.body) * (0.026 + horegIntent * 0.004)) * (1 + turboReward * 0.040)), now, ramp);
     c.bassWet.gain.setTargetAtTime(clamp(mix * (voiceSafe ? 0.060 : 0.18 + Math.max(0, bodyAmount) * (0.34 + horegTorque) + harmonicAmount * (0.08 + horegIntent * 0.045 + balapIntent * 0.035)) * turboBassReward, 0, isSonKuBalap ? 0.455 : (isHoregFamily ? 0.47 : 0.355)), now, ramp);
-    c.bassShaper.curve = makeBassExciterCurve(driveDb * (voiceSafe ? 0.30 : 0.44 + horegIntent * 0.045) + Math.max(0, color.body) * (0.030 + horegIntent * 0.006), color.mode);
+    if (updateCurves) c.bassShaper.curve = makeBassExciterCurve(driveDb * (voiceSafe ? 0.30 : 0.44 + horegIntent * 0.045) + Math.max(0, color.body) * (0.030 + horegIntent * 0.006), color.mode);
 
     // Band 2 — Warm low-mid / vocal chest. This is the "analog thickness" band.
     c.warmPre.frequency.setTargetAtTime(clamp(warmCenter - Math.max(0, warmthAmount) * 18, 330, 720), now, ramp);
@@ -1778,7 +1790,7 @@ class AudioEnhancerEngine {
     c.warmTone.Q.setTargetAtTime(0.72, now, ramp);
     c.warmTone.gain.setTargetAtTime(color.warmth * 0.084 + harmonicAmount * (voiceSafe ? 0.08 : 0.34), now, ramp);
     c.warmWet.gain.setTargetAtTime(mix * (voiceSafe ? 0.08 : 0.18 + Math.max(0, warmthAmount) * 0.34 + harmonicAmount * 0.12) * (1 - turboReward * 0.085), now, ramp);
-    c.warmShaper.curve = makeAnalogWarmCurve(driveDb * (voiceSafe ? 0.20 : 0.32) + Math.max(0, color.warmth) * 0.024, color.mode);
+    if (updateCurves) c.warmShaper.curve = makeAnalogWarmCurve(driveDb * (voiceSafe ? 0.20 : 0.32) + Math.max(0, color.warmth) * 0.024, color.mode);
 
     // Band 3 — Presence body. Lower and broader than old Color so vocals/instruments
     // become thick and pleasant, while 5–8 kHz stays protected from harsh grit.
@@ -1790,7 +1802,7 @@ class AudioEnhancerEngine {
     c.presenceTone.Q.setTargetAtTime(0.68, now, ramp);
     c.presenceTone.gain.setTargetAtTime((voiceSafe ? 0.04 : 0.42) + positiveAir * 0.012 + harmonicAmount * (voiceSafe ? 0.08 : 0.26), now, ramp);
     c.presenceWet.gain.setTargetAtTime(mix * (voiceSafe ? 0.035 : 0.090 + harmonicAmount * 0.12 + Math.max(0, warmthAmount) * 0.035) * (1 + turboReward * 0.115), now, ramp);
-    c.presenceShaper.curve = makePresenceExciterCurve(driveDb * (voiceSafe ? 0.09 : 0.17) + harmonicAmount * 0.28, color.mode);
+    if (updateCurves) c.presenceShaper.curve = makePresenceExciterCurve(driveDb * (voiceSafe ? 0.09 : 0.17) + harmonicAmount * 0.28, color.mode);
 
     // Band 4 — Rounded Particle Air. Bright enough to feel premium, but the
     // synthetic layer avoids 6–12 kHz where edge/glass/grain/splash artifacts
@@ -1807,7 +1819,7 @@ class AudioEnhancerEngine {
     c.airTone.gain.setTargetAtTime(((voiceSafe ? 0.04 : 0.38) + positiveAir * 0.022 + harmonicAmount * (voiceSafe ? 0.078 : 0.25) + velvetTrebleAmt * 0.090) * (1 - roundedParticleGuard * 0.026), now, ramp);
     const airWetTarget = mix * Math.max(0, voiceSafe ? 0.030 + Math.max(0, airAmount) * 0.066 + velvetTrebleAmt * 0.012 : 0.106 + Math.max(0, airAmount) * 0.296 + harmonicAmount * 0.106 + velvetTrebleAmt * 0.030) * (1 - roundedParticleGuard * 0.030) * turboAirReward;
     c.airWet.gain.setTargetAtTime(airWetTarget, now, ramp);
-    c.airShaper.curve = makeAirExciterCurve((driveDb * (voiceSafe ? 0.056 : 0.122) + harmonicAmount * 0.40 + Math.max(0, airAmount) * 0.25) * (1 - velvetTrebleAmt * 0.22) * (1 - roundedParticleGuard * 0.055), color.mode);
+    if (updateCurves) c.airShaper.curve = makeAirExciterCurve((driveDb * (voiceSafe ? 0.056 : 0.122) + harmonicAmount * 0.40 + Math.max(0, airAmount) * 0.25) * (1 - velvetTrebleAmt * 0.22) * (1 - roundedParticleGuard * 0.055), color.mode);
 
     // Side sparkle remains very subtle. Stereo width is owned by the Width module;
     // Color may add sheen, but must not be the source of phase problems.
@@ -1822,7 +1834,7 @@ class AudioEnhancerEngine {
     c.sideTone.gain.setTargetAtTime(((voiceSafe ? 0.022 : 0.172) + positiveAir * 0.014 + harmonicAmount * (voiceSafe ? 0.046 : 0.148) + velvetTrebleAmt * 0.046) * (1 - roundedParticleGuard * 0.030), now, ramp);
     const sideWetTarget = clamp(sideWet * (1 - velvetTrebleAmt * 0.070) * (1 - roundedParticleGuard * 0.028) * turboSideReward, 0, voiceSafe ? 0.017 : 0.178);
     c.sideWet.gain.setTargetAtTime(sideWetTarget, now, ramp);
-    c.sideShaper.curve = makeSideAirExciterCurve((driveDb * (voiceSafe ? 0.020 : 0.062) + harmonicAmount * 0.28 + Math.max(0, airAmount) * 0.15) * (1 - velvetTrebleAmt * 0.22) * (1 - roundedParticleGuard * 0.055), color.mode);
+    if (updateCurves) c.sideShaper.curve = makeSideAirExciterCurve((driveDb * (voiceSafe ? 0.020 : 0.062) + harmonicAmount * 0.28 + Math.max(0, airAmount) * 0.15) * (1 - velvetTrebleAmt * 0.22) * (1 - roundedParticleGuard * 0.055), color.mode);
     this.aiHighRepairBase = { amount: clamp01((Number(color.aiHighRepair) || 0) / 100), velvet: velvetTrebleAmt, airWet: airWetTarget, sideWet: sideWetTarget, sideAir: sideWet, silkWet: 0 };
 
     // v25 Smart God Particles+ base. This is not more static treble. It adds
@@ -1842,7 +1854,7 @@ class AudioEnhancerEngine {
       c.godSideTone.frequency.setTargetAtTime(clamp(airBase * 1.22 + harmonicAmount * 620 + roundedParticleGuard * 500, 13200, 17800), now, ramp);
       c.godSideTone.gain.setTargetAtTime(clamp((0.06 + positiveAir * 0.0030 + godAirIntent * 0.245 + velvetTrebleAmt * 0.060) * (1 - roundedParticleGuard * 0.070), 0, 0.62), now, ramp);
       c.godSideDrive.gain.setTargetAtTime(dbToGain(godDriveDb), now, ramp);
-      c.godSideShaper.curve = makeSideAirExciterCurve((0.30 + godDriveDb * 0.26 + godAirIntent * 0.34) * (1 - velvetTrebleAmt * 0.24) * (1 - roundedParticleGuard * 0.080), color.mode);
+      if (updateCurves) c.godSideShaper.curve = makeSideAirExciterCurve((0.30 + godDriveDb * 0.26 + godAirIntent * 0.34) * (1 - velvetTrebleAmt * 0.24) * (1 - roundedParticleGuard * 0.080), color.mode);
 
       c.godMidHighpass.frequency.setTargetAtTime(clamp(1700 + godMidIntent * 520 + godAirIntent * 180, 1600, 2600), now, ramp);
       c.godMidFocus.frequency.setTargetAtTime(clamp(2650 + godMidIntent * 960 + harmonicAmount * 180, 2200, 4600), now, ramp);
@@ -1850,7 +1862,7 @@ class AudioEnhancerEngine {
       c.godMidTone.frequency.setTargetAtTime(clamp(10200 + godAirIntent * 3800 + harmonicAmount * 680 + roundedParticleGuard * 620, 11000, 15800), now, ramp);
       c.godMidTone.gain.setTargetAtTime(clamp((0.09 + positiveAir * 0.0024 + godAirIntent * 0.12 + godMidIntent * 0.22 + velvetTrebleAmt * 0.046) * (1 - roundedParticleGuard * 0.070), 0, 0.62), now, ramp);
       c.godMidDrive.gain.setTargetAtTime(dbToGain(godDriveDb * (0.62 + godMidIntent * 0.22)), now, ramp);
-      c.godMidShaper.curve = makePresenceExciterCurve(0.28 + godDriveDb * 0.24 + godAirIntent * 0.18 + godMidIntent * 0.46, color.mode);
+      if (updateCurves) c.godMidShaper.curve = makePresenceExciterCurve(0.28 + godDriveDb * 0.24 + godAirIntent * 0.18 + godMidIntent * 0.46, color.mode);
     }
     this.godParticleBase = {
       sideWet: clamp(mix * godAirIntent * (voiceSafe ? 0.009 : 0.062) * (1 - velvetTrebleAmt * 0.12) * (1 - roundedParticleGuard * 0.065) * (1 + turboReward * 0.20), 0, voiceSafe ? 0.016 : 0.112),
@@ -1875,7 +1887,7 @@ class AudioEnhancerEngine {
     c.sideMidLowpass.frequency.setTargetAtTime(clamp(harmonicCenter * 1.90 + harmonicAmount * 240, 3600, 5200), now, ramp);
     c.sideMidPresence.frequency.setTargetAtTime(clamp(harmonicCenter + harmonicAmount * 120, 1850, 3150), now, ramp);
     c.sideMidTone.frequency.setTargetAtTime(clamp(harmonicCenter * 1.55, 3000, 4300), now, ramp);
-    c.sideMidShaper.curve = makePresenceExciterCurve(1.35 + midSideDriveDb, color.mode);
+    if (updateCurves) c.sideMidShaper.curve = makePresenceExciterCurve(1.35 + midSideDriveDb, color.mode);
     this.sideMidBase = {
       presence: stereoMidAmt * (voiceSafe ? 0.92 : 2.55) * (isHoregFamily ? 1.07 : 1) * (1 + turboReward * 0.06),
       tone: stereoMidAmt * (voiceSafe ? 0.42 : 1.20) * (isHoregFamily ? 1.08 : 1) * (1 + turboReward * 0.06),
@@ -1902,7 +1914,7 @@ class AudioEnhancerEngine {
     c.midAnchorFocus.Q.setTargetAtTime(0.48 + harmonicAmount * 0.05 + vocalPresenceAmt * 0.04, now, ramp);
     c.midAnchorTone.frequency.setTargetAtTime(clamp(harmonicCenter * 1.42 + positiveAir * 8 + harmonicAmount * 120, 2450, 3900), now, ramp);
     c.midAnchorTone.Q.setTargetAtTime(0.56, now, ramp);
-    c.midAnchorShaper.curve = makeMidAnchorCurve(0.85 + centerDriveDb, color.mode);
+    if (updateCurves) c.midAnchorShaper.curve = makeMidAnchorCurve(0.85 + centerDriveDb, color.mode);
     this.midAnchorBase = {
       peak: (stereoMidAmt * (voiceSafe ? 0.44 : 1.55)
         + vocalPresenceAmt * (voiceSafe ? 0.26 : 0.86)
@@ -1935,8 +1947,8 @@ class AudioEnhancerEngine {
     c.midProjectNasalGuard.Q.setTargetAtTime(0.78, now, ramp);
     c.midProjectShoutGuard.frequency.setTargetAtTime(clamp(3420 + projectionIntent * 240, 3200, 4200), now, ramp);
     c.midProjectShoutGuard.Q.setTargetAtTime(0.72, now, ramp);
-    c.midProjectShaper.curve = makeMidAnchorCurve(0.70 + projectionDriveDb, color.mode);
-    if (c.midProjectBodyShaper) c.midProjectBodyShaper.curve = makeMidAnchorCurve(0.58 + projectionDriveDb * 0.72, color.mode);
+    if (updateCurves) c.midProjectShaper.curve = makeMidAnchorCurve(0.70 + projectionDriveDb, color.mode);
+    if (updateCurves && c.midProjectBodyShaper) c.midProjectBodyShaper.curve = makeMidAnchorCurve(0.58 + projectionDriveDb * 0.72, color.mode);
     c.sideTuckHighpass.frequency.setTargetAtTime(clamp(620 + projectionIntent * 60, 560, 760), now, ramp);
     c.sideTuckLowpass.frequency.setTargetAtTime(clamp(2750 + projectionIntent * 480, 2350, 3400), now, ramp);
     c.sideTuckFocus.frequency.setTargetAtTime(clamp(1650 + projectionIntent * 460 + vocalPresenceAmt * 120, 1450, 2350), now, ramp);
@@ -1962,7 +1974,7 @@ class AudioEnhancerEngine {
     c.lowBodyFocus.Q.setTargetAtTime(0.42, now, ramp);
     c.lowBodyMudGuard.frequency.setTargetAtTime(385, now, ramp);
     c.lowBodyMudGuard.Q.setTargetAtTime(0.62, now, ramp);
-    c.lowBodyShaper.curve = makeLinearCurve();
+    if (updateCurves) c.lowBodyShaper.curve = makeLinearCurve();
     this.lowMidBodyBase = {
       focus: lowBodyIntent * (voiceSafe ? 0.12 : 0.46) + Math.max(0, color.body) * (voiceSafe ? 0.002 : 0.0045),
       mudTrim: lowBodyIntent * (voiceSafe ? 0.045 : 0.16),
@@ -1981,7 +1993,7 @@ class AudioEnhancerEngine {
     c.upperBodyFocus.Q.setTargetAtTime(0.54, now, ramp);
     c.upperBodyHonkGuard.frequency.setTargetAtTime(780, now, ramp);
     c.upperBodyHonkGuard.Q.setTargetAtTime(0.80, now, ramp);
-    c.upperBodyShaper.curve = makeLinearCurve();
+    if (updateCurves) c.upperBodyShaper.curve = makeLinearCurve();
     this.upperMidBodyBase = {
       focus: upperBodyIntent * (voiceSafe ? 0.08 : 0.30) + Math.max(0, color.warmth) * (voiceSafe ? 0.0012 : 0.0028),
       honkTrim: upperBodyIntent * (voiceSafe ? 0.05 : 0.14),
@@ -1994,7 +2006,7 @@ class AudioEnhancerEngine {
     // coherent and guarded; presets drive it via color.vocalTickle.
     const vocalTickleAmt = clamp01((Number(color.vocalTickle ?? 35) || 0) / 100);
     const vocalTickleDriveDb = (voiceSafe ? 0.55 : 1.55) * vocalTickleAmt + harmonicAmount * 0.80 * vocalTickleAmt;
-    c.vocalTickleShaper.curve = makePresenceExciterCurve(1.0 + vocalTickleDriveDb, color.mode);
+    if (updateCurves) c.vocalTickleShaper.curve = makePresenceExciterCurve(1.0 + vocalTickleDriveDb, color.mode);
     this.vocalTickleBase = {
       focus: vocalTickleAmt * (voiceSafe ? 0.70 : 1.58),
       guardTrim: vocalTickleAmt * (voiceSafe ? 0.26 : 0.58),
@@ -2020,7 +2032,7 @@ class AudioEnhancerEngine {
     c.trebleSkinTone.frequency.setTargetAtTime(8750, now, ramp);
     c.trebleSkinTone.Q.setTargetAtTime(0.78, now, ramp);
     c.trebleSkinTone.gain.setTargetAtTime(clamp(0.10 + trebleSkinIntent * 0.44 - roundedParticleGuard * 0.055, -0.12, 0.58), now, ramp);
-    c.trebleSkinShaper.curve = makePresenceExciterCurve((0.14 + trebleSkinIntent * 0.48) * (1 - roundedParticleGuard * 0.16), color.mode);
+    if (updateCurves) c.trebleSkinShaper.curve = makePresenceExciterCurve((0.14 + trebleSkinIntent * 0.48) * (1 - roundedParticleGuard * 0.16), color.mode);
     this.trebleSkinBase = {
       focus: trebleSkinIntent,
       tone: clamp(0.10 + trebleSkinIntent * 0.44, 0, 0.62),
@@ -2042,7 +2054,7 @@ class AudioEnhancerEngine {
     c.warmth.gain.setTargetAtTime(color.warmth * 0.078, now, ramp);
     c.air.gain.setTargetAtTime((airValue + color.harmonics * 0.036) * 0.078, now, ramp);
     c.wet.gain.setTargetAtTime(mix, now, ramp);
-    c.shaper.curve = makeSaturationCurve(driveDb, color.mode);
+    if (updateCurves) c.shaper.curve = makeSaturationCurve(driveDb, color.mode);
   }
 
   applyWidthParams(now, ramp) {
@@ -2141,57 +2153,128 @@ class AudioEnhancerEngine {
     return this.graphRebuildPromise;
   }
 
+  hasDiscontinuousEqChange(previousBands, nextBands) {
+    const previous = normalizeEqBands(previousBands || []);
+    const next = normalizeEqBands(nextBands || []);
+    if (previous.length !== next.length) return true;
+    return next.some((band, index) => {
+      const before = previous[index];
+      if (!before) return true;
+      return before.type !== band.type
+        || before.enabled !== band.enabled
+        || (isCutType(before.type) || isCutType(band.type)) && before.slope !== band.slope;
+    });
+  }
+
+  statePatchNeedsProtectedTransition(previousState, nextState, patch, eqTopologyChanged = false) {
+    if (!this.context || !this.state.active) return false;
+    const graphTopologyChanged = this.requiresGraphTopologyChange(previousState, nextState, eqTopologyChanged);
+    const colorKeys = patch?.color && typeof patch.color === 'object' ? Object.keys(patch.color) : [];
+    const fullColorStateChange = colorKeys.length > 1;
+    const colorModeChanged = colorKeys.includes('mode') && previousState?.color?.mode !== nextState?.color?.mode;
+    const eqTypeChanged = Boolean(patch?.eq && this.hasDiscontinuousEqChange(previousState?.eq, nextState?.eq));
+    return Boolean(
+      graphTopologyChanged
+      || patch?.performance
+      || eqTypeChanged
+      || fullColorStateChange
+      || colorModeChanged
+    );
+  }
+
+  async runProtectedAudioMutation(mutate, { fadeOutMs = 56, settleMs = 48 } = {}) {
+    const execute = async () => {
+      if (!this.context || !this.bypassGain || !this.processedGain) return mutate();
+      const contextAtStart = this.context;
+      const wasBypassed = Boolean(this.state.output?.bypass);
+      this.audioTransitionActive = true;
+      this.stopAdaptiveAudioLoop();
+
+      try {
+        if (!wasBypassed) {
+          this.rampGainParam(this.bypassGain.gain, 1, 0.045);
+          this.rampGainParam(this.processedGain.gain, 0, 0.035);
+          await new Promise((resolve) => setTimeout(resolve, fadeOutMs));
+        }
+
+        const result = await mutate();
+        if (this.context === contextAtStart) {
+          await new Promise((resolve) => setTimeout(resolve, settleMs));
+        }
+        return result;
+      } finally {
+        if (this.context === contextAtStart && this.bypassGain && this.processedGain) {
+          this.crossfadeEnhancePower(Boolean(this.state.output?.bypass));
+        }
+        this.audioTransitionActive = false;
+        if (this.context && this.context.state !== 'closed' && this.state.active && this.monitoringActive) {
+          this.startAdaptiveAudioLoop();
+        }
+      }
+    };
+
+    const previous = this.audioMutationPromise || Promise.resolve();
+    const operation = previous.catch(() => {}).then(execute);
+    const tracked = operation.finally(() => {
+      if (this.audioMutationPromise === tracked) this.audioMutationPromise = null;
+    });
+    this.audioMutationPromise = tracked;
+    return tracked;
+  }
+
   async applyPreset(preset) {
     if (!preset) throw new Error('Preset not found.');
-    const previousState = this.state;
-    const hasLiveCrossfade = Boolean(this.context && this.bypassGain && this.processedGain);
-    const wasBypassed = Boolean(previousState.output?.bypass);
 
-    // WaveShaper curves, filter types and EQ topology are not sample-continuous.
-    // Move briefly to the untouched dry route before changing the live rack.
-    if (hasLiveCrossfade && !wasBypassed) {
-      this.rampGainParam(this.bypassGain.gain, 1, 0.045);
-      this.rampGainParam(this.processedGain.gain, 0, 0.035);
-      await new Promise((resolve) => setTimeout(resolve, 56));
-    }
+    await this.runProtectedAudioMutation(async () => {
+      const previousState = this.state;
+      this.state = this.prepareState(applyPresetToState(this.state, preset));
+      if (!this.context) return;
 
-    this.state = this.prepareState(applyPresetToState(this.state, preset));
-    if (this.context) {
       const eqTopologyChanged = this.reconcileEqNodeGroups(this.state.eq);
       const graphTopologyChanged = this.requiresGraphTopologyChange(previousState, this.state, eqTopologyChanged);
-
-      // Apply every discontinuous change while wet audio is muted. When the
-      // topology differs, reconnect inside this same protected transition.
-      this.applyAllParams();
+      this.applyAllParams({ updateCurves: true });
       if (graphTopologyChanged) this.connectGraph({ preserveCrossfade: true });
+    });
 
-      if (hasLiveCrossfade) {
-        // applyAllParams() uses an 18 ms time constant; let filters and gain
-        // stages settle before returning to the processed route.
-        await new Promise((resolve) => setTimeout(resolve, 48));
-        this.crossfadeEnhancePower(Boolean(this.state.output.bypass));
-      }
-    }
     this.state.updatedAt = Date.now();
     notifyStateChanged(this.getPublicState());
   }
 
   async updateState(patch) {
     const previousState = this.state;
-    this.state = this.prepareState(deepMerge(this.state, patch));
-    if (patch.performance && this.context) this.applyPerformanceSettings({ resetBuffers: true });
-    const eqTopologyChanged = Boolean(patch.eq && this.context && this.reconcileEqNodeGroups(this.state.eq));
-    this.applyAllParams();
-    const bypassPatch = patch.output?.bypass !== undefined;
-    const graphTopologyChanged = this.context
-      ? this.requiresGraphTopologyChange(previousState, this.state, eqTopologyChanged)
+    const nextState = this.prepareState(deepMerge(this.state, patch));
+    const eqTopologyWillChange = Boolean(
+      patch.eq
+      && this.context
+      && requiresEqTopologyRebuild(this.eqNodeGroups, normalizeEqBands(nextState.eq))
+    );
+    const graphTopologyWillChange = this.context
+      ? this.requiresGraphTopologyChange(previousState, nextState, eqTopologyWillChange)
       : false;
-    if (graphTopologyChanged) await this.rebuildGraphSafely();
-    if (bypassPatch) this.crossfadeEnhancePower(Boolean(this.state.output.bypass));
-    if (patch.performance && this.context && this.monitoringActive) {
-      this.runAdaptiveAudioFrame({ force: true, includeStereoBands: false });
-      this.startAdaptiveAudioLoop();
+    const protectedTransition = this.statePatchNeedsProtectedTransition(
+      previousState,
+      nextState,
+      patch,
+      eqTopologyWillChange
+    );
+    const bypassPatch = patch.output?.bypass !== undefined;
+
+    const applyMutation = async ({ updateCurves }) => {
+      this.state = nextState;
+      if (!this.context) return;
+      if (patch.performance) this.applyPerformanceSettings({ resetBuffers: true });
+      const eqTopologyChanged = Boolean(patch.eq && this.reconcileEqNodeGroups(this.state.eq));
+      this.applyAllParams({ updateCurves });
+      if (graphTopologyWillChange || eqTopologyChanged) this.connectGraph({ preserveCrossfade: true });
+    };
+
+    if (protectedTransition) {
+      await this.runProtectedAudioMutation(() => applyMutation({ updateCurves: true }));
+    } else {
+      await applyMutation({ updateCurves: false });
+      if (bypassPatch) this.crossfadeEnhancePower(Boolean(this.state.output.bypass));
     }
+
     this.state.updatedAt = Date.now();
     notifyStateChanged(this.getPublicState());
   }
@@ -2261,7 +2344,7 @@ class AudioEnhancerEngine {
       this.widthNodes?.shaper
     ];
     for (const shaper of shapers) {
-      if (shaper && 'oversample' in shaper) shaper.oversample = oversample;
+      if (shaper && 'oversample' in shaper && shaper.oversample !== oversample) shaper.oversample = oversample;
     }
 
     if (resetBuffers && this.context) {
@@ -2281,12 +2364,14 @@ class AudioEnhancerEngine {
 
   startAdaptiveAudioLoop() {
     this.stopAdaptiveAudioLoop();
+    if (this.audioTransitionActive) return;
     if (!this.context || this.context.state === 'closed' || !this.monitoringActive) return;
     const config = getPerfConfig(this.performanceMode);
     if (!config.adaptiveLoopEnabled) return;
 
     const tick = () => {
       this.adaptiveAudioTimer = null;
+      if (this.audioTransitionActive) return;
       if (!this.context || this.context.state === 'closed' || !this.state.active || !this.monitoringActive) return;
       try {
         this.runAdaptiveAudioFrame({ force: true, includeStereoBands: false });
@@ -2372,6 +2457,7 @@ class AudioEnhancerEngine {
   }
 
   runAdaptiveAudioFrame({ force = false, includeStereoBands = false } = {}) {
+    if (this.audioTransitionActive) return this.state.meters;
     if (!this.inputAnalyser || !this.outputAnalyser || !this.timeBufferIn || !this.timeBufferOut) return this.state.meters;
     const nowMs = Date.now();
     if (!force && this.lastAdaptiveFrameAt && nowMs - this.lastAdaptiveFrameAt < getPerfConfig(this.performanceMode).adaptiveMinFrameMs) return this.state.meters;
@@ -3045,7 +3131,6 @@ class AudioEnhancerEngine {
     c.aiSilkTone.frequency.setTargetAtTime(clamp(silkHpHz + 1700, 12800, 17800), now, ramp * 1.8);
     c.aiSilkTone.gain.setTargetAtTime(clamp(0.24 + repair * 0.074 + vocalAirLift * 5.3 + velvetGlossLift * 3.8 + sheenParticleWindow * 0.225 + sweetTickleRecover * 0.245 - glassBurst * 0.050 - sibilanceBurst * 0.038 - splashBurst * 0.046 - sixTwelveArtifact * 0.064, -0.16, 0.86), now, ramp);
     c.aiSilkWet.gain.setTargetAtTime(silkGain, now, ramp);
-    c.aiSilkShaper.curve = makeAirExciterCurve((0.23 + amount * 0.58 + repair * 0.52 + velvetAmt * 0.20 + sweetTickleRecover * 0.18) * (1 - velvetProblem * 0.10) * (1 - sixTwelveArtifact * 0.20) * (0.90 + sheenParticleWindow * 0.20), color.mode || 'mastering');
 
     if (c.aiEdgeWet) {
       const edgeRepairNeed = clamp(Math.max(edgeTrim ?? edge, glassTrim ?? glass, grainTrim * 0.78) * (1 - texture * 0.18), 0, 1);
@@ -3057,7 +3142,6 @@ class AudioEnhancerEngine {
       c.aiEdgeTone.frequency.setTargetAtTime(clamp((map.aiEdgePleasantHz ?? 6900) - sixTwelveArtifact * 120 + polishedTrebleWindow * 130, 6200, 7600), now, ramp * 1.8);
       c.aiEdgeTone.Q.setTargetAtTime(0.42 + texture * 0.05, now, ramp);
       c.aiEdgeWet.gain.setTargetAtTime(edgeWet, now, ramp);
-      c.aiEdgeShaper.curve = makePresenceExciterCurve((0.22 + amount * 0.38 + edgeRepairNeed * 0.34 + sweetTickleRecover * 0.18) * (1 - fastTrebleBurst * 0.11), color.mode || 'mastering');
     }
 
     if (c.trebleSkinWet) {
@@ -3157,6 +3241,7 @@ class AudioEnhancerEngine {
   }
 
   computeMeters({ force = false, includeStereoBands = true } = {}) {
+    if (this.audioTransitionActive) return this.state.meters;
     const config = getPerfConfig(this.performanceMode);
     if (config.basicMetersOnly && !force) return this.computeBasicMeterFrame({ force });
     return this.runAdaptiveAudioFrame({ force, includeStereoBands: config.basicMetersOnly ? false : includeStereoBands });
