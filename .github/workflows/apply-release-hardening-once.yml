@@ -71,14 +71,14 @@ jobs:
 
           if ! npm run check > /tmp/release-check.log 2>&1; then
             echo "Release check failed. Tail follows:"
-            tail -n 45 /tmp/release-check.log
+            tail -n 20 /tmp/release-check.log
             exit 1
           fi
-          tail -n 18 /tmp/release-check.log
+          tail -n 12 /tmp/release-check.log
 
           if ! npm run package > /tmp/release-package.log 2>&1; then
             echo "Release package validation failed. Tail follows:"
-            tail -n 45 /tmp/release-package.log
+            tail -n 20 /tmp/release-package.log
             exit 1
           fi
           cat /tmp/release-package.log
