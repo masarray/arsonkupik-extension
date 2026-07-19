@@ -92,7 +92,7 @@ const modulePresetSelections = {
 };
 
 const CHOOSE_OUTPUT_DEVICE_ID = '__choose_output__';
-const MASARI_PRESET_LABEL = 'MasAri';
+const MASARI_PRESET_LABEL = 'Mas Ari Signature';
 const CUSTOM_PRESET_LABEL = 'Custom';
 const SVG_NS = 'http://www.w3.org/2000/svg';
 

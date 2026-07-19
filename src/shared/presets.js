@@ -656,7 +656,7 @@ export const MODULE_PRESETS = {
   eq: [
     {
       id: 'default-polish',
-      name: 'MasAri Sparkle Balance',
+      name: 'Mas Ari Signature Sparkle Balance',
       eqEnabled: true,
       eq: DEFAULT_EQ_BANDS
     },
@@ -741,7 +741,7 @@ export const MODULE_PRESETS = {
     { id: 'night-level', name: 'Night Level', compressor: { threshold: -33, ratio: 2.65, knee: 24, attack: 0.026, release: 0.42, makeupGain: 1.0, parallelMix: 72, enabled: true } }
   ],
   color: [
-    { id: 'signature-glow', name: 'MasAri Glow', color: DEFAULT_COLOR },
+    { id: 'signature-glow', name: 'Mas Ari Signature Glow', color: DEFAULT_COLOR },
     { id: 'clean-glow', name: 'Clean Glow', color: { enabled: true, drive: 1.75, bodyFreq: 170, body: 8.5, smartBass: 48, warmthFreq: 490, warmth: 6.8, harmonicsFreq: 1950, harmonics: 16, airFreq: 11970, air: 11, godParticles: 33.8, aiHighRepair: 58, velvetTreble: 87, vocalTickle: 24, vocalPresence: 31, midProjection: 38, mix: 20, stereoMid: 8, mode: 'clean' } },
     { id: 'modern-exciter', name: 'Analog Lift', color: { enabled: true, drive: 3.20, bodyFreq: 170, body: 15.3, smartBass: 61, warmthFreq: 490, warmth: 12.6, harmonicsFreq: 2150, harmonics: 29, airFreq: 12420, air: 16.7, godParticles: 52.2, aiHighRepair: 64, velvetTreble: 89, vocalTickle: 37, vocalPresence: 46, midProjection: 58, mix: 26, stereoMid: 35, mode: 'mastering' } },
     { id: 'side-sparkle', name: 'Silky Sparkle', color: { enabled: true, drive: 2.70, bodyFreq: 170, body: 9.8, smartBass: 52, warmthFreq: 490, warmth: 8.0, harmonicsFreq: 2250, harmonics: 27, airFreq: 12920, air: 23.4, godParticles: 68.0, aiHighRepair: 62, velvetTreble: 86, vocalTickle: 35, vocalPresence: 42, midProjection: 50, mix: 25, stereoMid: 38, mode: 'mastering' } },

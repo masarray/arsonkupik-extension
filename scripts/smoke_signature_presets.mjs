@@ -10,6 +10,9 @@ const presets = presetsModule.FACTORY_PRESETS;
 const primary = presetsModule.PRIMARY_MASTER_PRESET_IDS;
 const flagship = presets.find((preset) => preset.id === 'default');
 assert.equal(flagship?.name, 'Mas Ari Signature');
+for (const runtimeFile of ['popup.html', 'studio.html', 'src/popup/popup.js', 'src/studio/studio.js', 'src/shared/presets.js']) {
+  assert.doesNotMatch(read(runtimeFile), /MasAri/, `${runtimeFile} still contains the legacy MasAri label`);
+}
 
 const expected = [
   ['dangdut-mantap', 'Dangdut Mantap'],
