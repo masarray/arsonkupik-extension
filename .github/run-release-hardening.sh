@@ -81,3 +81,5 @@ if ! git diff --cached --quiet; then
   git commit -m "Harden Chrome Web Store release 0.3.111"
   git push -q origin HEAD:"${TARGET_BRANCH}"
 fi
+
+# This helper is intentionally removed from the final release-hardening commit.
