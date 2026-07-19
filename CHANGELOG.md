@@ -4,6 +4,19 @@ All notable project changes are documented here. The format follows Keep a Chang
 
 ## [Unreleased]
 
+## [0.3.110] - 2026-07-19
+
+### Added
+
+- Eight calmer genre presets derived from the flagship Mas Ari tuning: Dangdut Mantap, K-Pop Nikmat, Hard Rock, Blues Asik, Pop Indonesia, EDM Santai, Jazz Hangat, and Akustik Intim.
+- Optional QRIS interstitial before opening Studio, with an immediate Continue to Studio action and no payment requirement.
+- Regression coverage for flagship naming, genre preset loudness hierarchy, and Studio support flow.
+
+### Changed
+
+- Renamed the default flagship preset from MasAri to Mas Ari Signature.
+- Users who locally confirm support bypass the Studio QRIS interstitial on the current Chrome profile.
+
 ## [0.3.109] - 2026-07-18
 
 ### Added

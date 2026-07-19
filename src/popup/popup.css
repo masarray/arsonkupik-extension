@@ -779,3 +779,13 @@ body.support-modal-open { overflow: hidden; }
 .support-modal-actions .primary-button,
 .support-modal-actions .secondary-button { min-height: 40px; height: auto; padding: 8px; font-size: 10.5px; }
 .support-page-button { justify-self: center; }
+
+
+.support-continue-studio {
+  width: 100%;
+  min-height: 42px;
+  height: auto;
+  padding: 9px 12px;
+}
+.support-continue-studio[hidden] { display: none !important; }
+.support-modal-actions button[hidden] { display: none !important; }
