@@ -1,0 +1,90 @@
+name: One-time preset crackle fix
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/one-time-fix-preset-crackle.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch-and-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Apply de-click preset transition
+        shell: python
+        run: |
+          from pathlib import Path
+
+          path = Path("src/offscreen/offscreen.js")
+          source = path.read_text(encoding="utf-8")
+          start_marker = "  async applyPreset(preset) {"
+          end_marker = "\n  async updateState(patch) {"
+          start = source.find(start_marker)
+          end = source.find(end_marker, start)
+          if start < 0 or end < 0:
+              raise SystemExit("Unable to locate applyPreset method")
+
+          replacement = '''  async applyPreset(preset) {
+            if (!preset) throw new Error('Preset not found.');
+            const previousState = this.state;
+            const hasLiveCrossfade = Boolean(this.context && this.bypassGain && this.processedGain);
+            const wasBypassed = Boolean(previousState.output?.bypass);
+
+            // Presets can replace WaveShaper curves, filter types and even the EQ
+            // topology. Those operations are not sample-continuous, so move the
+            // listener briefly to the untouched dry path before changing the rack.
+            if (hasLiveCrossfade && !wasBypassed) {
+              this.rampGainParam(this.bypassGain.gain, 1, 0.045);
+              this.rampGainParam(this.processedGain.gain, 0, 0.035);
+              await new Promise((resolve) => setTimeout(resolve, 56));
+            }
+
+            this.state = this.prepareState(applyPresetToState(this.state, preset));
+            if (this.context) {
+              const eqTopologyChanged = this.reconcileEqNodeGroups(this.state.eq);
+              const graphTopologyChanged = this.requiresGraphTopologyChange(previousState, this.state, eqTopologyChanged);
+
+              // All audible parameter and curve changes now happen while the wet
+              // path is muted. Reconnect directly inside the same transition so a
+              // second, late graph crossfade cannot expose a click.
+              this.applyAllParams();
+              if (graphTopologyChanged) this.connectGraph({ preserveCrossfade: true });
+
+              if (hasLiveCrossfade) {
+                // applyAllParams() uses an 18 ms AudioParam time constant. Give it
+                // enough settling time before returning to the enhanced path.
+                await new Promise((resolve) => setTimeout(resolve, 48));
+                this.crossfadeEnhancePower(Boolean(this.state.output.bypass));
+              }
+            }
+            this.state.updatedAt = Date.now();
+            notifyStateChanged(this.getPublicState());
+          }
+          '''
+
+          updated = source[:start] + replacement + source[end:]
+          path.write_text(updated, encoding="utf-8")
+
+      - name: Validate JavaScript syntax
+        run: node --check src/offscreen/offscreen.js
+
+      - name: Run repository checks
+        run: npm run check
+
+      - name: Commit fix
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/offscreen/offscreen.js
+          git commit -m "Fix crackles during preset transitions"
+          git push origin HEAD:main
