@@ -11,17 +11,17 @@ permissions:
   contents: write
 
 jobs:
-  patch-and-validate:
+  patch-validate-and-clean:
     runs-on: ubuntu-latest
     steps:
       - name: Check out PR branch
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
         with:
           ref: ${{ github.event.pull_request.head.ref }}
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           fetch-depth: 0
 
-      - name: Apply de-click preset transition
+      - name: Apply final de-click preset transition
         shell: python
         run: |
           from pathlib import Path
@@ -36,44 +36,44 @@ jobs:
               raise SystemExit("Unable to locate applyPreset method")
 
           replacement = '''  async applyPreset(preset) {
-            if (!preset) throw new Error('Preset not found.');
-            const previousState = this.state;
-            const hasLiveCrossfade = Boolean(this.context && this.bypassGain && this.processedGain);
-            const wasBypassed = Boolean(previousState.output?.bypass);
+              if (!preset) throw new Error('Preset not found.');
+              const previousState = this.state;
+              const hasLiveCrossfade = Boolean(this.context && this.bypassGain && this.processedGain);
+              const wasBypassed = Boolean(previousState.output?.bypass);
 
-            // WaveShaper curves, filter types and EQ topology are not sample-continuous.
-            // Move briefly to the untouched dry route before changing the live rack.
-            if (hasLiveCrossfade && !wasBypassed) {
-              this.rampGainParam(this.bypassGain.gain, 1, 0.045);
-              this.rampGainParam(this.processedGain.gain, 0, 0.035);
-              await new Promise((resolve) => setTimeout(resolve, 56));
-            }
-
-            this.state = this.prepareState(applyPresetToState(this.state, preset));
-            if (this.context) {
-              const eqTopologyChanged = this.reconcileEqNodeGroups(this.state.eq);
-              const graphTopologyChanged = this.requiresGraphTopologyChange(previousState, this.state, eqTopologyChanged);
-
-              // Apply every discontinuous change while wet audio is muted. When the
-              // topology differs, reconnect inside this same protected transition.
-              this.applyAllParams();
-              if (graphTopologyChanged) this.connectGraph({ preserveCrossfade: true });
-
-              if (hasLiveCrossfade) {
-                // applyAllParams() uses an 18 ms time constant; let filters and gain
-                // stages settle before returning to the processed route.
-                await new Promise((resolve) => setTimeout(resolve, 48));
-                this.crossfadeEnhancePower(Boolean(this.state.output.bypass));
+              // WaveShaper curves, filter types and EQ topology are not sample-continuous.
+              // Move briefly to the untouched dry route before changing the live rack.
+              if (hasLiveCrossfade && !wasBypassed) {
+                this.rampGainParam(this.bypassGain.gain, 1, 0.045);
+                this.rampGainParam(this.processedGain.gain, 0, 0.035);
+                await new Promise((resolve) => setTimeout(resolve, 56));
               }
+
+              this.state = this.prepareState(applyPresetToState(this.state, preset));
+              if (this.context) {
+                const eqTopologyChanged = this.reconcileEqNodeGroups(this.state.eq);
+                const graphTopologyChanged = this.requiresGraphTopologyChange(previousState, this.state, eqTopologyChanged);
+
+                // Apply every discontinuous change while wet audio is muted. When the
+                // topology differs, reconnect inside this same protected transition.
+                this.applyAllParams();
+                if (graphTopologyChanged) this.connectGraph({ preserveCrossfade: true });
+
+                if (hasLiveCrossfade) {
+                  // applyAllParams() uses an 18 ms time constant; let filters and gain
+                  // stages settle before returning to the processed route.
+                  await new Promise((resolve) => setTimeout(resolve, 48));
+                  this.crossfadeEnhancePower(Boolean(this.state.output.bypass));
+                }
+              }
+              this.state.updatedAt = Date.now();
+              notifyStateChanged(this.getPublicState());
             }
-            this.state.updatedAt = Date.now();
-            notifyStateChanged(this.getPublicState());
-          }
           '''
 
           path.write_text(source[:start] + replacement + source[end:], encoding="utf-8")
 
-      - name: Assert transition ordering
+      - name: Assert transition ordering and formatting
         shell: python
         run: |
           from pathlib import Path
@@ -92,98 +92,21 @@ jobs:
               raise SystemExit("Wet fade must happen before parameter application")
           if method.index(required[1]) > method.index(required[3]):
               raise SystemExit("Wet fade-in must happen after parameter application")
+          if "\n    if (!preset)" not in method:
+              raise SystemExit("applyPreset body indentation is inconsistent")
 
       - name: Validate JavaScript syntax
         run: node --check src/offscreen/offscreen.js
 
-      - name: Check repository identity
-        id: identity
-        continue-on-error: true
-        run: node scripts/check_repository_identity.mjs
+      - name: Run complete repository checks
+        run: npm run check
 
-      - name: Check release metadata
-        id: metadata
-        continue-on-error: true
-        run: node scripts/check_release_metadata.mjs
-
-      - name: Validate repository
-        id: validate
-        continue-on-error: true
-        run: node scripts/run-python.mjs scripts/validate.py
-
-      - name: Smoke privacy
-        id: privacy
-        continue-on-error: true
-        run: node scripts/smoke_privacy.mjs
-
-      - name: Smoke support
-        id: support
-        continue-on-error: true
-        run: node scripts/smoke_support.mjs
-
-      - name: Smoke stability
-        id: stability
-        continue-on-error: true
-        run: node scripts/smoke_stability.mjs
-
-      - name: Smoke headless
-        id: headless
-        continue-on-error: true
-        run: node scripts/smoke_headless.mjs
-
-      - name: Smoke update queue
-        id: update_queue
-        continue-on-error: true
-        run: node scripts/smoke_update_queue.mjs
-
-      - name: Smoke global state queue
-        id: global_queue
-        continue-on-error: true
-        run: node scripts/smoke_global_state_queue.mjs
-
-      - name: Smoke runtime startup
-        id: startup
-        continue-on-error: true
-        run: node scripts/smoke_runtime_startup.mjs
-
-      - name: Smoke audio route
-        id: audio_route
-        continue-on-error: true
-        run: node scripts/smoke_audio_route.mjs
-
-      - name: Smoke support prompt
-        id: support_prompt
-        continue-on-error: true
-        run: node scripts/smoke_support_prompt.mjs
-
-      - name: Smoke signature presets
-        id: signatures
-        continue-on-error: true
-        run: node scripts/smoke_signature_presets.mjs
-
-      - name: Record check outcomes
-        run: |
-          cat > preset-check-results.txt <<'EOF'
-          identity=${{ steps.identity.outcome }}
-          metadata=${{ steps.metadata.outcome }}
-          validate=${{ steps.validate.outcome }}
-          privacy=${{ steps.privacy.outcome }}
-          support=${{ steps.support.outcome }}
-          stability=${{ steps.stability.outcome }}
-          headless=${{ steps.headless.outcome }}
-          update_queue=${{ steps.update_queue.outcome }}
-          global_queue=${{ steps.global_queue.outcome }}
-          startup=${{ steps.startup.outcome }}
-          audio_route=${{ steps.audio_route.outcome }}
-          support_prompt=${{ steps.support_prompt.outcome }}
-          signatures=${{ steps.signatures.outcome }}
-          EOF
-          cat preset-check-results.txt
-
-      - name: Commit engine fix and diagnostics to PR branch
+      - name: Commit only the engine fix
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add src/offscreen/offscreen.js preset-check-results.txt
+          git rm -f .github/workflows/pr-fix-preset-crackle.yml
+          git rm -f preset-check-results.txt
+          git add src/offscreen/offscreen.js
           git commit -m "Fix crackles during preset transitions"
           git push origin HEAD:${{ github.event.pull_request.head.ref }}
