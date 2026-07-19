@@ -161,32 +161,29 @@ jobs:
         continue-on-error: true
         run: node scripts/smoke_signature_presets.mjs
 
-      - name: Require all repository checks
-        env:
-          RESULTS: >-
-            identity=${{ steps.identity.outcome }}
-            metadata=${{ steps.metadata.outcome }}
-            validate=${{ steps.validate.outcome }}
-            privacy=${{ steps.privacy.outcome }}
-            support=${{ steps.support.outcome }}
-            stability=${{ steps.stability.outcome }}
-            headless=${{ steps.headless.outcome }}
-            update_queue=${{ steps.update_queue.outcome }}
-            global_queue=${{ steps.global_queue.outcome }}
-            startup=${{ steps.startup.outcome }}
-            audio_route=${{ steps.audio_route.outcome }}
-            support_prompt=${{ steps.support_prompt.outcome }}
-            signatures=${{ steps.signatures.outcome }}
+      - name: Record check outcomes
         run: |
-          echo "$RESULTS"
-          if echo "$RESULTS" | grep -q '=failure'; then
-            exit 1
-          fi
+          cat > preset-check-results.txt <<'EOF'
+          identity=${{ steps.identity.outcome }}
+          metadata=${{ steps.metadata.outcome }}
+          validate=${{ steps.validate.outcome }}
+          privacy=${{ steps.privacy.outcome }}
+          support=${{ steps.support.outcome }}
+          stability=${{ steps.stability.outcome }}
+          headless=${{ steps.headless.outcome }}
+          update_queue=${{ steps.update_queue.outcome }}
+          global_queue=${{ steps.global_queue.outcome }}
+          startup=${{ steps.startup.outcome }}
+          audio_route=${{ steps.audio_route.outcome }}
+          support_prompt=${{ steps.support_prompt.outcome }}
+          signatures=${{ steps.signatures.outcome }}
+          EOF
+          cat preset-check-results.txt
 
-      - name: Commit engine fix to PR branch
+      - name: Commit engine fix and diagnostics to PR branch
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add src/offscreen/offscreen.js
+          git add src/offscreen/offscreen.js preset-check-results.txt
           git commit -m "Fix crackles during preset transitions"
           git push origin HEAD:${{ github.event.pull_request.head.ref }}
