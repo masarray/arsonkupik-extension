@@ -1,0 +1,41 @@
+name: Apply bilingual localization patch once
+
+on:
+  push:
+    branches:
+      - agent/i18n-popup-studio
+    paths:
+      - .github/i18n-trigger.txt
+
+permissions:
+  contents: write
+
+jobs:
+  apply-i18n:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout localization branch
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          ref: agent/i18n-popup-studio
+          fetch-depth: 0
+
+      - name: Apply localization files
+        run: |
+          cat .github/i18n-patch.part-* | base64 --decode | tar -xJf -
+          rm -f .github/i18n-trigger.txt .github/i18n-patch.part-*
+
+      - name: Validate repository
+        run: npm run check
+
+      - name: Commit localization
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No localization changes to commit"
+          else
+            git commit -m "Add Indonesian and English Popup and Studio localization"
+            git push origin HEAD:agent/i18n-popup-studio
+          fi
