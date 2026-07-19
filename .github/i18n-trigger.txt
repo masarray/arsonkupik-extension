@@ -1,1 +1,1 @@
-apply bilingual popup and studio localization
+apply bilingual popup and studio localization retry
