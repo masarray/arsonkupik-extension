@@ -1,0 +1,13 @@
+identity=success
+metadata=failure
+validate=success
+privacy=success
+support=success
+stability=success
+headless=success
+update_queue=success
+global_queue=success
+startup=success
+audio_route=success
+support_prompt=success
+signatures=success

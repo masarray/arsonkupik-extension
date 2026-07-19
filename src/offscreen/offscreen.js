@@ -2142,16 +2142,39 @@ class AudioEnhancerEngine {
   }
 
   async applyPreset(preset) {
-    if (!preset) throw new Error('Preset not found.');
-    const previousState = this.state;
-    this.state = this.prepareState(applyPresetToState(this.state, preset));
-    if (this.context) {
-      const eqTopologyChanged = this.reconcileEqNodeGroups(this.state.eq);
-      this.applyAllParams();
-      if (this.requiresGraphTopologyChange(previousState, this.state, eqTopologyChanged)) await this.rebuildGraphSafely();
-    }
-    notifyStateChanged(this.getPublicState());
+  if (!preset) throw new Error('Preset not found.');
+  const previousState = this.state;
+  const hasLiveCrossfade = Boolean(this.context && this.bypassGain && this.processedGain);
+  const wasBypassed = Boolean(previousState.output?.bypass);
+
+  // WaveShaper curves, filter types and EQ topology are not sample-continuous.
+  // Move briefly to the untouched dry route before changing the live rack.
+  if (hasLiveCrossfade && !wasBypassed) {
+    this.rampGainParam(this.bypassGain.gain, 1, 0.045);
+    this.rampGainParam(this.processedGain.gain, 0, 0.035);
+    await new Promise((resolve) => setTimeout(resolve, 56));
   }
+
+  this.state = this.prepareState(applyPresetToState(this.state, preset));
+  if (this.context) {
+    const eqTopologyChanged = this.reconcileEqNodeGroups(this.state.eq);
+    const graphTopologyChanged = this.requiresGraphTopologyChange(previousState, this.state, eqTopologyChanged);
+
+    // Apply every discontinuous change while wet audio is muted. When the
+    // topology differs, reconnect inside this same protected transition.
+    this.applyAllParams();
+    if (graphTopologyChanged) this.connectGraph({ preserveCrossfade: true });
+
+    if (hasLiveCrossfade) {
+      // applyAllParams() uses an 18 ms time constant; let filters and gain
+      // stages settle before returning to the processed route.
+      await new Promise((resolve) => setTimeout(resolve, 48));
+      this.crossfadeEnhancePower(Boolean(this.state.output.bypass));
+    }
+  }
+  this.state.updatedAt = Date.now();
+  notifyStateChanged(this.getPublicState());
+}
 
   async updateState(patch) {
     const previousState = this.state;
