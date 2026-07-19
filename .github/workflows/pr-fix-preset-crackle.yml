@@ -96,8 +96,92 @@ jobs:
       - name: Validate JavaScript syntax
         run: node --check src/offscreen/offscreen.js
 
-      - name: Run repository checks
-        run: npm run check
+      - name: Check repository identity
+        id: identity
+        continue-on-error: true
+        run: node scripts/check_repository_identity.mjs
+
+      - name: Check release metadata
+        id: metadata
+        continue-on-error: true
+        run: node scripts/check_release_metadata.mjs
+
+      - name: Validate repository
+        id: validate
+        continue-on-error: true
+        run: node scripts/run-python.mjs scripts/validate.py
+
+      - name: Smoke privacy
+        id: privacy
+        continue-on-error: true
+        run: node scripts/smoke_privacy.mjs
+
+      - name: Smoke support
+        id: support
+        continue-on-error: true
+        run: node scripts/smoke_support.mjs
+
+      - name: Smoke stability
+        id: stability
+        continue-on-error: true
+        run: node scripts/smoke_stability.mjs
+
+      - name: Smoke headless
+        id: headless
+        continue-on-error: true
+        run: node scripts/smoke_headless.mjs
+
+      - name: Smoke update queue
+        id: update_queue
+        continue-on-error: true
+        run: node scripts/smoke_update_queue.mjs
+
+      - name: Smoke global state queue
+        id: global_queue
+        continue-on-error: true
+        run: node scripts/smoke_global_state_queue.mjs
+
+      - name: Smoke runtime startup
+        id: startup
+        continue-on-error: true
+        run: node scripts/smoke_runtime_startup.mjs
+
+      - name: Smoke audio route
+        id: audio_route
+        continue-on-error: true
+        run: node scripts/smoke_audio_route.mjs
+
+      - name: Smoke support prompt
+        id: support_prompt
+        continue-on-error: true
+        run: node scripts/smoke_support_prompt.mjs
+
+      - name: Smoke signature presets
+        id: signatures
+        continue-on-error: true
+        run: node scripts/smoke_signature_presets.mjs
+
+      - name: Require all repository checks
+        env:
+          RESULTS: >-
+            identity=${{ steps.identity.outcome }}
+            metadata=${{ steps.metadata.outcome }}
+            validate=${{ steps.validate.outcome }}
+            privacy=${{ steps.privacy.outcome }}
+            support=${{ steps.support.outcome }}
+            stability=${{ steps.stability.outcome }}
+            headless=${{ steps.headless.outcome }}
+            update_queue=${{ steps.update_queue.outcome }}
+            global_queue=${{ steps.global_queue.outcome }}
+            startup=${{ steps.startup.outcome }}
+            audio_route=${{ steps.audio_route.outcome }}
+            support_prompt=${{ steps.support_prompt.outcome }}
+            signatures=${{ steps.signatures.outcome }}
+        run: |
+          echo "$RESULTS"
+          if echo "$RESULTS" | grep -q '=failure'; then
+            exit 1
+          fi
 
       - name: Commit engine fix to PR branch
         run: |
