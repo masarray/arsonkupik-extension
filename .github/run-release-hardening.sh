@@ -95,8 +95,10 @@ run_check localization node scripts/smoke_i18n.mjs
 run_check release_check npm run release:check
 run_check webstore_package npm run package
 
+# The workflow token cannot modify files under .github/workflows. Keep those
+# paths unchanged for this push; the GitHub connector updates/deletes them next.
+git checkout HEAD -- .github/workflows/validate.yml
 rm -f .github/release-hardening.payload
-rm -f .github/workflows/apply-release-hardening-once.yml
 rm -f .github/run-release-hardening.sh
 
 git config user.name "github-actions[bot]"
