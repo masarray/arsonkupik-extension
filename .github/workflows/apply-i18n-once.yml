@@ -1,11 +1,6 @@
 name: Apply bilingual localization patch once
 
 on:
-  push:
-    branches:
-      - agent/i18n-popup-studio
-    paths:
-      - .github/i18n-trigger.txt
   pull_request:
     branches:
       - main
@@ -20,35 +15,28 @@ permissions:
 jobs:
   apply-i18n:
     runs-on: ubuntu-latest
+    env:
+      TARGET_BRANCH: agent/i18n-popup-studio
     steps:
-      - name: Checkout localization branch
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
-        with:
-          ref: agent/i18n-popup-studio
-          fetch-depth: 0
-
-      - name: Apply localization files
+      - name: Apply, validate, and commit localization
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
+          git clone -q "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" repo
+          cd repo
+          git checkout -q "$TARGET_BRANCH"
           cat .github/i18n-patch.part-* | base64 --decode | tar -xJf -
           rm -f .github/i18n-trigger.txt .github/i18n-patch.part-*
-
-      - name: Validate repository
-        run: |
           if ! npm run check > /tmp/i18n-check.log 2>&1; then
             echo "Repository validation failed. Tail follows:"
             tail -n 120 /tmp/i18n-check.log
             exit 1
           fi
           tail -n 20 /tmp/i18n-check.log
-
-      - name: Commit localization
-        run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
-          if git diff --cached --quiet; then
-            echo "No localization changes to commit"
-          else
+          if ! git diff --cached --quiet; then
             git commit -m "Add Indonesian and English Popup and Studio localization"
-            git push origin HEAD:agent/i18n-popup-studio
+            git push -q origin HEAD:"$TARGET_BRANCH"
           fi
