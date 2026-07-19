@@ -37,14 +37,13 @@ await Promise.all([before, barrier, after]);
 assert.deepEqual(sequence, ['before', 'preset', 'after'], 'commands must be ordered between patch groups');
 
 const latestSequence = [];
-const latestScheduler = createStateCommandScheduler(async () => ({ ok: true }), {
-  patchDebounceMs: 0,
-  latestCommandDebounceMs: 18
-});
-const latestA = latestScheduler.enqueueLatestCommand('apply-preset', async () => {
+const releases = [];
+const latestScheduler = createStateCommandScheduler(async () => ({ ok: true }), { patchDebounceMs: 0 });
+const latestA = latestScheduler.enqueueLatestCommand('apply-preset', () => new Promise((resolve) => {
   latestSequence.push('preset-a');
-  return { ok: true, presetId: 'preset-a' };
-});
+  releases.push(() => resolve({ ok: true, presetId: 'preset-a' }));
+}));
+await new Promise(setImmediate);
 const latestB = latestScheduler.enqueueLatestCommand('apply-preset', async () => {
   latestSequence.push('preset-b');
   return { ok: true, presetId: 'preset-b' };
@@ -53,15 +52,14 @@ const latestC = latestScheduler.enqueueLatestCommand('apply-preset', async () =>
   latestSequence.push('preset-c');
   return { ok: true, presetId: 'preset-c' };
 });
+assert.deepEqual(latestSequence, ['preset-a'], 'the in-flight preset may finish without a service-worker timer');
+releases.shift()();
 const latestResults = await Promise.all([latestA, latestB, latestC]);
-assert.deepEqual(latestSequence, ['preset-c'], 'rapid pending presets must execute only the newest selection');
-assert.deepEqual(latestResults.map((result) => result.presetId), ['preset-c', 'preset-c', 'preset-c']);
+assert.deepEqual(latestSequence, ['preset-a', 'preset-c'], 'obsolete pending presets must collapse to the newest selection');
+assert.deepEqual(latestResults.map((result) => result.presetId), ['preset-a', 'preset-c', 'preset-c']);
 
 const barrierSequence = [];
-const latestBarrierScheduler = createStateCommandScheduler(async () => ({ ok: true }), {
-  patchDebounceMs: 0,
-  latestCommandDebounceMs: 8
-});
+const latestBarrierScheduler = createStateCommandScheduler(async () => ({ ok: true }), { patchDebounceMs: 0 });
 const firstLatest = latestBarrierScheduler.enqueueLatestCommand('apply-preset', async () => {
   barrierSequence.push('first-latest');
   return { ok: true };
@@ -77,10 +75,7 @@ const secondLatest = latestBarrierScheduler.enqueueLatestCommand('apply-preset',
 await Promise.all([firstLatest, hardBarrier, secondLatest]);
 assert.deepEqual(barrierSequence, ['first-latest', 'barrier', 'second-latest'], 'latest commands must not cross command barriers');
 
-const failureScheduler = createStateCommandScheduler(async () => ({ ok: true }), {
-  patchDebounceMs: 0,
-  latestCommandDebounceMs: 8
-});
+const failureScheduler = createStateCommandScheduler(async () => ({ ok: true }), { patchDebounceMs: 0 });
 const failedA = failureScheduler.enqueueLatestCommand('apply-preset', async () => ({ ok: true }));
 const failedB = failureScheduler.enqueueLatestCommand('apply-preset', async () => {
   throw new Error('preset engine rejected');
@@ -89,7 +84,12 @@ await assert.rejects(Promise.all([failedA, failedB]), /preset engine rejected/);
 
 const root = path.resolve(import.meta.dirname, '..');
 const worker = fs.readFileSync(path.join(root, 'src/background/service-worker.js'), 'utf8');
+const schedulerSource = fs.readFileSync(path.join(root, 'src/shared/state-command-scheduler.js'), 'utf8');
+const messaging = fs.readFileSync(path.join(root, 'src/shared/messaging.js'), 'utf8');
 assert.match(worker, /enqueueLatestCommand\(\s*'apply-preset'/, 'background must coalesce rapid preset requests');
+assert.doesNotMatch(schedulerSource, /latestCommandDebounceMs|entry\.debounceMs/, 'service-worker latest commands must not depend on timers');
+assert.match(messaging, /DEFAULT_MESSAGE_TIMEOUT_MS/);
+assert.match(messaging, /type:\s*'GET_STATE'\s*\},\s*\{ timeoutMs:\s*4000 \}/);
 const applyPresetStart = worker.indexOf('async function applyPresetCommand(');
 const applyPresetEnd = worker.indexOf('\nasync function updateStateCommand(', applyPresetStart);
 assert.ok(applyPresetStart > 0 && applyPresetEnd > applyPresetStart, 'preset command implementation must be discoverable');
