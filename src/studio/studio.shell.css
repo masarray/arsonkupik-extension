@@ -428,3 +428,6 @@ html, body {
   background: rgba(255,146,194,.06);
   box-shadow: 0 0 18px -10px rgba(255,146,194,.8);
 }
+
+.topbar-language-select{width:auto;min-width:112px;height:30px;border-radius:999px;font-size:10.5px;padding-left:10px;}
+@media (max-width:760px){.topbar-language-select{min-width:105px;}}
