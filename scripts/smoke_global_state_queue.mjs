@@ -36,7 +36,6 @@ const after = orderedScheduler.enqueuePatch({ width: { mid: 1.3 } });
 await Promise.all([before, barrier, after]);
 assert.deepEqual(sequence, ['before', 'preset', 'after'], 'commands must be ordered between patch groups');
 
-
 const latestSequence = [];
 const latestScheduler = createStateCommandScheduler(async () => ({ ok: true }), {
   patchDebounceMs: 0,
