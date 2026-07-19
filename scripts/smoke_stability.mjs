@@ -35,6 +35,20 @@ assert.match(offscreen, /requiresGraphTopologyChange/);
 assert.doesNotMatch(offscreen, /\|\|\s*Boolean\(patch\.eq\)/);
 assert.doesNotMatch(offscreen, /if \(patch\.eq && this\.context\) this\.eqNodeGroups =/);
 
+// P0 preset-transition regression checks: every discontinuous rack mutation is
+// protected by a dry-route crossfade, adaptive steering pauses during the
+// transition, and the adaptive loop never swaps WaveShaper curves live.
+assert.match(offscreen, /runProtectedAudioMutation/);
+assert.match(offscreen, /statePatchNeedsProtectedTransition/);
+assert.match(offscreen, /this\.audioTransitionActive = true;[\s\S]*this\.stopAdaptiveAudioLoop\(\)/);
+assert.match(offscreen, /applyAllParams\(\{ updateCurves: true \}\)/);
+assert.match(offscreen, /if \(this\.audioTransitionActive\) return this\.state\.meters;/);
+const adaptiveStart = offscreen.indexOf('  runAdaptiveAudioFrame(');
+const adaptiveEnd = offscreen.indexOf('  computeMeters(', adaptiveStart);
+assert.ok(adaptiveStart > 0 && adaptiveEnd > adaptiveStart, 'adaptive runtime section must be discoverable');
+const adaptiveRuntime = offscreen.slice(adaptiveStart, adaptiveEnd);
+assert.doesNotMatch(adaptiveRuntime, /(?:aiSilkShaper|aiEdgeShaper)\.curve\s*=/);
+
 const worker = read('src/background/service-worker.js');
 assert.match(worker, /migratePerformanceForStability/);
 assert.match(worker, /STABILITY_REVISION/);
