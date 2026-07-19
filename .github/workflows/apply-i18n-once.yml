@@ -29,10 +29,10 @@ jobs:
           rm -f .github/i18n-trigger.txt .github/i18n-patch.part-*
           if ! npm run check > /tmp/i18n-check.log 2>&1; then
             echo "Repository validation failed. Tail follows:"
-            tail -n 120 /tmp/i18n-check.log
+            tail -n 35 /tmp/i18n-check.log
             exit 1
           fi
-          tail -n 20 /tmp/i18n-check.log
+          tail -n 15 /tmp/i18n-check.log
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
