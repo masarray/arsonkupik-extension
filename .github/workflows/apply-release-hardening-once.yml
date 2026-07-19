@@ -71,14 +71,14 @@ jobs:
 
           if ! npm run check > /tmp/release-check.log 2>&1; then
             echo "Release check failed. Focused diagnostics:"
-            grep -E "passed|AssertionError|ERR_ASSERTION|Error:|does not|must |missing|Expected|actual:|expected:" /tmp/release-check.log | tail -n 35 || true
+            grep -E "passed\.|AssertionError|ERR_ASSERTION|at file:" /tmp/release-check.log | tail -n 25 || true
             exit 1
           fi
           tail -n 12 /tmp/release-check.log
 
           if ! npm run package > /tmp/release-package.log 2>&1; then
             echo "Release package validation failed. Focused diagnostics:"
-            grep -E "ERROR|Error|failed|missing|must |invalid|unsafe|forbidden" /tmp/release-package.log | tail -n 35 || true
+            grep -E "ERROR|Error|failed|missing|invalid|unsafe|forbidden" /tmp/release-package.log | tail -n 25 || true
             exit 1
           fi
           cat /tmp/release-package.log
