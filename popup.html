@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-i18n-title="popup_document_title">
 <head>
   <link id="arDynamicFavicon" rel="icon" type="image/png" sizes="32x32" href="icons/icon-32.png">
   <link rel="shortcut icon" href="icons/favicon.ico">
@@ -12,106 +12,112 @@
   <main class="popup-shell">
     <header class="topbar">
       <div>
-        <div class="eyebrow">Browser Mastering</div>
+        <div class="eyebrow" data-i18n="browser_mastering">Browser Mastering</div>
         <h1><span class="brand-arson">ArSon</span><span class="brand-kupik">KuPik</span></h1>
       </div>
-      <span id="statusDot" class="status-dot" title="Engine status"></span>
+      <div class="topbar-actions">
+        <select id="languageSelect" class="language-select" aria-label="Language" title="Language">
+          <option value="id">Bahasa Indonesia</option>
+          <option value="en">English</option>
+        </select>
+        <span id="statusDot" class="status-dot" title="Engine status" data-i18n-title="engine_status"></span>
+      </div>
     </header>
 
     <section id="privacyNotice" class="privacy-notice" aria-labelledby="privacyNoticeTitle" hidden>
-      <span class="privacy-kicker">Before first use</span>
-      <h2 id="privacyNoticeTitle">Local-processing privacy notice</h2>
-      <p>Tab audio is processed only on this device and is never recorded or uploaded. When per-site preferences are used, the current site hostname may be stored locally in this Chrome profile.</p>
+      <span class="privacy-kicker" data-i18n="before_first_use">Before first use</span>
+      <h2 id="privacyNoticeTitle" data-i18n="privacy_notice_title">Local-processing privacy notice</h2>
+      <p data-i18n="privacy_notice_body">Tab audio is processed only on this device and is never recorded or uploaded. When per-site preferences are used, the current site hostname may be stored locally in this Chrome profile.</p>
       <div class="privacy-notice-actions">
-        <button id="acceptPrivacyButton" class="primary-button" type="button">Accept &amp; Continue</button>
-        <button id="privacyPolicyNoticeButton" class="text-button" type="button">Read privacy policy</button>
+        <button id="acceptPrivacyButton" class="primary-button" type="button" data-i18n="accept_continue">Accept &amp; Continue</button>
+        <button id="privacyPolicyNoticeButton" class="text-button" type="button" data-i18n="read_privacy_policy">Read privacy policy</button>
       </div>
     </section>
 
     <section class="source-card">
       <div class="source-head-row">
-        <span class="label">Source</span>
-        <span id="sourceStatePill" class="source-state-pill idle">Idle</span>
+        <span class="label" data-i18n="source">Source</span>
+        <span id="sourceStatePill" class="source-state-pill idle" data-i18n="idle">Idle</span>
       </div>
       <div class="source-meta">
-        <strong id="sourceTitle">No active capture</strong>
+        <strong id="sourceTitle" data-i18n="no_active_capture">No active capture</strong>
       </div>
-      <button id="startStopButton" class="primary-button" type="button">Start Enhance</button>
-      <p id="hintText" class="hint" aria-live="polite">Audio is processed locally. No recording, no upload.</p>
+      <button id="startStopButton" class="primary-button" type="button" data-i18n="start_enhance">Start Enhance</button>
+      <p id="hintText" class="hint" aria-live="polite" data-i18n="local_audio_hint">Audio is processed locally. No recording, no upload.</p>
     </section>
 
     <section class="panel">
       <div class="panel-title-row">
-        <span>Quick preset</span>
+        <span data-i18n="quick_preset">Quick preset</span>
       </div>
       <div class="preset-select-row">
-        <select id="presetSelect" aria-label="Master preset"></select>
+        <select id="presetSelect" aria-label="Master preset" data-i18n-aria-label="master_preset"></select>
       </div>
     </section>
 
     <section class="compact-controls">
       <label class="slider-row" hidden>
-        <span>Output</span>
+        <span data-i18n="output">Output</span>
         <output id="outputGainValue">0.0 dB</output>
         <input id="outputGain" min="-18" max="12" step="0.1" value="0.5" type="range">
       </label>
       <label class="switch-row" hidden>
-        <span>Limiter safety</span>
+        <span data-i18n="limiter_safety">Limiter safety</span>
         <input id="limiterToggle" type="checkbox" checked>
       </label>
 
       <details class="privacy-data-controls">
-        <summary>Privacy &amp; local data</summary>
-        <p id="localDataSummary">No site preferences stored.</p>
+        <summary data-i18n="privacy_local_data">Privacy &amp; local data</summary>
+        <p id="localDataSummary" data-i18n="no_site_preferences">No site preferences stored.</p>
         <div class="privacy-data-actions">
-          <button id="clearSitePreferencesButton" class="secondary-button" type="button">Clear Site Preferences</button>
-          <button id="resetAllLocalDataButton" class="secondary-button danger-outline" type="button">Reset All Local Data</button>
-          <button id="privacyPolicyDataButton" class="text-button" type="button">Privacy policy</button>
+          <button id="clearSitePreferencesButton" class="secondary-button" type="button" data-i18n="clear_site_preferences">Clear Site Preferences</button>
+          <button id="resetAllLocalDataButton" class="secondary-button danger-outline" type="button" data-i18n="reset_all_local_data">Reset All Local Data</button>
+          <button id="privacyPolicyDataButton" class="text-button" type="button" data-i18n="privacy_policy">Privacy policy</button>
         </div>
       </details>
     </section>
 
-    <button id="openStudioButton" class="studio-button" type="button">Open Studio Panel</button>
+    <button id="openStudioButton" class="studio-button" type="button" data-i18n="open_studio_panel">Open Studio Panel</button>
 
-    <footer class="popup-support" aria-label="Support ArSonKuPik development">
+    <footer class="popup-support" aria-label="Support ArSonKuPik development" data-i18n-aria-label="support_via_qris">
       <button id="supportDevelopmentButton" class="support-development-button" type="button">
-        <span aria-hidden="true">♡</span> Support ArSonKuPik
+        <span aria-hidden="true">♡</span> <span data-i18n="support_development">Support ArSonKuPik</span>
       </button>
-      <span>Optional · QRIS Indonesia</span>
+      <span data-i18n="support_footer_note">Optional · QRIS Indonesia</span>
     </footer>
   </main>
 
   <div id="supportModal" class="support-modal" hidden aria-hidden="true">
-    <button id="supportModalBackdrop" class="support-modal-backdrop" type="button" aria-label="Close support dialog"></button>
+    <button id="supportModalBackdrop" class="support-modal-backdrop" type="button" aria-label="Close support dialog" data-i18n-aria-label="close_support_dialog"></button>
     <section class="support-modal-card" role="dialog" aria-modal="true" aria-labelledby="supportModalTitle" aria-describedby="supportModalDescription">
-      <button id="supportModalCloseButton" class="support-modal-close" type="button" aria-label="Close support dialog">×</button>
-      <span class="support-modal-kicker">Optional support · QRIS Indonesia</span>
-      <h2 id="supportModalTitle">Support SonkuPik development</h2>
-      <p id="supportModalDescription">ArSonKuPik stays fully functional and free. After 90 days of use, this optional reminder helps fund continued DSP development, testing, and support.</p>
+      <button id="supportModalCloseButton" class="support-modal-close" type="button" aria-label="Close support dialog" data-i18n-aria-label="close_support_dialog">×</button>
+      <span class="support-modal-kicker" data-i18n="support_kicker">Optional support · QRIS Indonesia</span>
+      <h2 id="supportModalTitle" data-i18n="support_title">Support SonkuPik development</h2>
+      <p id="supportModalDescription" data-i18n="support_description">ArSonKuPik stays fully functional and free. After 90 days of use, this optional reminder helps fund continued DSP development, testing, and support.</p>
       <div class="support-qris-frame">
-        <img id="supportQrisImage" src="src/popup/qris-support.svg" width="280" height="306" alt="Static QRIS for voluntary SonkuPik support">
+        <img id="supportQrisImage" src="src/popup/qris-support.svg" width="280" height="306" alt="Static QRIS for voluntary SonkuPik support" data-i18n-alt="support_qris_alt">
       </div>
       <div class="support-merchant">
         <strong>SonkuPik, Audio Developer</strong>
         <span>NMID ID1026551401775 · Bogor</span>
       </div>
-      <p class="support-local-note">Payments are not tracked by the extension. “I’ve supported” only hides this reminder on the current Chrome profile.</p>
-      <button id="supportContinueStudioButton" class="primary-button support-continue-studio" type="button" hidden>Continue to Studio</button>
+      <p class="support-local-note" data-i18n="support_local_note">Payments are not tracked by the extension. “I’ve supported” only hides this reminder on the current Chrome profile.</p>
+      <button id="supportContinueStudioButton" class="primary-button support-continue-studio" type="button" hidden data-i18n="continue_to_studio">Continue to Studio</button>
       <div class="support-modal-actions">
-        <button id="supportLaterButton" class="secondary-button" type="button">Remind me in 30 days</button>
-        <button id="supportConfirmedButton" class="primary-button" type="button">I’ve supported</button>
+        <button id="supportLaterButton" class="secondary-button" type="button" data-i18n="remind_30_days">Remind me in 30 days</button>
+        <button id="supportConfirmedButton" class="primary-button" type="button" data-i18n="ive_supported">I’ve supported</button>
       </div>
-      <button id="supportPageButton" class="text-button support-page-button" type="button">Open full support page</button>
+      <button id="supportPageButton" class="text-button support-page-button" type="button" data-i18n="open_full_support_page">Open full support page</button>
     </section>
   </div>
 
   <div id="soundModeToast" class="sound-mode-toast" hidden aria-live="polite" aria-atomic="true">
     <div class="sound-mode-card">
-      <span class="sound-mode-kicker">Sound Enhancer</span>
-      <strong id="soundModeToastStatus" class="sound-mode-status">Active</strong>
+      <span class="sound-mode-kicker" data-i18n="sound_enhancer">Sound Enhancer</span>
+      <strong id="soundModeToastStatus" class="sound-mode-status" data-i18n="active">Active</strong>
     </div>
   </div>
 
-  <script type="module" src="src/popup/popup.js"></script>
+  <script type="module" src="src/popup/popup-bootstrap.js"></script>
 </body>
 </html>

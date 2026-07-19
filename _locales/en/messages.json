@@ -1,0 +1,725 @@
+{
+  "extension_name": {
+    "message": "ArSonKuPik"
+  },
+  "extension_description": {
+    "message": "Professional local browser audio enhancer with parametric EQ, dynamics, harmonics, stereo width, and limiting."
+  },
+  "extension_action_title": {
+    "message": "ArSonKuPik Sound Enhancer"
+  },
+  "popup_document_title": {
+    "message": "ArSonKuPik"
+  },
+  "studio_document_title": {
+    "message": "ArSonKuPik Studio"
+  },
+  "studio_document_title_active": {
+    "message": "ArSonKuPik Studio · Active"
+  },
+  "language_label": {
+    "message": "Language"
+  },
+  "browser_mastering": {
+    "message": "Browser Mastering"
+  },
+  "engine_status": {
+    "message": "Engine status"
+  },
+  "before_first_use": {
+    "message": "Before first use"
+  },
+  "privacy_notice_title": {
+    "message": "Local-processing privacy notice"
+  },
+  "privacy_notice_body": {
+    "message": "Tab audio is processed only on this device and is never recorded or uploaded. When per-site preferences are used, the current site hostname may be stored locally in this Chrome profile."
+  },
+  "accept_continue": {
+    "message": "Accept & Continue"
+  },
+  "read_privacy_policy": {
+    "message": "Read privacy policy"
+  },
+  "source": {
+    "message": "Source"
+  },
+  "idle": {
+    "message": "Idle"
+  },
+  "ready_here": {
+    "message": "Ready Here"
+  },
+  "bypass": {
+    "message": "Bypass"
+  },
+  "active": {
+    "message": "Active"
+  },
+  "disabled": {
+    "message": "Disabled"
+  },
+  "no_active_capture": {
+    "message": "No active capture"
+  },
+  "start_enhance": {
+    "message": "Start Enhance"
+  },
+  "enhance_this_tab": {
+    "message": "Enhance This Tab"
+  },
+  "enhance_on": {
+    "message": "Enhance On"
+  },
+  "enhance_off": {
+    "message": "Enhance Off"
+  },
+  "local_audio_hint": {
+    "message": "Audio is processed locally. No recording, no upload."
+  },
+  "quick_preset": {
+    "message": "Quick preset"
+  },
+  "master_preset": {
+    "message": "Master preset"
+  },
+  "output": {
+    "message": "Output"
+  },
+  "input": {
+    "message": "Input"
+  },
+  "limiter_safety": {
+    "message": "Limiter safety"
+  },
+  "privacy_local_data": {
+    "message": "Privacy & local data"
+  },
+  "no_site_preferences": {
+    "message": "No site preferences stored."
+  },
+  "clear_site_preferences": {
+    "message": "Clear Site Preferences"
+  },
+  "reset_all_local_data": {
+    "message": "Reset All Local Data"
+  },
+  "privacy_policy": {
+    "message": "Privacy policy"
+  },
+  "open_studio_panel": {
+    "message": "Open Studio Panel"
+  },
+  "support_development": {
+    "message": "Support ArSonKuPik"
+  },
+  "support_footer_note": {
+    "message": "Optional · QRIS Indonesia"
+  },
+  "close_support_dialog": {
+    "message": "Close support dialog"
+  },
+  "support_kicker": {
+    "message": "Optional support · QRIS Indonesia"
+  },
+  "support_title": {
+    "message": "Support SonkuPik development"
+  },
+  "support_title_before_studio": {
+    "message": "Support SonkuPik before Studio"
+  },
+  "support_description": {
+    "message": "ArSonKuPik stays fully functional and free. After 90 days of use, this optional reminder helps fund continued DSP development, testing, and support."
+  },
+  "support_description_before_studio": {
+    "message": "Studio remains fully free. Scan QRIS only when you would like to support continued DSP development, then continue immediately."
+  },
+  "support_qris_alt": {
+    "message": "Static QRIS for voluntary SonkuPik support"
+  },
+  "support_local_note": {
+    "message": "Payments are not tracked by the extension. “I’ve supported” only hides this reminder on the current Chrome profile."
+  },
+  "continue_to_studio": {
+    "message": "Continue to Studio"
+  },
+  "remind_30_days": {
+    "message": "Remind me in 30 days"
+  },
+  "ive_supported": {
+    "message": "I’ve supported"
+  },
+  "open_full_support_page": {
+    "message": "Open full support page"
+  },
+  "sound_enhancer": {
+    "message": "Sound Enhancer"
+  },
+  "accept_privacy_first": {
+    "message": "Accept the local-processing privacy notice before starting audio enhancement."
+  },
+  "moving_capture": {
+    "message": "Moving capture to this active tab…"
+  },
+  "releasing_capture": {
+    "message": "Releasing tab capture…"
+  },
+  "switching_power": {
+    "message": "Switching enhance power without reopening YouTube audio…"
+  },
+  "starting_capture": {
+    "message": "Starting capture for this tab…"
+  },
+  "command_failed": {
+    "message": "Command failed"
+  },
+  "privacy_accepted": {
+    "message": "Privacy notice accepted. Audio remains local to this device."
+  },
+  "privacy_save_failed": {
+    "message": "Unable to save privacy consent."
+  },
+  "confirm_clear_sites": {
+    "message": "Clear all saved per-site enhancement preferences? Custom presets will be kept."
+  },
+  "sites_cleared": {
+    "message": "Saved site preferences cleared. Custom presets were kept."
+  },
+  "sites_clear_failed": {
+    "message": "Unable to clear site preferences."
+  },
+  "confirm_reset_data": {
+    "message": "Reset all ArSonKuPik local data? This removes custom presets, settings, site preferences, and privacy consent."
+  },
+  "data_reset": {
+    "message": "All local data was reset. Review the privacy notice before using audio enhancement again."
+  },
+  "data_reset_failed": {
+    "message": "Unable to reset local data."
+  },
+  "support_thanks": {
+    "message": "Thank you for supporting SonkuPik. This reminder is disabled on this Chrome profile."
+  },
+  "reactivating_chain": {
+    "message": "Reactivating mastering chain…"
+  },
+  "enhance_kept_warm": {
+    "message": "Enhance off. Capture kept warm so YouTube does not renegotiate playback."
+  },
+  "enhance_reusing_capture": {
+    "message": "Enhance on. Reusing the same capture stream."
+  },
+  "active_another_tab": {
+    "message": "Enhance active on another tab{{domain}}"
+  },
+  "attach_current_title": {
+    "message": "Attach ArSonKuPik to the current active tab and release the previous capture stream."
+  },
+  "active_button_title": {
+    "message": "Click toggles mastering bypass without reopening capture. Shift-click releases tab capture fully."
+  },
+  "start_button_title": {
+    "message": "Start local tab capture and audio enhancement."
+  },
+  "accept_button_title": {
+    "message": "Accept the local-processing privacy notice before starting."
+  },
+  "another_tab_hint_remembered": {
+    "message": "Enhance is attached to another tab; {{domain}} is remembered. Click Enhance This Tab to move it here."
+  },
+  "another_tab_hint": {
+    "message": "Enhance is attached to another tab. Click Enhance This Tab to move it here."
+  },
+  "warm_capture_hint": {
+    "message": "Enhance is off but capture is kept warm to avoid YouTube buffering."
+  },
+  "enhancing_locally": {
+    "message": "Enhancing this tab locally."
+  },
+  "remembered_domain_hint": {
+    "message": "Enhancer remembered for {{domain}}. Click Start Enhance to attach this tab."
+  },
+  "local_data_summary": {
+    "message": "{{sites}} site preference{{siteSuffix}} · {{presets}} custom preset{{presetSuffix}} stored locally."
+  },
+  "mastering_chain": {
+    "message": "Mastering Chain"
+  },
+  "undo": {
+    "message": "Undo"
+  },
+  "redo": {
+    "message": "Redo"
+  },
+  "support_via_qris": {
+    "message": "Support ArSonKuPik development via QRIS"
+  },
+  "engine_quality_stable": {
+    "message": "Engine quality: STABLE"
+  },
+  "eco": {
+    "message": "Eco"
+  },
+  "turbo": {
+    "message": "Turbo"
+  },
+  "stable": {
+    "message": "STABLE"
+  },
+  "chain": {
+    "message": "Chain"
+  },
+  "signal_flow": {
+    "message": "Signal flow"
+  },
+  "active_mastering_chain": {
+    "message": "Active mastering chain"
+  },
+  "hardware_guide": {
+    "message": "Hardware Guide"
+  },
+  "open_hardware_guide": {
+    "message": "Open audio hardware guide"
+  },
+  "master": {
+    "message": "Master"
+  },
+  "reset_preset_title": {
+    "message": "Reset to Mas Ari Signature preset"
+  },
+  "reset_preset": {
+    "message": "Reset preset"
+  },
+  "save_custom_preset": {
+    "message": "Save custom preset"
+  },
+  "save_preset": {
+    "message": "Save preset"
+  },
+  "master_fx_active": {
+    "message": "Master FX active — click to bypass all FX"
+  },
+  "precision_parametric": {
+    "message": "Precision parametric"
+  },
+  "equalizer": {
+    "message": "Equalizer"
+  },
+  "preset": {
+    "message": "Preset"
+  },
+  "spectrum": {
+    "message": "Spectrum"
+  },
+  "input_spectrum": {
+    "message": "Input spectrum before processing"
+  },
+  "output_spectrum": {
+    "message": "Output spectrum after processing"
+  },
+  "bypass_eq": {
+    "message": "Bypass EQ"
+  },
+  "eq_graph": {
+    "message": "Interactive parametric equalizer graph"
+  },
+  "global_input_meter": {
+    "message": "Global input audio stereo level meter"
+  },
+  "global_output_meter": {
+    "message": "Global output audio stereo level meter"
+  },
+  "no_band_selected": {
+    "message": "No band selected — double-click the display to add one"
+  },
+  "compressor": {
+    "message": "Compressor"
+  },
+  "bypass_compressor": {
+    "message": "Bypass compressor"
+  },
+  "compressor_curve": {
+    "message": "Compressor transfer curve"
+  },
+  "compressor_curve_meter": {
+    "message": "Compressor transfer curve with linked stereo gain reduction meter"
+  },
+  "compressor_gr_meter": {
+    "message": "Compressor gain reduction meter"
+  },
+  "color_harmonics": {
+    "message": "Color · Harmonics"
+  },
+  "clean": {
+    "message": "Clean"
+  },
+  "warm": {
+    "message": "Warm"
+  },
+  "modern": {
+    "message": "Modern"
+  },
+  "mastering": {
+    "message": "Mastering"
+  },
+  "bypass_color": {
+    "message": "Bypass color"
+  },
+  "harmonic_visualizer": {
+    "message": "Harmonic saturation visualizer"
+  },
+  "stereo_width": {
+    "message": "Stereo Width"
+  },
+  "bypass_width": {
+    "message": "Bypass width"
+  },
+  "stereo_width_visualizer": {
+    "message": "Stereo width field visualizer"
+  },
+  "low": {
+    "message": "Low"
+  },
+  "mid": {
+    "message": "Mid"
+  },
+  "high": {
+    "message": "High"
+  },
+  "low_mid": {
+    "message": "Low-Mid"
+  },
+  "three_band_correlation": {
+    "message": "3-band stereo correlation"
+  },
+  "limiter": {
+    "message": "Limiter"
+  },
+  "bypass_limiter": {
+    "message": "Bypass limiter"
+  },
+  "limiter_meters": {
+    "message": "Limiter input and output stereo meters"
+  },
+  "input_stereo_level": {
+    "message": "Input stereo level"
+  },
+  "output_stereo_level": {
+    "message": "Output stereo level"
+  },
+  "target_gr_note": {
+    "message": "Target GR 0–3 dB · warning above 6 dB"
+  },
+  "hint_double_click": {
+    "message": "add / remove band"
+  },
+  "hint_drag": {
+    "message": "freq / gain"
+  },
+  "hint_wheel": {
+    "message": "Q · slope"
+  },
+  "hint_ctrl_drag": {
+    "message": "Q"
+  },
+  "hint_shift": {
+    "message": "fine-tune"
+  },
+  "hint_alt_click": {
+    "message": "bypass band"
+  },
+  "hint_right_click": {
+    "message": "menu"
+  },
+  "double_click": {
+    "message": "Double-click"
+  },
+  "drag": {
+    "message": "Drag"
+  },
+  "wheel": {
+    "message": "Wheel"
+  },
+  "ctrl_drag": {
+    "message": "Ctrl-drag"
+  },
+  "shift": {
+    "message": "Shift"
+  },
+  "alt_click": {
+    "message": "Alt-click"
+  },
+  "right_click": {
+    "message": "Right-click"
+  },
+  "close_hardware_guide": {
+    "message": "Close audio hardware guide"
+  },
+  "independent_guidance": {
+    "message": "Independent editorial guidance"
+  },
+  "hardware_guide_title": {
+    "message": "Choose an interface that preserves the mastering chain."
+  },
+  "hardware_guide_lead": {
+    "message": "For reliable external playback, prioritize stable drivers and clean conversion over marketing features."
+  },
+  "driver_stability": {
+    "message": "Driver stability"
+  },
+  "driver_stability_desc": {
+    "message": "Native WASAPI support, dependable reconnect behavior, and current manufacturer drivers."
+  },
+  "clean_conversion": {
+    "message": "Clean conversion"
+  },
+  "clean_conversion_desc": {
+    "message": "24-bit playback, low output noise, and enough headroom for dynamic material."
+  },
+  "practical_io": {
+    "message": "Practical I/O"
+  },
+  "practical_io_desc": {
+    "message": "Balanced outputs for monitors, a dedicated headphone path, and physical level control."
+  },
+  "routing_support": {
+    "message": "Routing support"
+  },
+  "routing_support_desc": {
+    "message": "Use System Default when browser output selection is unavailable; ArSonKuPik never requests microphone access for speaker routing."
+  },
+  "hardware_disclosure": {
+    "message": "Not sponsored. No affiliate links. No third-party product image or endorsement is bundled with ArSonKuPik."
+  },
+  "save_custom_preset_title": {
+    "message": "Save custom preset"
+  },
+  "save_custom_preset_desc": {
+    "message": "Current EQ, compressor, color, width and limiter settings will be saved locally."
+  },
+  "preset_name": {
+    "message": "Preset name"
+  },
+  "cancel": {
+    "message": "Cancel"
+  },
+  "save": {
+    "message": "Save"
+  },
+  "attaching": {
+    "message": "Attaching…"
+  },
+  "stopping": {
+    "message": "Stopping…"
+  },
+  "bypassing": {
+    "message": "Bypassing…"
+  },
+  "starting": {
+    "message": "Starting…"
+  },
+  "start_failed": {
+    "message": "Start failed"
+  },
+  "support_open_failed": {
+    "message": "Unable to open support page"
+  },
+  "click_toggle_module": {
+    "message": "Click to bypass or enable this module."
+  },
+  "attach_studio_title": {
+    "message": "Attach Studio to its source tab and release the previous capture stream."
+  },
+  "ab_compare_title": {
+    "message": "A/B compare — active slot {{slot}}. Click to snapshot this slot and switch."
+  },
+  "ab_compare_aria": {
+    "message": "A/B compare active slot {{slot}}. Toggle between temporary A and B snapshots."
+  },
+  "performance_stable_desc": {
+    "message": "STABLE: conservative analysis and maximum playback reliability"
+  },
+  "performance_turbo_desc": {
+    "message": "TURBO: adaptive processing with higher analysis activity"
+  },
+  "performance_eco_desc": {
+    "message": "ECO: lighter audio graph and minimum background activity"
+  },
+  "performance_cycle": {
+    "message": "{{description}}. Click to cycle mode."
+  },
+  "master_bypass_active": {
+    "message": "Master FX active — click to bypass all FX"
+  },
+  "master_bypass_bypassed": {
+    "message": "Master FX bypassed — click to enable all FX"
+  },
+  "custom": {
+    "message": "Custom"
+  },
+  "manual": {
+    "message": "Manual"
+  },
+  "enabled": {
+    "message": "Enabled"
+  },
+  "bypassed": {
+    "message": "Bypassed"
+  },
+  "enable_band": {
+    "message": "Enable band"
+  },
+  "bypass_band": {
+    "message": "Bypass band"
+  },
+  "delete_band": {
+    "message": "Delete band"
+  },
+  "click_bypass_module": {
+    "message": "Click to bypass this module"
+  },
+  "click_enable_module": {
+    "message": "Click to enable this module"
+  },
+  "clip_risk": {
+    "message": "Clip risk"
+  },
+  "auto_headroom_title": {
+    "message": "Auto headroom {{headroom}} dB · restore +{{makeup}} dB"
+  },
+  "low_cut": {
+    "message": "Low cut"
+  },
+  "low_shelf": {
+    "message": "Low shelf"
+  },
+  "bell": {
+    "message": "Bell"
+  },
+  "notch": {
+    "message": "Notch"
+  },
+  "high_shelf": {
+    "message": "High shelf"
+  },
+  "high_cut": {
+    "message": "High cut"
+  },
+  "threshold": {
+    "message": "Threshold"
+  },
+  "ratio": {
+    "message": "Ratio"
+  },
+  "attack": {
+    "message": "Attack"
+  },
+  "release": {
+    "message": "Release"
+  },
+  "knee": {
+    "message": "Knee"
+  },
+  "makeup": {
+    "message": "Makeup"
+  },
+  "drive": {
+    "message": "Drive"
+  },
+  "body": {
+    "message": "Body"
+  },
+  "warmth": {
+    "message": "Warmth"
+  },
+  "air": {
+    "message": "Air"
+  },
+  "harmonics": {
+    "message": "Harmonics"
+  },
+  "smart_bass": {
+    "message": "Smart Bass"
+  },
+  "velvet_treble": {
+    "message": "Velvet Treble"
+  },
+  "ai_high_repair": {
+    "message": "AI High Repair"
+  },
+  "stereo_mid": {
+    "message": "Stereo Mid"
+  },
+  "vocal_presence": {
+    "message": "Vocal Presence"
+  },
+  "vocal_tickle": {
+    "message": "Vocal Tickle"
+  },
+  "mid_projection": {
+    "message": "Mid Projection"
+  },
+  "mix": {
+    "message": "Mix"
+  },
+  "blend": {
+    "message": "Blend"
+  },
+  "source_guard": {
+    "message": "Source Guard"
+  },
+  "created_bass_guard": {
+    "message": "Created Bass Guard"
+  },
+  "side_air": {
+    "message": "Side Air"
+  },
+  "ceiling": {
+    "message": "Ceiling"
+  },
+  "color_harmonic_mode": {
+    "message": "Color harmonic mode"
+  },
+  "color_mode_aria": {
+    "message": "{{label}} color mode"
+  },
+  "performance_stable_full": {
+    "message": "Engine quality: STABLE — full sound with lighter analysis for reliable playback"
+  },
+  "performance_turbo_full": {
+    "message": "Engine quality: TURBO — oversampled adaptive processing for powerful computers"
+  },
+  "performance_eco_full": {
+    "message": "Engine quality: ECO — simplified processing for low-spec computers"
+  },
+  "master_bypass_enabled": {
+    "message": "Master bypass is enabled — click to reactivate all FX"
+  },
+  "frequency": {
+    "message": "Freq"
+  },
+  "slope": {
+    "message": "Slope"
+  },
+  "gain_db": {
+    "message": "Gain dB"
+  },
+  "delete": {
+    "message": "Delete"
+  },
+  "parallel": {
+    "message": "Parallel"
+  },
+  "bass_body": {
+    "message": "Bass Body"
+  },
+  "exciter": {
+    "message": "Exciter"
+  },
+  "god_particles": {
+    "message": "God Particles"
+  },
+  "another_tab_studio": {
+    "message": "Enhance active on another tab{{domain}}"
+  }
+}

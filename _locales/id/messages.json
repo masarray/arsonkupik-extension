@@ -1,0 +1,725 @@
+{
+  "extension_name": {
+    "message": "ArSonKuPik"
+  },
+  "extension_description": {
+    "message": "Peningkat audio browser profesional yang memproses suara secara lokal dengan EQ parametrik, dinamika, harmonik, stereo width, dan limiter."
+  },
+  "extension_action_title": {
+    "message": "Peningkat Suara ArSonKuPik"
+  },
+  "popup_document_title": {
+    "message": "ArSonKuPik"
+  },
+  "studio_document_title": {
+    "message": "ArSonKuPik Studio"
+  },
+  "studio_document_title_active": {
+    "message": "ArSonKuPik Studio · Active"
+  },
+  "language_label": {
+    "message": "Bahasa"
+  },
+  "browser_mastering": {
+    "message": "Mastering Browser"
+  },
+  "engine_status": {
+    "message": "Status engine"
+  },
+  "before_first_use": {
+    "message": "Sebelum penggunaan pertama"
+  },
+  "privacy_notice_title": {
+    "message": "Pemberitahuan privasi pemrosesan lokal"
+  },
+  "privacy_notice_body": {
+    "message": "Audio tab hanya diproses di perangkat ini dan tidak pernah direkam atau diunggah. Saat preferensi per situs digunakan, nama host situs saat ini dapat disimpan secara lokal di profil Chrome ini."
+  },
+  "accept_continue": {
+    "message": "Setuju & Lanjutkan"
+  },
+  "read_privacy_policy": {
+    "message": "Baca kebijakan privasi"
+  },
+  "source": {
+    "message": "Sumber"
+  },
+  "idle": {
+    "message": "Siaga"
+  },
+  "ready_here": {
+    "message": "Siap di Sini"
+  },
+  "bypass": {
+    "message": "Bypass"
+  },
+  "active": {
+    "message": "Aktif"
+  },
+  "disabled": {
+    "message": "Nonaktif"
+  },
+  "no_active_capture": {
+    "message": "Tidak ada capture aktif"
+  },
+  "start_enhance": {
+    "message": "Mulai Enhance"
+  },
+  "enhance_this_tab": {
+    "message": "Enhance Tab Ini"
+  },
+  "enhance_on": {
+    "message": "Aktifkan Enhance"
+  },
+  "enhance_off": {
+    "message": "Nonaktifkan Enhance"
+  },
+  "local_audio_hint": {
+    "message": "Audio diproses lokal. Tidak direkam dan tidak diunggah."
+  },
+  "quick_preset": {
+    "message": "Preset cepat"
+  },
+  "master_preset": {
+    "message": "Preset master"
+  },
+  "output": {
+    "message": "Keluaran"
+  },
+  "input": {
+    "message": "Masukan"
+  },
+  "limiter_safety": {
+    "message": "Pengaman limiter"
+  },
+  "privacy_local_data": {
+    "message": "Privasi & data lokal"
+  },
+  "no_site_preferences": {
+    "message": "Belum ada preferensi situs yang disimpan."
+  },
+  "clear_site_preferences": {
+    "message": "Hapus Preferensi Situs"
+  },
+  "reset_all_local_data": {
+    "message": "Reset Semua Data Lokal"
+  },
+  "privacy_policy": {
+    "message": "Kebijakan privasi"
+  },
+  "open_studio_panel": {
+    "message": "Buka Panel Studio"
+  },
+  "support_development": {
+    "message": "Dukung ArSonKuPik"
+  },
+  "support_footer_note": {
+    "message": "Opsional · QRIS Indonesia"
+  },
+  "close_support_dialog": {
+    "message": "Tutup dialog dukungan"
+  },
+  "support_kicker": {
+    "message": "Dukungan opsional · QRIS Indonesia"
+  },
+  "support_title": {
+    "message": "Dukung pengembangan SonkuPik"
+  },
+  "support_title_before_studio": {
+    "message": "Dukung SonkuPik sebelum membuka Studio"
+  },
+  "support_description": {
+    "message": "ArSonKuPik tetap berfungsi penuh dan gratis. Setelah 90 hari penggunaan, pengingat opsional ini membantu pengembangan DSP, pengujian, dan dukungan."
+  },
+  "support_description_before_studio": {
+    "message": "Studio tetap sepenuhnya gratis. Pindai QRIS hanya bila Anda ingin mendukung pengembangan DSP, lalu lanjutkan langsung."
+  },
+  "support_qris_alt": {
+    "message": "QRIS statis untuk dukungan sukarela SonkuPik"
+  },
+  "support_local_note": {
+    "message": "Pembayaran tidak dilacak oleh extension. “Saya sudah mendukung” hanya menyembunyikan pengingat ini pada profil Chrome saat ini."
+  },
+  "continue_to_studio": {
+    "message": "Lanjut ke Studio"
+  },
+  "remind_30_days": {
+    "message": "Ingatkan 30 hari lagi"
+  },
+  "ive_supported": {
+    "message": "Saya sudah mendukung"
+  },
+  "open_full_support_page": {
+    "message": "Buka halaman dukungan lengkap"
+  },
+  "sound_enhancer": {
+    "message": "Peningkat Suara"
+  },
+  "accept_privacy_first": {
+    "message": "Setujui pemberitahuan privasi pemrosesan lokal sebelum memulai enhancement audio."
+  },
+  "moving_capture": {
+    "message": "Memindahkan capture ke tab aktif ini…"
+  },
+  "releasing_capture": {
+    "message": "Melepas capture tab…"
+  },
+  "switching_power": {
+    "message": "Mengubah status enhance tanpa membuka ulang audio YouTube…"
+  },
+  "starting_capture": {
+    "message": "Memulai capture untuk tab ini…"
+  },
+  "command_failed": {
+    "message": "Perintah gagal"
+  },
+  "privacy_accepted": {
+    "message": "Pemberitahuan privasi disetujui. Audio tetap lokal di perangkat ini."
+  },
+  "privacy_save_failed": {
+    "message": "Gagal menyimpan persetujuan privasi."
+  },
+  "confirm_clear_sites": {
+    "message": "Hapus semua preferensi enhancement per situs? Preset kustom tetap disimpan."
+  },
+  "sites_cleared": {
+    "message": "Preferensi situs telah dihapus. Preset kustom tetap disimpan."
+  },
+  "sites_clear_failed": {
+    "message": "Gagal menghapus preferensi situs."
+  },
+  "confirm_reset_data": {
+    "message": "Reset semua data lokal ArSonKuPik? Tindakan ini menghapus preset kustom, pengaturan, preferensi situs, dan persetujuan privasi."
+  },
+  "data_reset": {
+    "message": "Semua data lokal telah direset. Tinjau kembali pemberitahuan privasi sebelum menggunakan enhancement audio."
+  },
+  "data_reset_failed": {
+    "message": "Gagal mereset data lokal."
+  },
+  "support_thanks": {
+    "message": "Terima kasih telah mendukung SonkuPik. Pengingat ini dinonaktifkan pada profil Chrome ini."
+  },
+  "reactivating_chain": {
+    "message": "Mengaktifkan kembali mastering chain…"
+  },
+  "enhance_kept_warm": {
+    "message": "Enhance nonaktif. Capture tetap dipertahankan agar YouTube tidak memulai ulang playback."
+  },
+  "enhance_reusing_capture": {
+    "message": "Enhance aktif. Menggunakan kembali capture stream yang sama."
+  },
+  "active_another_tab": {
+    "message": "Enhance aktif di tab lain{{domain}}"
+  },
+  "attach_current_title": {
+    "message": "Pasang ArSonKuPik ke tab aktif saat ini dan lepaskan capture sebelumnya."
+  },
+  "active_button_title": {
+    "message": "Klik untuk mengubah bypass mastering tanpa membuka ulang capture. Shift-klik untuk melepas capture sepenuhnya."
+  },
+  "start_button_title": {
+    "message": "Mulai capture tab lokal dan enhancement audio."
+  },
+  "accept_button_title": {
+    "message": "Setujui pemberitahuan privasi pemrosesan lokal sebelum memulai."
+  },
+  "another_tab_hint_remembered": {
+    "message": "Enhance terpasang di tab lain; {{domain}} diingat. Klik Enhance Tab Ini untuk memindahkannya."
+  },
+  "another_tab_hint": {
+    "message": "Enhance terpasang di tab lain. Klik Enhance Tab Ini untuk memindahkannya."
+  },
+  "warm_capture_hint": {
+    "message": "Enhance nonaktif tetapi capture tetap dipertahankan untuk menghindari buffering YouTube."
+  },
+  "enhancing_locally": {
+    "message": "Sedang meningkatkan audio tab ini secara lokal."
+  },
+  "remembered_domain_hint": {
+    "message": "Enhancer diingat untuk {{domain}}. Klik Mulai Enhance untuk memasang tab ini."
+  },
+  "local_data_summary": {
+    "message": "{{sites}} preferensi situs · {{presets}} preset kustom tersimpan lokal."
+  },
+  "mastering_chain": {
+    "message": "Rantai Mastering"
+  },
+  "undo": {
+    "message": "Urungkan"
+  },
+  "redo": {
+    "message": "Ulangi"
+  },
+  "support_via_qris": {
+    "message": "Dukung pengembangan ArSonKuPik melalui QRIS"
+  },
+  "engine_quality_stable": {
+    "message": "Kualitas engine: STABLE"
+  },
+  "eco": {
+    "message": "Hemat"
+  },
+  "turbo": {
+    "message": "Turbo"
+  },
+  "stable": {
+    "message": "STABLE"
+  },
+  "chain": {
+    "message": "Rantai"
+  },
+  "signal_flow": {
+    "message": "Alur sinyal"
+  },
+  "active_mastering_chain": {
+    "message": "Rantai mastering aktif"
+  },
+  "hardware_guide": {
+    "message": "Panduan Hardware"
+  },
+  "open_hardware_guide": {
+    "message": "Buka panduan hardware audio"
+  },
+  "master": {
+    "message": "Master"
+  },
+  "reset_preset_title": {
+    "message": "Reset ke preset Mas Ari Signature"
+  },
+  "reset_preset": {
+    "message": "Reset preset"
+  },
+  "save_custom_preset": {
+    "message": "Simpan preset kustom"
+  },
+  "save_preset": {
+    "message": "Simpan preset"
+  },
+  "master_fx_active": {
+    "message": "Master FX aktif — klik untuk bypass semua FX"
+  },
+  "precision_parametric": {
+    "message": "Parametrik presisi"
+  },
+  "equalizer": {
+    "message": "Equalizer"
+  },
+  "preset": {
+    "message": "Preset"
+  },
+  "spectrum": {
+    "message": "Spektrum"
+  },
+  "input_spectrum": {
+    "message": "Spektrum masukan sebelum pemrosesan"
+  },
+  "output_spectrum": {
+    "message": "Spektrum keluaran setelah pemrosesan"
+  },
+  "bypass_eq": {
+    "message": "Bypass EQ"
+  },
+  "eq_graph": {
+    "message": "Grafik equalizer parametrik interaktif"
+  },
+  "global_input_meter": {
+    "message": "Meter level stereo masukan global"
+  },
+  "global_output_meter": {
+    "message": "Meter level stereo keluaran global"
+  },
+  "no_band_selected": {
+    "message": "Tidak ada band dipilih — klik dua kali pada display untuk menambah band"
+  },
+  "compressor": {
+    "message": "Kompresor"
+  },
+  "bypass_compressor": {
+    "message": "Bypass kompresor"
+  },
+  "compressor_curve": {
+    "message": "Kurva transfer kompresor"
+  },
+  "compressor_curve_meter": {
+    "message": "Kurva transfer kompresor dengan meter gain reduction stereo"
+  },
+  "compressor_gr_meter": {
+    "message": "Meter gain reduction kompresor"
+  },
+  "color_harmonics": {
+    "message": "Warna · Harmonik"
+  },
+  "clean": {
+    "message": "Bersih"
+  },
+  "warm": {
+    "message": "Hangat"
+  },
+  "modern": {
+    "message": "Modern"
+  },
+  "mastering": {
+    "message": "Mastering"
+  },
+  "bypass_color": {
+    "message": "Bypass warna"
+  },
+  "harmonic_visualizer": {
+    "message": "Visualisasi saturasi harmonik"
+  },
+  "stereo_width": {
+    "message": "Lebar Stereo"
+  },
+  "bypass_width": {
+    "message": "Bypass stereo width"
+  },
+  "stereo_width_visualizer": {
+    "message": "Visualisasi bidang stereo width"
+  },
+  "low": {
+    "message": "Rendah"
+  },
+  "mid": {
+    "message": "Tengah"
+  },
+  "high": {
+    "message": "Tinggi"
+  },
+  "low_mid": {
+    "message": "Rendah-Tengah"
+  },
+  "three_band_correlation": {
+    "message": "Korelasi stereo 3-band"
+  },
+  "limiter": {
+    "message": "Limiter"
+  },
+  "bypass_limiter": {
+    "message": "Bypass limiter"
+  },
+  "limiter_meters": {
+    "message": "Meter stereo masukan dan keluaran limiter"
+  },
+  "input_stereo_level": {
+    "message": "Level stereo masukan"
+  },
+  "output_stereo_level": {
+    "message": "Level stereo keluaran"
+  },
+  "target_gr_note": {
+    "message": "Target GR 0–3 dB · peringatan di atas 6 dB"
+  },
+  "hint_double_click": {
+    "message": "tambah / hapus band"
+  },
+  "hint_drag": {
+    "message": "frekuensi / gain"
+  },
+  "hint_wheel": {
+    "message": "Q · slope"
+  },
+  "hint_ctrl_drag": {
+    "message": "Q"
+  },
+  "hint_shift": {
+    "message": "penyetelan halus"
+  },
+  "hint_alt_click": {
+    "message": "bypass band"
+  },
+  "hint_right_click": {
+    "message": "menu"
+  },
+  "double_click": {
+    "message": "Klik dua kali"
+  },
+  "drag": {
+    "message": "Geser"
+  },
+  "wheel": {
+    "message": "Roda mouse"
+  },
+  "ctrl_drag": {
+    "message": "Ctrl-geser"
+  },
+  "shift": {
+    "message": "Shift"
+  },
+  "alt_click": {
+    "message": "Alt-klik"
+  },
+  "right_click": {
+    "message": "Klik kanan"
+  },
+  "close_hardware_guide": {
+    "message": "Tutup panduan hardware audio"
+  },
+  "independent_guidance": {
+    "message": "Panduan editorial independen"
+  },
+  "hardware_guide_title": {
+    "message": "Pilih interface yang mempertahankan kualitas mastering chain."
+  },
+  "hardware_guide_lead": {
+    "message": "Untuk playback eksternal yang andal, prioritaskan driver stabil dan konversi bersih dibanding fitur pemasaran."
+  },
+  "driver_stability": {
+    "message": "Stabilitas driver"
+  },
+  "driver_stability_desc": {
+    "message": "Dukungan WASAPI native, reconnect yang andal, dan driver terbaru dari produsen."
+  },
+  "clean_conversion": {
+    "message": "Konversi bersih"
+  },
+  "clean_conversion_desc": {
+    "message": "Playback 24-bit, noise keluaran rendah, dan headroom yang cukup untuk materi dinamis."
+  },
+  "practical_io": {
+    "message": "I/O praktis"
+  },
+  "practical_io_desc": {
+    "message": "Keluaran balanced untuk monitor, jalur headphone khusus, dan kontrol level fisik."
+  },
+  "routing_support": {
+    "message": "Dukungan routing"
+  },
+  "routing_support_desc": {
+    "message": "Gunakan System Default saat pemilihan output browser tidak tersedia; ArSonKuPik tidak pernah meminta akses mikrofon untuk routing speaker."
+  },
+  "hardware_disclosure": {
+    "message": "Tidak disponsori. Tidak ada tautan afiliasi. Tidak ada gambar produk pihak ketiga atau endorsement yang dibundel dengan ArSonKuPik."
+  },
+  "save_custom_preset_title": {
+    "message": "Simpan preset kustom"
+  },
+  "save_custom_preset_desc": {
+    "message": "Pengaturan EQ, kompresor, warna, width, dan limiter saat ini akan disimpan secara lokal."
+  },
+  "preset_name": {
+    "message": "Nama preset"
+  },
+  "cancel": {
+    "message": "Batal"
+  },
+  "save": {
+    "message": "Simpan"
+  },
+  "attaching": {
+    "message": "Memasang…"
+  },
+  "stopping": {
+    "message": "Menghentikan…"
+  },
+  "bypassing": {
+    "message": "Membypass…"
+  },
+  "starting": {
+    "message": "Memulai…"
+  },
+  "start_failed": {
+    "message": "Gagal memulai"
+  },
+  "support_open_failed": {
+    "message": "Gagal membuka halaman dukungan"
+  },
+  "click_toggle_module": {
+    "message": "Klik untuk bypass atau mengaktifkan modul ini."
+  },
+  "attach_studio_title": {
+    "message": "Pasang Studio ke tab sumbernya dan lepaskan capture sebelumnya."
+  },
+  "ab_compare_title": {
+    "message": "Perbandingan A/B — slot aktif {{slot}}. Klik untuk menyimpan snapshot slot ini dan berpindah."
+  },
+  "ab_compare_aria": {
+    "message": "Perbandingan A/B slot aktif {{slot}}. Beralih antara snapshot sementara A dan B."
+  },
+  "performance_stable_desc": {
+    "message": "STABLE: analisis konservatif dan reliabilitas playback maksimum"
+  },
+  "performance_turbo_desc": {
+    "message": "TURBO: pemrosesan adaptif dengan aktivitas analisis lebih tinggi"
+  },
+  "performance_eco_desc": {
+    "message": "ECO: audio graph lebih ringan dan aktivitas latar minimum"
+  },
+  "performance_cycle": {
+    "message": "{{description}}. Klik untuk mengganti mode."
+  },
+  "master_bypass_active": {
+    "message": "Master FX aktif — klik untuk bypass semua FX"
+  },
+  "master_bypass_bypassed": {
+    "message": "Master FX dibypass — klik untuk mengaktifkan semua FX"
+  },
+  "custom": {
+    "message": "Kustom"
+  },
+  "manual": {
+    "message": "Manual"
+  },
+  "enabled": {
+    "message": "Aktif"
+  },
+  "bypassed": {
+    "message": "Dibypass"
+  },
+  "enable_band": {
+    "message": "Aktifkan band"
+  },
+  "bypass_band": {
+    "message": "Bypass band"
+  },
+  "delete_band": {
+    "message": "Hapus band"
+  },
+  "click_bypass_module": {
+    "message": "Klik untuk bypass modul ini"
+  },
+  "click_enable_module": {
+    "message": "Klik untuk mengaktifkan modul ini"
+  },
+  "clip_risk": {
+    "message": "Risiko clipping"
+  },
+  "auto_headroom_title": {
+    "message": "Headroom otomatis {{headroom}} dB · pemulihan +{{makeup}} dB"
+  },
+  "low_cut": {
+    "message": "Low cut"
+  },
+  "low_shelf": {
+    "message": "Low shelf"
+  },
+  "bell": {
+    "message": "Bell"
+  },
+  "notch": {
+    "message": "Notch"
+  },
+  "high_shelf": {
+    "message": "High shelf"
+  },
+  "high_cut": {
+    "message": "High cut"
+  },
+  "threshold": {
+    "message": "Threshold"
+  },
+  "ratio": {
+    "message": "Rasio"
+  },
+  "attack": {
+    "message": "Attack"
+  },
+  "release": {
+    "message": "Release"
+  },
+  "knee": {
+    "message": "Knee"
+  },
+  "makeup": {
+    "message": "Makeup"
+  },
+  "drive": {
+    "message": "Drive"
+  },
+  "body": {
+    "message": "Body"
+  },
+  "warmth": {
+    "message": "Warmth"
+  },
+  "air": {
+    "message": "Air"
+  },
+  "harmonics": {
+    "message": "Harmonik"
+  },
+  "smart_bass": {
+    "message": "Smart Bass"
+  },
+  "velvet_treble": {
+    "message": "Velvet Treble"
+  },
+  "ai_high_repair": {
+    "message": "AI High Repair"
+  },
+  "stereo_mid": {
+    "message": "Stereo Mid"
+  },
+  "vocal_presence": {
+    "message": "Presence Vokal"
+  },
+  "vocal_tickle": {
+    "message": "Detail Vokal"
+  },
+  "mid_projection": {
+    "message": "Proyeksi Mid"
+  },
+  "mix": {
+    "message": "Mix"
+  },
+  "blend": {
+    "message": "Blend"
+  },
+  "source_guard": {
+    "message": "Pelindung Sumber"
+  },
+  "created_bass_guard": {
+    "message": "Pelindung Bass Buatan"
+  },
+  "side_air": {
+    "message": "Side Air"
+  },
+  "ceiling": {
+    "message": "Ceiling"
+  },
+  "color_harmonic_mode": {
+    "message": "Mode harmonik warna"
+  },
+  "color_mode_aria": {
+    "message": "Mode warna {{label}}"
+  },
+  "performance_stable_full": {
+    "message": "Kualitas engine: STABLE — suara penuh dengan analisis lebih ringan untuk playback yang andal"
+  },
+  "performance_turbo_full": {
+    "message": "Kualitas engine: TURBO — pemrosesan adaptif oversampled untuk komputer bertenaga"
+  },
+  "performance_eco_full": {
+    "message": "Kualitas engine: ECO — pemrosesan sederhana untuk komputer spesifikasi rendah"
+  },
+  "master_bypass_enabled": {
+    "message": "Master bypass aktif — klik untuk mengaktifkan kembali semua FX"
+  },
+  "frequency": {
+    "message": "Frekuensi"
+  },
+  "slope": {
+    "message": "Slope"
+  },
+  "gain_db": {
+    "message": "Gain dB"
+  },
+  "delete": {
+    "message": "Hapus"
+  },
+  "parallel": {
+    "message": "Paralel"
+  },
+  "bass_body": {
+    "message": "Body Bass"
+  },
+  "exciter": {
+    "message": "Exciter"
+  },
+  "god_particles": {
+    "message": "God Particles"
+  },
+  "another_tab_studio": {
+    "message": "Enhance aktif di tab lain{{domain}}"
+  }
+}
