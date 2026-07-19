@@ -1,0 +1,1 @@
+apply bilingual popup and studio localization
