@@ -39,6 +39,31 @@ new_check = 'Confirm the listing does not mention output-device routing or store
 if old_check not in disclosure:
     raise SystemExit('Expected output-routing checklist wording was not found')
 disclosure_path.write_text(disclosure.replace(old_check, new_check, 1), encoding='utf-8')
+
+signature_path = Path('scripts/smoke_signature_presets.mjs')
+signature = signature_path.read_text(encoding='utf-8')
+old_gate_test = r'''const popupHtml = read('popup.html');
+const popupJs = read('src/popup/popup.js');
+assert.match(popupHtml, /supportContinueStudioButton/);
+assert.match(popupHtml, /Continue to Studio/);
+assert.match(popupJs, /openStudioWithSupportPrompt/);
+assert.match(popupJs, /showSupportPrompt\(\{ automatic: false, studioGate: true \}\)/);
+assert.match(popupJs, /if \(current\.permanentlyDismissed\) return openStudioPanel\(\)/);
+assert.match(popupJs, /supportModalStudioGate/);
+assert.match(popupJs, /Studio remains fully free/);
+assert.doesNotMatch(popupJs, /setTimeout\([^)]*openStudio|paymentStatus|verifyPayment|fetch\s*\(/);
+console.log('Signature preset and Studio support gate smoke test passed.');'''
+new_direct_test = r'''const popupHtml = read('popup.html');
+const popupJs = read('src/popup/popup.js');
+assert.doesNotMatch(popupHtml, /supportContinueStudioButton|Continue to Studio|id="supportModal"/);
+assert.doesNotMatch(popupJs, /openStudioWithSupportPrompt|showSupportPrompt|supportModalStudioGate|SUPPORT_PROMPT_DELAY_MS|SUPPORT_REMINDER_DELAY_MS|arsonkupikSupportPrompt/);
+assert.match(popupJs, /supportDevelopmentButton\?\.addEventListener\('click'.*openSupportPage/s);
+assert.match(popupJs, /openStudioButton\.addEventListener\('click', openStudioPanel\)/);
+assert.doesNotMatch(popupJs, /paymentStatus|verifyPayment|fetch\s*\(/);
+console.log('Signature preset and direct Studio access smoke test passed.');'''
+if old_gate_test not in signature:
+    raise SystemExit('Expected legacy Studio support-gate smoke test was not found')
+signature_path.write_text(signature.replace(old_gate_test, new_direct_test, 1), encoding='utf-8')
 PY
 
 run_check() {
@@ -81,5 +106,3 @@ if ! git diff --cached --quiet; then
   git commit -m "Harden Chrome Web Store release 0.3.111"
   git push -q origin HEAD:"${TARGET_BRANCH}"
 fi
-
-# This helper is intentionally removed from the final release-hardening commit.
