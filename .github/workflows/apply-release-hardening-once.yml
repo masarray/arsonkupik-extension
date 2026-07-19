@@ -33,7 +33,17 @@ jobs:
             exit 0
           fi
 
-          base64 --decode .github/release-hardening.payload | gzip -d > /tmp/release-hardening.py
+          python3 - <<'PY'
+          import base64
+          import gzip
+          from pathlib import Path
+
+          payload = ''.join(Path('.github/release-hardening.payload').read_text(encoding='utf-8').split())
+          payload += '=' * (-len(payload) % 4)
+          compressed = base64.b64decode(payload, validate=False)
+          Path('/tmp/release-hardening.py').write_bytes(gzip.decompress(compressed))
+          PY
+
           python3 /tmp/release-hardening.py
           rm -f .github/release-hardening.payload
           rm -f .github/workflows/apply-release-hardening-once.yml
