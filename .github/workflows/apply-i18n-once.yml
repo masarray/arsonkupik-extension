@@ -6,6 +6,13 @@ on:
       - agent/i18n-popup-studio
     paths:
       - .github/i18n-trigger.txt
+  pull_request:
+    branches:
+      - main
+    paths:
+      - .github/i18n-trigger.txt
+      - .github/i18n-patch.part-*
+      - .github/workflows/apply-i18n-once.yml
 
 permissions:
   contents: write
