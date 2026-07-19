@@ -39,7 +39,7 @@ jobs:
       - name: Build extension package
         run: npm run package
 
-      - name: Verify archive integrity, contents, and checksum
+      - name: Verify archive integrity, root structure, locales, and checksum
         shell: bash
         run: |
           set -euo pipefail
@@ -48,6 +48,14 @@ jobs:
           test -f dist/SHA256SUMS.txt
           unzip -t "$ZIP"
           unzip -l "$ZIP"
+          rm -rf dist/webstore-unpacked
+          mkdir -p dist/webstore-unpacked
+          unzip -q "$ZIP" -d dist/webstore-unpacked
+          test -f dist/webstore-unpacked/manifest.json
+          test -f dist/webstore-unpacked/_locales/en/messages.json
+          test -f dist/webstore-unpacked/_locales/id/messages.json
+          test ! -e dist/webstore-unpacked/ArSonKuPik-unpacked/manifest.json
+          python3 scripts/validate_release_artifact.py
           (cd dist && sha256sum -c SHA256SUMS.txt)
 
       - name: Upload validated Web Store release candidate

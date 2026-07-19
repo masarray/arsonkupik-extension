@@ -15,7 +15,7 @@
   <a class="skip-link" href="#main">Skip to content</a>
   <header class="site-header"><div class="container nav"><a class="brand" href="./"><img src="assets/icon-192.png" alt="" width="34" height="34"><span class="brand-word"><span class="arson">ArSon</span><span class="kupik">KuPik</span></span></a><button class="menu-button" type="button" data-menu-button aria-label="Open navigation" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button><nav class="nav-links" data-menu><a href="./">Home</a><a href="support.html">Support</a><a href="https://github.com/masarray/arsonkupik-extension">GitHub</a></nav></div></header>
   <main id="main">
-    <section class="doc-hero"><div class="container"><p class="eyebrow">Policy · Effective July 15, 2026</p><h1>Privacy is part of the signal path.</h1><p>ArSonKuPik processes selected browser-tab audio locally and is intentionally designed without analytics, advertising, accounts, or cloud audio transport.</p></div></section>
+    <section class="doc-hero"><div class="container"><p class="eyebrow">Policy · Effective July 19, 2026</p><h1>Privacy is part of the signal path.</h1><p>ArSonKuPik processes selected browser-tab audio locally and is intentionally designed without analytics, advertising, accounts, or cloud audio transport.</p></div></section>
     <div class="container doc-layout">
       <article class="prose">
         <h2 id="summary">Summary</h2>
@@ -33,8 +33,7 @@
         <ul>
           <li>Audio-engine settings and selected preset.</li>
           <li>Custom preset names and values.</li>
-          <li>Output-device identifiers and labels exposed by the browser or operating system.</li>
-          <li>A normalized hostname associated with an enhancement preference or playback preference.</li>
+          <li>A normalized hostname associated with an optional per-site enhancement preference.</li>
           <li>Preference update times and privacy-consent metadata.</li>
           <li>Active capture state needed to coordinate the service worker and offscreen document.</li>
         </ul>
@@ -47,10 +46,10 @@
             <tr><td><code>activeTab</code></td><td>Limits user-triggered access to the tab the user currently selects.</td></tr>
             <tr><td><code>tabCapture</code></td><td>Obtains audio from the tab the user explicitly chooses to enhance.</td></tr>
             <tr><td><code>offscreen</code></td><td>Hosts the continuous local Web Audio graph after the popup closes.</td></tr>
-            <tr><td><code>storage</code></td><td>Saves settings, presets, consent, routes, and per-site preferences locally.</td></tr>
+            <tr><td><code>storage</code></td><td>Saves settings, presets, consent, language choice, and per-site preferences locally.</td></tr>
           </tbody>
         </table>
-        <p>ArSonKuPik declares no host permissions and does not request microphone access. Named speaker selection uses the browser's user-initiated output chooser when available; otherwise System Default is used.</p>
+        <p>ArSonKuPik declares no host permissions and does not request microphone or location access. Playback uses the browser and operating system default audio output.</p>
 
         <h2 id="network">Network and third parties</h2>
         <p>The extension runtime has no remote application code, analytics SDK, advertising SDK, telemetry endpoint, cloud synchronization, account system, or ArSonKuPik web-service request. Links opened by the user are normal browser navigation and are subject to the destination's own policy.</p>
@@ -62,7 +61,7 @@
         <p>Local configuration remains in the current Chrome profile until the user changes or deletes it. The popup provides two direct controls:</p>
         <ul>
           <li><strong>Clear Site Preferences</strong> removes per-site enhancement preferences and per-domain preferences while keeping custom presets and general settings.</li>
-          <li><strong>Reset All Local Data</strong> stops capture and removes settings, custom presets, site preferences, per-domain preferences, and privacy consent.</li>
+          <li><strong>Reset All Local Data</strong> stops capture and removes settings, custom presets, site preferences, language preference, and privacy consent.</li>
         </ul>
         <p>Uninstalling the extension also removes Chrome-managed extension data according to browser behavior.</p>
 

@@ -4,6 +4,24 @@ All notable project changes are documented here. The format follows Keep a Chang
 
 ## [Unreleased]
 
+## [0.3.111] - 2026-07-19
+
+### Added
+
+- Deterministic Web Store artifact validation covering ZIP root structure, bilingual locale files, manifest message resolution, privacy permissions, and packaged support behavior.
+- CI extraction checks that verify `manifest.json` and both locale catalogs exist at the release ZIP root.
+
+### Changed
+
+- Voluntary QRIS support is now available only through an explicit Support button that opens the first-party page; automatic reminders and the Studio interstitial were removed.
+- Chrome Web Store privacy declarations now disclose transient local tab-audio handling as Website content and limited selected-tab metadata handling.
+- Public privacy and listing copy now match system-default playback and the bilingual runtime.
+
+### Fixed
+
+- Included `_locales/en` and `_locales/id` in the Chrome Web Store package.
+- Shortened the Indonesian manifest description to remain within Chrome's 132-character limit.
+
 ## [0.3.110] - 2026-07-19
 
 ### Added
@@ -182,7 +200,8 @@ All notable project changes are documented here. The format follows Keep a Chang
 - GitHub Pages landing site with English and Indonesian content.
 - SEO metadata, canonical URLs, structured data, sitemap, robots file, and social-sharing image.
 
-[Unreleased]: https://github.com/masarray/arsonkupik-extension/compare/v0.3.107...HEAD
+[Unreleased]: https://github.com/masarray/arsonkupik-extension/compare/v0.3.111...HEAD
+[0.3.111]: https://github.com/masarray/arsonkupik-extension/compare/v0.3.110...v0.3.111
 [0.3.107]: https://github.com/masarray/arsonkupik-extension/compare/v0.3.106...v0.3.107
 [0.3.106]: https://github.com/masarray/arsonkupik-extension/compare/v0.3.105...v0.3.106
 [0.3.105]: https://github.com/masarray/arsonkupik-extension/compare/v0.3.102...v0.3.105

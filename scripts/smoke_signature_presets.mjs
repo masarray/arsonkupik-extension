@@ -36,12 +36,9 @@ for (const [id, name] of expected) {
 
 const popupHtml = read('popup.html');
 const popupJs = read('src/popup/popup.js');
-assert.match(popupHtml, /supportContinueStudioButton/);
-assert.match(popupHtml, /Continue to Studio/);
-assert.match(popupJs, /openStudioWithSupportPrompt/);
-assert.match(popupJs, /showSupportPrompt\(\{ automatic: false, studioGate: true \}\)/);
-assert.match(popupJs, /if \(current\.permanentlyDismissed\) return openStudioPanel\(\)/);
-assert.match(popupJs, /supportModalStudioGate/);
-assert.match(popupJs, /Studio remains fully free/);
-assert.doesNotMatch(popupJs, /setTimeout\([^)]*openStudio|paymentStatus|verifyPayment|fetch\s*\(/);
-console.log('Signature preset and Studio support gate smoke test passed.');
+assert.doesNotMatch(popupHtml, /supportContinueStudioButton|Continue to Studio|id="supportModal"/);
+assert.doesNotMatch(popupJs, /openStudioWithSupportPrompt|showSupportPrompt|supportModalStudioGate|SUPPORT_PROMPT_DELAY_MS|SUPPORT_REMINDER_DELAY_MS|arsonkupikSupportPrompt/);
+assert.match(popupJs, /supportDevelopmentButton\?\.addEventListener\('click'.*openSupportPage/s);
+assert.match(popupJs, /openStudioButton\.addEventListener\('click', openStudioPanel\)/);
+assert.doesNotMatch(popupJs, /paymentStatus|verifyPayment|fetch\s*\(/);
+console.log('Signature preset and direct Studio access smoke test passed.');

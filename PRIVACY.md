@@ -1,7 +1,7 @@
 # Privacy Policy
 
-**Effective date:** July 15, 2026  
-**Applies to:** ArSonKuPik 0.3.101 and later builds that reference this policy
+**Effective date:** July 19, 2026  
+**Applies to:** ArSonKuPik 0.3.111 and later builds that reference this policy
 
 ArSonKuPik is designed to process browser-tab audio locally on the user's device. Privacy controls are part of the extension, not only this document.
 
@@ -79,6 +79,6 @@ Material changes will be documented in the repository and reflected by an update
 Use the repository's private security-reporting channel for privacy or security concerns. Do not include sensitive personal or account information in a public issue.
 
 
-## Voluntary support reminder
+## Language preference
 
-The popup may store the timestamp of the first successful Enhance session, the next reminder date, and a local “I’ve supported” dismissal flag in `chrome.storage.local`. These values never leave the browser profile. ArSonKuPik does not verify payments, receive transaction status, or change feature access based on support.
+The popup and Studio may store a manual `id` or `en` language preference in `chrome.storage.local`. If no manual choice exists, the extension uses Chrome's UI language. It does not use IP address, GPS, or location permission to choose a language.
