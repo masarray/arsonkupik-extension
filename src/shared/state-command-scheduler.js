@@ -4,7 +4,7 @@ function delay(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-export function createStateCommandScheduler(applyPatch, { patchDebounceMs = 24 } = {}) {
+export function createStateCommandScheduler(applyPatch, { patchDebounceMs = 24, latestCommandDebounceMs = 90 } = {}) {
   if (typeof applyPatch !== 'function') throw new TypeError('applyPatch must be a function.');
 
   const queue = [];
@@ -26,6 +26,14 @@ export function createStateCommandScheduler(applyPatch, { patchDebounceMs = 24 }
     }
   }
 
+  function mergeAdjacentLatestCommandEntries(entry) {
+    while (queue[0]?.kind === 'latest-command' && queue[0].key === entry.key) {
+      const next = queue.shift();
+      entry.command = next.command;
+      entry.waiters.push(...next.waiters);
+    }
+  }
+
   async function drain() {
     if (running) return;
     running = true;
@@ -37,6 +45,18 @@ export function createStateCommandScheduler(applyPatch, { patchDebounceMs = 24 }
           mergeAdjacentPatchEntries(entry);
           try {
             const result = await applyPatch(entry.patch);
+            for (const waiter of entry.waiters) waiter.resolve(result);
+          } catch (error) {
+            for (const waiter of entry.waiters) waiter.reject(error);
+          }
+          continue;
+        }
+
+        if (entry.kind === 'latest-command') {
+          if (entry.debounceMs > 0) await delay(entry.debounceMs);
+          mergeAdjacentLatestCommandEntries(entry);
+          try {
+            const result = await entry.command();
             for (const waiter of entry.waiters) waiter.resolve(result);
           } catch (error) {
             for (const waiter of entry.waiters) waiter.reject(error);
@@ -82,10 +102,34 @@ export function createStateCommandScheduler(applyPatch, { patchDebounceMs = 24 }
     });
   }
 
+  function enqueueLatestCommand(key, command, { debounceMs = latestCommandDebounceMs } = {}) {
+    if (!key) throw new TypeError('latest command key is required.');
+    if (typeof command !== 'function') throw new TypeError('command must be a function.');
+    const normalizedKey = String(key);
+    const normalizedDebounceMs = Math.max(0, Number(debounceMs) || 0);
+    return new Promise((resolve, reject) => {
+      const tail = queue.at(-1);
+      if (tail?.kind === 'latest-command' && tail.key === normalizedKey) {
+        tail.command = command;
+        tail.debounceMs = normalizedDebounceMs;
+        tail.waiters.push({ resolve, reject });
+      } else {
+        queue.push({
+          kind: 'latest-command',
+          key: normalizedKey,
+          command,
+          debounceMs: normalizedDebounceMs,
+          waiters: [{ resolve, reject }]
+        });
+      }
+      void drain();
+    });
+  }
+
   function flush() {
     if (!running && queue.length === 0) return Promise.resolve();
     return new Promise((resolve) => idleWaiters.push(resolve));
   }
 
-  return Object.freeze({ enqueuePatch, enqueueCommand, flush });
+  return Object.freeze({ enqueuePatch, enqueueCommand, enqueueLatestCommand, flush });
 }

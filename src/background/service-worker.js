@@ -115,6 +115,16 @@ function dispatchBackgroundMessage(message, sender = null) {
   if (message.type === 'UPDATE_STATE') {
     return stateCommandScheduler.enqueuePatch(message.patch || {});
   }
+  if (message.type === 'APPLY_PRESET') {
+    // Rapid selector changes should not march through every obsolete preset.
+    // Keep ordering against state patches, but collapse adjacent pending preset
+    // requests so every caller receives the result of the newest selection.
+    return stateCommandScheduler.enqueueLatestCommand(
+      'apply-preset',
+      () => handleBackgroundMessage(message, sender),
+      { debounceMs: 90 }
+    );
+  }
   return stateCommandScheduler.enqueueCommand(() => handleBackgroundMessage(message, sender));
 }
 
@@ -828,9 +838,39 @@ async function applyPresetCommand(preset) {
   if (!preset) {
     throw new Error('Preset not found.');
   }
-  lastState = prepareStateForStorage(applyPresetToState({ ...createDefaultState(), ...lastState }, preset));
+
+  const previousState = lastState;
+  const nextState = prepareStateForStorage(
+    applyPresetToState({ ...createDefaultState(), ...previousState }, preset)
+  );
+  const offscreenResponse = await sendToOffscreenIfActive({
+    target: 'offscreen',
+    type: 'APPLY_PRESET',
+    preset
+  });
+
+  if (previousState.active && !offscreenResponse) {
+    throw new Error('Audio engine is unavailable. Reload the extension before changing presets.');
+  }
+  if (offscreenResponse && offscreenResponse.ok !== true) {
+    throw new Error(offscreenResponse.error || 'Audio engine rejected the preset.');
+  }
+
+  // Commit only after the live engine accepts the preset. This prevents storage
+  // and the UI from reporting a selection that the audio graph never applied.
+  const confirmedState = offscreenResponse?.state
+    ? prepareStateForStorage({
+        ...nextState,
+        ...offscreenResponse.state,
+        output: { ...nextState.output, ...offscreenResponse.state.output }
+      })
+    : nextState;
+  lastState = prepareStateForStorage({
+    ...confirmedState,
+    updatedAt: Math.max(Date.now(), Number(confirmedState.updatedAt || 0))
+  });
   await chrome.storage.local.set({ [STORE_KEYS.state]: lastState });
-  await sendToOffscreenIfActive({ target: 'offscreen', type: 'APPLY_PRESET', preset }).catch(() => {});
+  await updateActionVisual(lastState);
   return { ok: true, state: await getStateWithPresets() };
 }
 
