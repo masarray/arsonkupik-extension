@@ -23,10 +23,13 @@ const ui = {
   openStudioButton: document.getElementById('openStudioButton'),
   supportDevelopmentButton: document.getElementById('supportDevelopmentButton'),
   supportModal: document.getElementById('supportModal'),
+  supportModalTitle: document.getElementById('supportModalTitle'),
+  supportModalDescription: document.getElementById('supportModalDescription'),
   supportModalBackdrop: document.getElementById('supportModalBackdrop'),
   supportModalCloseButton: document.getElementById('supportModalCloseButton'),
   supportLaterButton: document.getElementById('supportLaterButton'),
   supportConfirmedButton: document.getElementById('supportConfirmedButton'),
+  supportContinueStudioButton: document.getElementById('supportContinueStudioButton'),
   supportPageButton: document.getElementById('supportPageButton')
 };
 
@@ -34,12 +37,13 @@ let state = null;
 let presets = [...FACTORY_PRESETS];
 let busy = false;
 let soundModeToastTimer = 0;
-const MASARI_PRESET_LABEL = 'MasAri';
+const MASARI_PRESET_LABEL = 'Mas Ari Signature';
 const DAY_MS = 24 * 60 * 60 * 1000;
 const SUPPORT_PROMPT_DELAY_MS = 90 * DAY_MS;
 const SUPPORT_REMINDER_DELAY_MS = 30 * DAY_MS;
 const SUPPORT_PROMPT_STORAGE_KEY = 'arsonkupikSupportPrompt';
 let supportModalAutomatic = false;
+let supportModalStudioGate = false;
 
 const FAVICON_STATE_PATHS = {
   active: { png: 'icons/icon-32.png', ico: 'icons/favicon.ico' },
@@ -139,11 +143,12 @@ function bindEvents() {
     button?.addEventListener('click', () => openPrivacyPolicy().catch((error) => setHint(error.message)));
   }
 
-  ui.supportDevelopmentButton?.addEventListener('click', () => showSupportPrompt({ automatic: false }));
+  ui.supportDevelopmentButton?.addEventListener('click', () => showSupportPrompt({ automatic: false, studioGate: false }));
   ui.supportModalCloseButton?.addEventListener('click', () => closeSupportPrompt({ snooze: supportModalAutomatic }));
   ui.supportModalBackdrop?.addEventListener('click', () => closeSupportPrompt({ snooze: supportModalAutomatic }));
   ui.supportLaterButton?.addEventListener('click', () => closeSupportPrompt({ snooze: true }));
   ui.supportConfirmedButton?.addEventListener('click', confirmSupportLocally);
+  ui.supportContinueStudioButton?.addEventListener('click', continueToStudio);
   ui.supportPageButton?.addEventListener('click', () => openSupportPage().catch((error) => setHint(error.message)));
   document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape' && ui.supportModal && !ui.supportModal.hidden) {
@@ -175,9 +180,7 @@ function bindEvents() {
     }
   });
 
-  ui.openStudioButton.addEventListener('click', () => {
-    sendMessage({ target: 'background', type: 'OPEN_STUDIO' }).catch((error) => setHint(error.message));
-  });
+  ui.openStudioButton.addEventListener('click', openStudioWithSupportPrompt);
 }
 
 
@@ -216,13 +219,20 @@ async function maybeShowSupportPrompt() {
   if (Date.now() >= dueAt) showSupportPrompt({ automatic: true });
 }
 
-function showSupportPrompt({ automatic = false } = {}) {
+function showSupportPrompt({ automatic = false, studioGate = false } = {}) {
   if (!ui.supportModal) return;
   supportModalAutomatic = automatic;
+  supportModalStudioGate = studioGate;
+  if (ui.supportModalTitle) ui.supportModalTitle.textContent = studioGate ? 'Support SonkuPik before Studio' : 'Support SonkuPik development';
+  if (ui.supportModalDescription) ui.supportModalDescription.textContent = studioGate
+    ? 'Studio remains fully free. Scan QRIS only when you would like to support continued DSP development, then continue immediately.'
+    : 'ArSonKuPik stays fully functional and free. After 90 days of use, this optional reminder helps fund continued DSP development, testing, and support.';
+  if (ui.supportContinueStudioButton) ui.supportContinueStudioButton.hidden = !studioGate;
+  if (ui.supportLaterButton) ui.supportLaterButton.hidden = studioGate;
   ui.supportModal.hidden = false;
   ui.supportModal.setAttribute('aria-hidden', 'false');
   document.body.classList.add('support-modal-open');
-  requestAnimationFrame(() => ui.supportModalCloseButton?.focus());
+  requestAnimationFrame(() => (studioGate ? ui.supportContinueStudioButton : ui.supportModalCloseButton)?.focus());
 }
 
 async function closeSupportPrompt({ snooze = false } = {}) {
@@ -235,6 +245,9 @@ async function closeSupportPrompt({ snooze = false } = {}) {
     });
   }
   supportModalAutomatic = false;
+  supportModalStudioGate = false;
+  if (ui.supportContinueStudioButton) ui.supportContinueStudioButton.hidden = true;
+  if (ui.supportLaterButton) ui.supportLaterButton.hidden = false;
   if (ui.supportModal) {
     ui.supportModal.hidden = true;
     ui.supportModal.setAttribute('aria-hidden', 'true');
@@ -243,6 +256,7 @@ async function closeSupportPrompt({ snooze = false } = {}) {
 }
 
 async function confirmSupportLocally() {
+  const shouldOpenStudio = supportModalStudioGate;
   const current = await readSupportPromptState();
   await writeSupportPromptState({
     ...current,
@@ -252,6 +266,22 @@ async function confirmSupportLocally() {
   });
   await closeSupportPrompt({ snooze: false });
   setHint('Thank you for supporting SonkuPik. This reminder is disabled on this Chrome profile.');
+  if (shouldOpenStudio) await openStudioPanel();
+}
+
+async function openStudioPanel() {
+  return sendMessage({ target: 'background', type: 'OPEN_STUDIO' }).catch((error) => setHint(error.message));
+}
+
+async function openStudioWithSupportPrompt() {
+  const current = await readSupportPromptState().catch(() => ({}));
+  if (current.permanentlyDismissed) return openStudioPanel();
+  showSupportPrompt({ automatic: false, studioGate: true });
+}
+
+async function continueToStudio() {
+  await closeSupportPrompt({ snooze: false });
+  await openStudioPanel();
 }
 
 async function refreshState() {

@@ -120,6 +120,14 @@ export const DEFAULT_MASTER_REVISION = 'v0-3-96-treble-coherence-skin-engine';
 export const PRIMARY_MASTER_PRESET_IDS = [
   'mastering',
   'default',
+  'dangdut-mantap',
+  'kpop-nikmat',
+  'hard-rock',
+  'blues-asik',
+  'pop-indonesia',
+  'edm-santai',
+  'jazz-hangat',
+  'akustik-intim',
   'max-enhancer',
   'sonkuhoreg',
   'sonkubattle',
@@ -190,13 +198,165 @@ export const FACTORY_PRESETS = [
   }),
   p({
     id: 'default',
-    name: 'MasAri',
-    description: 'Balanced Audiophile+MasAri signature: bass bulat bernapas, mid keluar natural, global sheen particles, velvet treble, enjoyable for long repeat listening.',
+    name: 'Mas Ari Signature',
+    description: 'Flagship Mas Ari signature: bass bulat bernapas, natural forward mid, refined stereo particles, velvet treble, and an enjoyable long-listening balance.',
     eq: DEFAULT_EQ_BANDS,
     compressor: DEFAULT_COMPRESSOR,
     color: DEFAULT_COLOR,
     width: DEFAULT_WIDTH,
     output: DEFAULT_OUTPUT
+  }),
+  p({
+    id: 'dangdut-mantap',
+    name: 'Dangdut Mantap',
+    description: 'Mas Ari Signature tuned for dangdut: kendang punch, rounded bass, lively vocal, bright percussion, and slightly calmer output.',
+    eq: [
+      { ...DEFAULT_EQ_BANDS[0], frequency: 28 },
+      { ...DEFAULT_EQ_BANDS[1], frequency: 82, gain: 1.55, q: 0.62 },
+      { ...VOCAL_ACOUSTIC_BODY_BAND, frequency: 180, gain: 1.05, q: 2.2 },
+      { ...DEFAULT_EQ_BANDS[2], frequency: 315, gain: -1.05, q: 0.82 },
+      { ...VOCAL_BODY_GUARD_BAND, gain: 1.42, q: 0.82 },
+      { ...DEFAULT_EQ_BANDS[3], frequency: 2250, gain: 1.18, q: 0.62 },
+      { ...DEFAULT_EQ_BANDS[4], frequency: 6500, gain: 1.28, q: 0.56 },
+      { ...DEFAULT_EQ_BANDS[5], frequency: 12650, gain: 3.05, q: 0.42 }
+    ],
+    compressor: { threshold: -24.8, ratio: 1.72, knee: 25, attack: 0.030, release: 0.20, makeupGain: 0.62, parallelMix: 90 },
+    color: { drive: 3.0, body: 14.8, smartBass: 64, warmth: 13.2, harmonics: 32, air: 36, godParticles: 73, aiHighRepair: 52, velvetTreble: 74, vocalTickle: 58, vocalPresence: 58, midProjection: 60, mix: 27, stereoMid: 54 },
+    width: { mix: 65, width: 138, lowMidWidth: 103, midWidth: 116, highWidth: 178, sourceProtect: 72, sideTone: 3.0 },
+    output: { outputGain: -1.55, limiterDrive: 0.52, limiterCeiling: -1.1 }
+  }),
+  p({
+    id: 'kpop-nikmat',
+    name: 'K-Pop Nikmat',
+    description: 'Clean modern K-pop polish with tight bass, glossy vocal detail, airy stereo sparkle, and controlled listening level.',
+    eq: [
+      { ...DEFAULT_EQ_BANDS[0], frequency: 30 },
+      { ...DEFAULT_EQ_BANDS[1], frequency: 86, gain: 1.05, q: 0.68 },
+      { ...DEFAULT_EQ_BANDS[2], frequency: 340, gain: -1.18, q: 0.88 },
+      { ...VOCAL_BODY_GUARD_BAND, gain: 1.25, q: 0.82 },
+      { ...DEFAULT_EQ_BANDS[3], frequency: 2480, gain: 1.34, q: 0.60 },
+      { ...DEFAULT_EQ_BANDS[4], frequency: 6900, gain: 1.62, q: 0.54 },
+      { ...DEFAULT_EQ_BANDS[5], frequency: 13000, gain: 3.55, q: 0.40 }
+    ],
+    compressor: { threshold: -25.0, ratio: 1.82, knee: 24, attack: 0.024, release: 0.18, makeupGain: 0.55, parallelMix: 89 },
+    color: { drive: 2.95, body: 11.5, smartBass: 53, warmth: 10.5, harmonics: 35, air: 42, godParticles: 82, aiHighRepair: 60, velvetTreble: 80, vocalTickle: 64, vocalPresence: 60, midProjection: 62, mix: 27, stereoMid: 62 },
+    width: { mix: 70, width: 145, lowMidWidth: 102, midWidth: 122, highWidth: 192, sourceProtect: 68, sideTone: 3.35 },
+    output: { outputGain: -1.72, limiterDrive: 0.48, limiterCeiling: -1.1 }
+  }),
+  p({
+    id: 'hard-rock',
+    name: 'Hard Rock',
+    description: 'Dense guitar energy, kick impact, snare bite, and strong vocal projection without excessive loudness or treble fatigue.',
+    eq: [
+      { ...DEFAULT_EQ_BANDS[0], frequency: 32 },
+      { ...DEFAULT_EQ_BANDS[1], frequency: 92, gain: 1.18, q: 0.68 },
+      { ...VOCAL_ACOUSTIC_BODY_BAND, frequency: 190, gain: 0.72, q: 2.0 },
+      { ...DEFAULT_EQ_BANDS[2], frequency: 305, gain: -1.42, q: 0.86 },
+      { ...VOCAL_BODY_GUARD_BAND, gain: 1.2, q: 0.84 },
+      { ...DEFAULT_EQ_BANDS[3], frequency: 2450, gain: 1.48, q: 0.64 },
+      { id: 'hard-rock-harsh-guard', label: 'Guitar Harsh Guard', type: 'bell', frequency: 4300, gain: -0.48, q: 1.0, slope: 12, enabled: true },
+      { ...DEFAULT_EQ_BANDS[4], frequency: 6200, gain: 1.05, q: 0.62 },
+      { ...DEFAULT_EQ_BANDS[5], frequency: 12400, gain: 2.45, q: 0.46 }
+    ],
+    compressor: { threshold: -25.0, ratio: 1.92, knee: 22, attack: 0.021, release: 0.16, makeupGain: 0.50, parallelMix: 86 },
+    color: { drive: 3.25, body: 13.2, smartBass: 49, warmth: 12.0, harmonics: 41, air: 28, godParticles: 58, aiHighRepair: 48, velvetTreble: 72, vocalTickle: 50, vocalPresence: 62, midProjection: 70, mix: 25.5, stereoMid: 52 },
+    width: { mix: 58, width: 130, lowMidWidth: 101, midWidth: 112, highWidth: 160, sourceProtect: 82, sideTone: 2.45 },
+    output: { outputGain: -1.92, limiterDrive: 0.58, limiterCeiling: -1.15 }
+  }),
+  p({
+    id: 'blues-asik',
+    name: 'Blues Asik',
+    description: 'Warm expressive blues tone with guitar body, intimate vocal texture, relaxed dynamics, and smooth non-fatiguing air.',
+    eq: [
+      { ...DEFAULT_EQ_BANDS[0], frequency: 30 },
+      { ...DEFAULT_EQ_BANDS[1], frequency: 78, gain: 0.92, q: 0.70 },
+      { ...VOCAL_ACOUSTIC_BODY_BAND, frequency: 168, gain: 1.28, q: 2.25 },
+      { ...DEFAULT_EQ_BANDS[2], frequency: 330, gain: -0.58, q: 0.82 },
+      { ...VOCAL_BODY_GUARD_BAND, gain: 1.62, q: 0.78 },
+      { ...DEFAULT_EQ_BANDS[3], frequency: 1820, gain: 0.88, q: 0.70 },
+      { ...DEFAULT_EQ_BANDS[4], frequency: 5900, gain: 0.62, q: 0.68 },
+      { ...DEFAULT_EQ_BANDS[5], frequency: 12000, gain: 2.15, q: 0.48 }
+    ],
+    compressor: { threshold: -23.6, ratio: 1.55, knee: 28, attack: 0.046, release: 0.28, makeupGain: 0.48, parallelMix: 92 },
+    color: { drive: 2.72, body: 14.5, smartBass: 43, warmth: 15.4, harmonics: 28, air: 25, godParticles: 52, aiHighRepair: 40, velvetTreble: 70, vocalTickle: 42, vocalPresence: 46, midProjection: 50, mix: 24.5, stereoMid: 38 },
+    width: { mix: 54, width: 124, lowMidWidth: 102, midWidth: 108, highWidth: 148, sourceProtect: 86, sideTone: 2.05 },
+    output: { outputGain: -1.82, limiterDrive: 0.40, limiterCeiling: -1.15 }
+  }),
+  p({
+    id: 'pop-indonesia',
+    name: 'Pop Indonesia',
+    description: 'Clear Indonesian vocal focus, soft full bass, open acoustic detail, and polished but restrained high frequencies.',
+    eq: [
+      { ...DEFAULT_EQ_BANDS[0], frequency: 28 },
+      { ...DEFAULT_EQ_BANDS[1], frequency: 80, gain: 1.12, q: 0.66 },
+      { ...VOCAL_ACOUSTIC_BODY_BAND, frequency: 175, gain: 1.08, q: 2.3 },
+      { ...DEFAULT_EQ_BANDS[2], frequency: 335, gain: -0.92, q: 0.84 },
+      { ...VOCAL_BODY_GUARD_BAND, gain: 1.55, q: 0.80 },
+      { ...DEFAULT_EQ_BANDS[3], frequency: 2100, gain: 1.16, q: 0.64 },
+      { ...DEFAULT_EQ_BANDS[4], frequency: 6250, gain: 1.15, q: 0.58 },
+      { ...DEFAULT_EQ_BANDS[5], frequency: 12650, gain: 2.95, q: 0.44 }
+    ],
+    compressor: { threshold: -24.5, ratio: 1.68, knee: 26, attack: 0.034, release: 0.22, makeupGain: 0.58, parallelMix: 91 },
+    color: { drive: 2.88, body: 13.8, smartBass: 52, warmth: 13.4, harmonics: 30, air: 34, godParticles: 68, aiHighRepair: 50, velvetTreble: 74, vocalTickle: 55, vocalPresence: 58, midProjection: 57, mix: 25.8, stereoMid: 48 },
+    width: { mix: 62, width: 134, lowMidWidth: 102, midWidth: 114, highWidth: 174, sourceProtect: 76, sideTone: 2.8 },
+    output: { outputGain: -1.62, limiterDrive: 0.46, limiterCeiling: -1.1 }
+  }),
+  p({
+    id: 'edm-santai',
+    name: 'EDM Santai',
+    description: 'Deep controlled electronic bass, clean synth layers, spacious highs, and lower output for enjoyable long sessions.',
+    eq: [
+      { ...DEFAULT_EQ_BANDS[0], frequency: 25 },
+      { ...DEFAULT_EQ_BANDS[1], frequency: 68, gain: 1.72, q: 0.58 },
+      { id: 'edm-punch', label: 'Electronic Punch', type: 'bell', frequency: 108, gain: 0.78, q: 0.62, slope: 12, enabled: true },
+      { ...DEFAULT_EQ_BANDS[2], frequency: 350, gain: -1.05, q: 0.78 },
+      { ...DEFAULT_EQ_BANDS[3], frequency: 2300, gain: 0.82, q: 0.60 },
+      { ...DEFAULT_EQ_BANDS[4], frequency: 7000, gain: 1.22, q: 0.56 },
+      { ...DEFAULT_EQ_BANDS[5], frequency: 13200, gain: 3.2, q: 0.42 },
+      { ...VOCAL_BODY_GUARD_BAND, gain: 1.05, q: 0.86 }
+    ],
+    compressor: { threshold: -25.2, ratio: 1.82, knee: 24, attack: 0.028, release: 0.17, makeupGain: 0.50, parallelMix: 88 },
+    color: { drive: 3.15, body: 13.5, smartBass: 70, warmth: 10.2, harmonics: 34, air: 38, godParticles: 76, aiHighRepair: 58, velvetTreble: 78, vocalTickle: 46, vocalPresence: 45, midProjection: 54, mix: 26.5, stereoMid: 66 },
+    width: { mix: 72, width: 148, lowMidWidth: 101, midWidth: 120, highWidth: 194, sourceProtect: 70, sideTone: 3.45 },
+    output: { outputGain: -1.95, limiterDrive: 0.55, limiterCeiling: -1.15 }
+  }),
+  p({
+    id: 'jazz-hangat',
+    name: 'Jazz Hangat',
+    description: 'Natural upright bass, warm piano and brass, soft cymbal detail, relaxed imaging, and preserved dynamic expression.',
+    eq: [
+      { ...DEFAULT_EQ_BANDS[0], frequency: 28 },
+      { ...DEFAULT_EQ_BANDS[1], frequency: 72, gain: 0.82, q: 0.72 },
+      { ...VOCAL_ACOUSTIC_BODY_BAND, frequency: 165, gain: 1.12, q: 2.4 },
+      { ...DEFAULT_EQ_BANDS[2], frequency: 310, gain: -0.48, q: 0.80 },
+      { ...VOCAL_BODY_GUARD_BAND, gain: 1.3, q: 0.82 },
+      { ...DEFAULT_EQ_BANDS[3], frequency: 1750, gain: 0.68, q: 0.72 },
+      { ...DEFAULT_EQ_BANDS[4], frequency: 5700, gain: 0.48, q: 0.72 },
+      { ...DEFAULT_EQ_BANDS[5], frequency: 11800, gain: 1.88, q: 0.50 }
+    ],
+    compressor: { threshold: -22.8, ratio: 1.42, knee: 30, attack: 0.055, release: 0.32, makeupGain: 0.40, parallelMix: 94 },
+    color: { drive: 2.55, body: 14.0, smartBass: 38, warmth: 16.2, harmonics: 24, air: 22, godParticles: 46, aiHighRepair: 34, velvetTreble: 66, vocalTickle: 36, vocalPresence: 40, midProjection: 44, mix: 22.5, stereoMid: 32 },
+    width: { mix: 50, width: 120, lowMidWidth: 101, midWidth: 106, highWidth: 140, sourceProtect: 90, sideTone: 1.75 },
+    output: { outputGain: -1.88, limiterDrive: 0.34, limiterCeiling: -1.2 }
+  }),
+  p({
+    id: 'akustik-intim',
+    name: 'Akustik Intim',
+    description: 'Close vocal and acoustic guitar presentation with natural body, delicate strings, restrained stereo width, and gentle output.',
+    eq: [
+      { ...DEFAULT_EQ_BANDS[0], frequency: 34 },
+      { ...DEFAULT_EQ_BANDS[1], frequency: 88, gain: 0.55, q: 0.74 },
+      { ...VOCAL_ACOUSTIC_BODY_BAND, frequency: 172, gain: 1.42, q: 2.35 },
+      { ...DEFAULT_EQ_BANDS[2], frequency: 300, gain: -0.72, q: 0.86 },
+      { ...VOCAL_BODY_GUARD_BAND, gain: 1.68, q: 0.78 },
+      { ...DEFAULT_EQ_BANDS[3], frequency: 1950, gain: 0.92, q: 0.72 },
+      { ...DEFAULT_EQ_BANDS[4], frequency: 5900, gain: 0.72, q: 0.68 },
+      { ...DEFAULT_EQ_BANDS[5], frequency: 12200, gain: 2.15, q: 0.48 }
+    ],
+    compressor: { threshold: -23.2, ratio: 1.48, knee: 29, attack: 0.048, release: 0.29, makeupGain: 0.44, parallelMix: 93 },
+    color: { drive: 2.62, body: 14.8, smartBass: 34, warmth: 14.8, harmonics: 25, air: 25, godParticles: 50, aiHighRepair: 38, velvetTreble: 68, vocalTickle: 46, vocalPresence: 52, midProjection: 48, mix: 23, stereoMid: 28 },
+    width: { mix: 46, width: 116, lowMidWidth: 100, midWidth: 104, highWidth: 136, sourceProtect: 92, sideTone: 1.45 },
+    output: { outputGain: -1.78, limiterDrive: 0.36, limiterCeiling: -1.2 }
   }),
   p({
     id: 'max-enhancer',
