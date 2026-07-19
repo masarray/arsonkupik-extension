@@ -69,8 +69,19 @@ jobs:
           rm -f .github/release-hardening.payload
           rm -f .github/workflows/apply-release-hardening-once.yml
 
-          npm run check
-          npm run package
+          if ! npm run check > /tmp/release-check.log 2>&1; then
+            echo "Release check failed. Tail follows:"
+            tail -n 45 /tmp/release-check.log
+            exit 1
+          fi
+          tail -n 18 /tmp/release-check.log
+
+          if ! npm run package > /tmp/release-package.log 2>&1; then
+            echo "Release package validation failed. Tail follows:"
+            tail -n 45 /tmp/release-package.log
+            exit 1
+          fi
+          cat /tmp/release-package.log
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
