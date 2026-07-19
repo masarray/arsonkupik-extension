@@ -1,18 +1,32 @@
 import { createLatestPatchQueue } from './latest-patch-queue.js';
 
-export function sendMessage(message) {
+const DEFAULT_MESSAGE_TIMEOUT_MS = 12000;
+
+export function sendMessage(message, { timeoutMs = DEFAULT_MESSAGE_TIMEOUT_MS } = {}) {
   return new Promise((resolve, reject) => {
+    let settled = false;
+    const finish = (callback, value) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeoutId);
+      callback(value);
+    };
+    const timeoutId = setTimeout(() => {
+      const command = message?.type ? ` ${message.type}` : '';
+      finish(reject, new Error(`Extension service worker did not respond to${command}. Reload the extension and try again.`));
+    }, Math.max(500, Number(timeoutMs) || DEFAULT_MESSAGE_TIMEOUT_MS));
+
     try {
       chrome.runtime.sendMessage(message, (response) => {
         const lastError = chrome.runtime.lastError;
         if (lastError) {
-          reject(new Error(lastError.message));
+          finish(reject, new Error(lastError.message));
           return;
         }
-        resolve(response);
+        finish(resolve, response);
       });
     } catch (error) {
-      reject(error);
+      finish(reject, error);
     }
   });
 }
@@ -34,7 +48,7 @@ export function flushEngineStateUpdates() {
 
 export async function getEngineState() {
   await flushEngineStateUpdates();
-  const response = await sendMessage({ target: 'background', type: 'GET_STATE' });
+  const response = await sendMessage({ target: 'background', type: 'GET_STATE' }, { timeoutMs: 4000 });
   return assertOk(response, 'Unable to read extension state.').state;
 }
 
