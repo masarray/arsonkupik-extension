@@ -4,6 +4,19 @@ All notable project changes are documented here. The format follows Keep a Chang
 
 ## [Unreleased]
 
+## [0.3.112] - 2026-07-22
+
+### Fixed
+
+- Removed the global live-localization MutationObserver that reprocessed Studio graphs, knobs, meters, SVG nodes, and frequently changing status attributes.
+- Made Popup and Studio runtime imports independent from localization startup so a language-catalog failure can no longer block the extension UI.
+- Added visible startup watchdogs that verify real preset, graph, and control construction and provide a reload action instead of leaving a silent half-rendered shell.
+
+### Changed
+
+- Localization now updates only explicitly annotated `data-i18n` text and attributes once per page load.
+- Added regression checks that reject blocking localization or reintroduction of a whole-document MutationObserver.
+
 ## [0.3.111] - 2026-07-19
 
 ### Added
@@ -69,7 +82,6 @@ All notable project changes are documented here. The format follows Keep a Chang
 
 - Restored the missing `createSilentMeters()` helper in the offscreen audio engine, preventing startup from failing before tab capture begins.
 - Restored the complete Quick Preset selector CSS block so the popup dropdown uses the intended full-width premium dark styling.
-
 
 ### Added
 
@@ -164,7 +176,6 @@ All notable project changes are documented here. The format follows Keep a Chang
 - Privacy and Chrome Web Store disclosures now explain the optional external support page.
 - Project website navigation and README now distinguish technical support from voluntary development support.
 
-
 ## [0.3.101] - 2026-07-15
 
 ### Added
@@ -200,7 +211,8 @@ All notable project changes are documented here. The format follows Keep a Chang
 - GitHub Pages landing site with English and Indonesian content.
 - SEO metadata, canonical URLs, structured data, sitemap, robots file, and social-sharing image.
 
-[Unreleased]: https://github.com/masarray/arsonkupik-extension/compare/v0.3.111...HEAD
+[Unreleased]: https://github.com/masarray/arsonkupik-extension/compare/v0.3.112...HEAD
+[0.3.112]: https://github.com/masarray/arsonkupik-extension/compare/v0.3.111...v0.3.112
 [0.3.111]: https://github.com/masarray/arsonkupik-extension/compare/v0.3.110...v0.3.111
 [0.3.107]: https://github.com/masarray/arsonkupik-extension/compare/v0.3.106...v0.3.107
 [0.3.106]: https://github.com/masarray/arsonkupik-extension/compare/v0.3.105...v0.3.106

@@ -1,6 +1,6 @@
 {
   "name": "arsonkupik",
-  "version": "0.3.111",
+  "version": "0.3.112",
   "private": true,
   "description": "Privacy-first professional browser audio enhancer built on the Web Audio API.",
   "scripts": {
