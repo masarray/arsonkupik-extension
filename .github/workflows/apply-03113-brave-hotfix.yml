@@ -34,7 +34,9 @@ jobs:
           git clone -q "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" repo
           cd repo
           git checkout -q "$TARGET_BRANCH"
-          python3 - <<'PY'
+
+          if ! grep -q '"version": "0.3.113"' manifest.json; then
+            python3 - <<'PY'
           from pathlib import Path
 
           path = Path('scripts/apply_03113_brave_hotfix.py')
@@ -58,7 +60,11 @@ jobs:
               raise SystemExit('package-lock patch anchor not found')
           path.write_text(text.replace(old, new, 1), encoding='utf-8')
           PY
-          python3 scripts/apply_03113_brave_hotfix.py
+            python3 scripts/apply_03113_brave_hotfix.py
+          else
+            echo "Hotfix source already applied; validating final tree."
+          fi
+
           npm run check
           npm run package
           rm -f scripts/apply_03113_brave_hotfix.py .github/hotfix-03113.trigger
