@@ -1,7 +1,7 @@
 # Privacy Policy
 
-**Effective date:** July 19, 2026  
-**Applies to:** ArSonKuPik 0.3.111 and later builds that reference this policy
+**Effective date:** July 24, 2026  
+**Applies to:** ArSonKuPik 0.3.112 and later builds that reference this policy
 
 ArSonKuPik is designed to process browser-tab audio locally on the user's device. Privacy controls are part of the extension, not only this document.
 
@@ -17,7 +17,7 @@ ArSonKuPik does not upload, record, retain, sell, or share audio content. Audio 
 
 ## Information handled locally
 
-ArSonKuPik may read the active or captured tab's URL and title to identify the tab selected by the user and to show the current source. It derives a normalized hostname, such as `example.com`, when saving a per-site preference.
+ArSonKuPik may read the active or captured tab's URL and title to identify the tab selected by the user and to show the current source. It derives a normalized hostname, such as `example.com`, when saving a per-site enhancement preference.
 
 The following data may be stored in Chrome extension storage in the current browser profile:
 
@@ -27,12 +27,13 @@ The following data may be stored in Chrome extension storage in the current brow
 - The time a site preference was last updated.
 - The accepted privacy-notice version and acceptance time.
 - Active capture state needed to coordinate the service worker and offscreen audio document. Tab identifiers and source titles are cleared from active state when capture stops.
+- A manual `id` or `en` language preference when the user overrides automatic language selection.
 
 ArSonKuPik does not store full browsing history. It does not read or store page text, form contents, passwords, messages, cookies, or account credentials.
 
 ## Data minimization
 
-Per-site records contain only the normalized hostname and the minimum preference data needed to restore the user's choice. ArSonKuPik does not store the page path, query string, tab title, or tab identifier in saved per-site preference records.
+Per-site records contain only the normalized hostname and the minimum preference data needed to restore the user's enhancement choice. ArSonKuPik does not store the page path, query string, tab title, or tab identifier in saved per-site preference records.
 
 ## Permissions
 
@@ -41,9 +42,9 @@ Per-site records contain only the normalized hostname and the minimum preference
 | `activeTab` | Limits user-triggered access to the tab the user currently selects. |
 | `tabCapture` | Obtains audio from the tab the user explicitly chooses to enhance. |
 | `offscreen` | Keeps the local Web Audio processing graph alive after the popup closes. |
-| `storage` | Saves settings, custom presets, consent, and per-site enhancement preferences locally. |
+| `storage` | Saves settings, custom presets, consent, language preference, and per-site enhancement preferences locally. |
 
-ArSonKuPik declares no host permissions and does not request microphone permission. Playback always uses the browser's system-default audio output; no speaker identifier is stored.
+ArSonKuPik declares no host permissions and does not request microphone or location permission. Playback always uses the browser's system-default audio output; no speaker identifier or named output route is stored.
 
 ## Network access and third parties
 
@@ -58,7 +59,7 @@ ArSonKuPik can open an optional public support page after the user explicitly se
 Local configuration remains in the current Chrome profile until the user changes or deletes it. The popup provides two controls:
 
 - **Clear Site Preferences** removes saved per-site enhancement preferences while keeping custom presets and general settings.
-- **Reset All Local Data** stops capture and removes settings, custom presets, site preferences and privacy consent.
+- **Reset All Local Data** stops capture and removes settings, custom presets, site preferences, language preference, and privacy consent.
 
 Uninstalling the extension also removes Chrome-managed extension data according to browser behavior.
 
@@ -78,7 +79,6 @@ Material changes will be documented in the repository and reflected by an update
 
 Use the repository's private security-reporting channel for privacy or security concerns. Do not include sensitive personal or account information in a public issue.
 
-
 ## Language preference
 
-The popup and Studio may store a manual `id` or `en` language preference in `chrome.storage.local`. If no manual choice exists, the extension uses Chrome's UI language. It does not use IP address, GPS, or location permission to choose a language.
+If no manual language choice exists, the extension uses Chrome's UI language. It does not use IP address, GPS, or location permission to choose a language.
