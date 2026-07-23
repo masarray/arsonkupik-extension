@@ -1,6 +1,7 @@
 import { createDefaultState, FACTORY_PRESETS, DEFAULT_MASTER_REVISION, applyPresetToState, normalizeEqBands, normalizeCompressor, normalizeColor, normalizeWidth, normalizeOutput } from '../shared/presets.js';
 import { DEFAULT_PERFORMANCE_MODE, STABILITY_REVISION, normalizePerformanceMode } from '../shared/audio-stability.js';
 import { createStateCommandScheduler } from '../shared/state-command-scheduler.js';
+import { getBackgroundCommandLane } from '../shared/background-command-routing.js';
 
 const OFFSCREEN_URL = 'offscreen.html';
 const STORE_KEYS = {
@@ -48,6 +49,21 @@ function createSilentMeters() {
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function settleBrowserApi(call, fallbackValue = null, timeoutMs = 900) {
+  try {
+    return await Promise.race([
+      Promise.resolve().then(call),
+      sleep(timeoutMs).then(() => fallbackValue)
+    ]);
+  } catch {
+    return fallbackValue;
+  }
+}
+
+function fireAndForgetBrowserApi(call) {
+  Promise.resolve().then(call).catch(() => {});
 }
 
 function isEnhancerAudiblyActive(state = lastState) {
@@ -112,20 +128,26 @@ const stateCommandScheduler = createStateCommandScheduler(
 );
 
 function dispatchBackgroundMessage(message, sender = null) {
-  if (message.type === 'UPDATE_STATE') {
+  const lane = getBackgroundCommandLane(message?.type);
+  if (lane === 'patch') {
     return stateCommandScheduler.enqueuePatch(message.patch || {});
   }
-  if (message.type === 'APPLY_PRESET') {
+  if (lane === 'latest-command') {
     // Rapid selector changes should not march through every obsolete preset.
     // Keep ordering against state patches, but collapse adjacent pending preset
     // requests so every caller receives the result of the newest selection.
     return stateCommandScheduler.enqueueLatestCommand(
       'apply-preset',
-      () => handleBackgroundMessage(message, sender),
-      { debounceMs: 90 }
+      () => handleBackgroundMessage(message, sender)
     );
   }
-  return stateCommandScheduler.enqueueCommand(() => handleBackgroundMessage(message, sender));
+  if (lane === 'state-command') {
+    return stateCommandScheduler.enqueueCommand(() => handleBackgroundMessage(message, sender));
+  }
+  // Read-only and browser-UI commands must never wait behind an unrelated
+  // state mutation. This is critical on Brave, where a tab/session API can
+  // remain pending after the Studio tab has already been created.
+  return handleBackgroundMessage(message, sender);
 }
 
 async function applyOffscreenStateChanged(state) {
@@ -194,7 +216,7 @@ chrome.tabs?.onRemoved?.addListener((tabId) => {
     if (Number(tabId) === Number(studioTabId)) {
       studioTabId = null;
       await safeSendMessage({ target: 'offscreen', type: 'SET_MONITORING_ACTIVE', active: false });
-      await clearStoredStudioTabId();
+      clearStoredStudioTabId();
     }
     await markCaptureInactiveIfMatches(tabId);
   }).catch(() => {});
@@ -428,7 +450,7 @@ async function handleBackgroundMessage(message, sender = null) {
     case 'OPEN_STUDIO':
       return openStudioSingleton();
     case 'REGISTER_STUDIO':
-      if (sender?.tab?.id) await rememberStudioTabId(sender.tab.id);
+      if (sender?.tab?.id) rememberStudioTabId(sender.tab.id);
       return { ok: true };
     case 'APPLY_PRESET':
       return applyPresetCommand(message.preset || await findPresetById(message.presetId));
@@ -505,15 +527,20 @@ async function openStudioSingletonCore() {
   const desiredUrl = chrome.runtime.getURL(path);
   const existing = await findExistingStudioTab();
   if (existing?.id) {
-    await rememberStudioTabId(existing.id);
+    rememberStudioTabId(existing.id);
     await focusStudioTab(existing, desiredUrl, sourceTabId);
     await closeDuplicateStudioTabs(existing.id);
     return { ok: true, reused: true, tabId: existing.id };
   }
 
-  const created = await chrome.tabs.create({ url: desiredUrl, active: true });
-  await rememberStudioTabId(created?.id || null);
-  return { ok: true, reused: false, tabId: studioTabId };
+  const created = await settleBrowserApi(
+    () => chrome.tabs.create({ url: desiredUrl, active: true }),
+    null,
+    2500
+  );
+  if (!created?.id) throw new Error('Brave did not finish creating the Studio tab. Reload the extension and try again.');
+  rememberStudioTabId(created.id);
+  return { ok: true, reused: false, tabId: created.id };
 }
 
 async function focusStudioTab(tab, desiredUrl, sourceTabId) {
@@ -522,9 +549,10 @@ async function focusStudioTab(tab, desiredUrl, sourceTabId) {
   if (!currentUrl || shouldUpdateStudioSourceUrl(currentUrl, sourceTabId)) {
     update.url = desiredUrl;
   }
-  await chrome.tabs.update(tab.id, update);
+  const updated = await settleBrowserApi(() => chrome.tabs.update(tab.id, update), null, 1500);
+  if (!updated) throw new Error('Brave did not finish focusing the Studio tab.');
   if (tab.windowId && chrome.windows?.update) {
-    await chrome.windows.update(tab.windowId, { focused: true }).catch(() => {});
+    fireAndForgetBrowserApi(() => chrome.windows.update(tab.windowId, { focused: true }));
   }
 }
 
@@ -547,19 +575,20 @@ async function findExistingStudioTab() {
   for (const tabId of candidateIds) {
     const tab = await getValidStudioTab(tabId, studioUrl);
     if (tab?.id) {
-      await rememberStudioTabId(tab.id);
+      rememberStudioTabId(tab.id);
       return tab;
     }
   }
 
-  await clearStoredStudioTabId();
+  clearStoredStudioTabId();
   return null;
 }
 
 async function getValidStudioTab(tabId, studioUrl) {
   if (!tabId) return null;
   try {
-    const tab = await chrome.tabs.get(Number(tabId));
+    const tab = await settleBrowserApi(() => chrome.tabs.get(Number(tabId)), null, 700);
+    if (!tab) return null;
     const tabUrl = tab?.pendingUrl || tab?.url || '';
     // When Chrome does not expose tab.url without the tabs permission, a tab id
     // that came from storage.session or runtime.getContexts is still trusted for
@@ -575,7 +604,11 @@ async function findStudioTabIdsFromRuntimeContexts() {
   if (!chrome.runtime.getContexts) return [];
   try {
     const studioUrl = chrome.runtime.getURL('studio.html');
-    const contexts = await chrome.runtime.getContexts({ contextTypes: ['TAB'] });
+    const contexts = await settleBrowserApi(
+      () => chrome.runtime.getContexts({ contextTypes: ['TAB'] }),
+      [],
+      700
+    );
     return (contexts || [])
       .filter((context) => String(context.documentUrl || '').startsWith(studioUrl))
       .map((context) => context.tabId)
@@ -587,7 +620,7 @@ async function findStudioTabIdsFromRuntimeContexts() {
 
 async function findStudioTabIdsByTabQuery(studioUrl) {
   try {
-    const tabs = await chrome.tabs.query({ url: `${studioUrl}*` });
+    const tabs = await settleBrowserApi(() => chrome.tabs.query({ url: `${studioUrl}*` }), [], 700);
     return (tabs || []).map((tab) => tab.id).filter((tabId) => Number.isInteger(tabId) && tabId > 0);
   } catch {
     // URL-scoped tab queries can be unavailable without the tabs permission.
@@ -601,34 +634,38 @@ async function closeDuplicateStudioTabs(keepTabId) {
   ids.delete(Number(keepTabId));
   const duplicateIds = [...ids].filter((tabId) => Number.isInteger(tabId) && tabId > 0);
   if (!duplicateIds.length) return;
-  await chrome.tabs.remove(duplicateIds).catch(() => {});
+  fireAndForgetBrowserApi(() => chrome.tabs.remove(duplicateIds));
 }
 
 async function getStoredStudioTabId() {
-  if (!chrome.storage?.session) return studioTabId;
-  try {
-    const stored = await chrome.storage.session.get(STORE_KEYS.studioTabId);
-    const tabId = Number(stored?.[STORE_KEYS.studioTabId]);
-    return Number.isInteger(tabId) && tabId > 0 ? tabId : studioTabId;
-  } catch {
-    return studioTabId;
-  }
+  if (studioTabId) return studioTabId;
+  if (!chrome.storage?.session) return null;
+  const stored = await settleBrowserApi(
+    () => chrome.storage.session.get(STORE_KEYS.studioTabId),
+    null,
+    450
+  );
+  const tabId = Number(stored?.[STORE_KEYS.studioTabId]);
+  return Number.isInteger(tabId) && tabId > 0 ? tabId : null;
 }
 
-async function rememberStudioTabId(tabId) {
+function rememberStudioTabId(tabId) {
   const id = Number(tabId);
   studioTabId = Number.isInteger(id) && id > 0 ? id : null;
-  if (!chrome.storage?.session) return;
+  if (!chrome.storage?.session) return studioTabId;
   if (studioTabId) {
-    await chrome.storage.session.set({ [STORE_KEYS.studioTabId]: studioTabId }).catch(() => {});
+    fireAndForgetBrowserApi(() => chrome.storage.session.set({ [STORE_KEYS.studioTabId]: studioTabId }));
   } else {
-    await chrome.storage.session.remove(STORE_KEYS.studioTabId).catch(() => {});
+    fireAndForgetBrowserApi(() => chrome.storage.session.remove(STORE_KEYS.studioTabId));
   }
+  return studioTabId;
 }
 
-async function clearStoredStudioTabId() {
+function clearStoredStudioTabId() {
   studioTabId = null;
-  if (chrome.storage?.session) await chrome.storage.session.remove(STORE_KEYS.studioTabId).catch(() => {});
+  if (chrome.storage?.session) {
+    fireAndForgetBrowserApi(() => chrome.storage.session.remove(STORE_KEYS.studioTabId));
+  }
 }
 
 function shouldUpdateStudioSourceUrl(currentUrl, sourceTabId) {

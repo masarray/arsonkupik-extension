@@ -10,7 +10,8 @@ import {
   DEFAULT_COLOR,
   DEFAULT_WIDTH,
   DEFAULT_OUTPUT,
-  PRIMARY_MASTER_PRESET_IDS
+  PRIMARY_MASTER_PRESET_IDS,
+  createDefaultState
 } from '../shared/presets.js';
 import { DEFAULT_PERFORMANCE_MODE, PERFORMANCE_MODE_LABELS, STABILITY_REVISION, nextPerformanceMode, normalizePerformanceMode } from '../shared/audio-stability.js';
 import {
@@ -213,12 +214,30 @@ async function init() {
   window.addEventListener('pagehide', () => setStudioMonitoringActive(false));
   buildSkeleton();
   bindUiEvents();
-  await refreshState();
+  applyFallbackState();
   layout();
+  const refreshed = await refreshState();
+  if (refreshed) layout();
   await setStudioMonitoringActive(!document.hidden);
   startCompLoop();
   startColorLoop();
   requestAnimationFrame(tickSpectrum);
+}
+
+function applyFallbackState() {
+  state = createDefaultState();
+  presets = [...FACTORY_PRESETS];
+  bypassAll = Boolean(state.output?.bypass);
+  loadBandsFromState(state.eq, true);
+  renderChromeState();
+  renderPresetDropdowns();
+  renderCompressorControls();
+  renderColorControls();
+  renderWidthControls();
+  renderOutputControls();
+  drawCompressorCurve();
+  updateRackState();
+  updateMeters(state.meters || {});
 }
 
 function bindUiEvents() {
@@ -391,7 +410,7 @@ async function refreshState(resetHistory = false) {
     console.error(error);
     return null;
   });
-  if (!next) return;
+  if (!next) return false;
   state = {
     ...next,
     eqEnabled: next.eqEnabled !== false,
@@ -413,6 +432,7 @@ async function refreshState(resetHistory = false) {
   drawCompressorCurve();
   updateRackState();
   updateMeters(state.meters || {});
+  return true;
 }
 
 function loadBandsFromState(eqBands, resetHistory = false) {
