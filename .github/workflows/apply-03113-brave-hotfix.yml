@@ -12,6 +12,7 @@ on:
     paths:
       - .github/hotfix-03113.trigger
       - scripts/apply_03113_brave_hotfix.py
+      - scripts/smoke_brave_studio_routing.mjs
       - .github/workflows/apply-03113-brave-hotfix.yml
 
 permissions:
