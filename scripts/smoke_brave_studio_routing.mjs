@@ -19,7 +19,8 @@ for (const command of ['START_ENHANCE', 'STOP_ENHANCE', 'RESET_ALL_LOCAL_DATA', 
 }
 
 assert.match(serviceWorker, /getBackgroundCommandLane/);
-assert.match(serviceWorker, /lane === 'direct'/);
+assert.match(serviceWorker, /Read-only and browser-UI commands must never wait behind/);
+assert.match(serviceWorker, /return handleBackgroundMessage\(message, sender\);/);
 assert.match(serviceWorker, /settleBrowserApi/);
 assert.match(serviceWorker, /fireAndForgetBrowserApi/);
 assert.doesNotMatch(serviceWorker, /await rememberStudioTabId/);
