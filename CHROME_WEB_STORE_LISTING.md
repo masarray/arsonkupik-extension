@@ -1,4 +1,4 @@
-# Chrome Web Store Listing — ArSonKuPik 0.3.111
+# Chrome Web Store Listing — ArSonKuPik 0.3.112
 
 ## Product name
 
@@ -25,7 +25,7 @@ Shape music, video, podcasts, and other audible browser tabs with an interactive
 - Direct playback through the browser and operating system default audio output
 - Master and module presets, A/B comparison, undo/redo, and custom local presets
 - ECO, STABLE, and TURBO processing modes
-- English and Bahasa Indonesia interface with a manual language selector
+- English and Bahasa Indonesia core interface with a manual language selector
 
 ### Privacy-first design
 
@@ -78,3 +78,13 @@ Saves audio settings, custom presets, consent metadata, manual language choice, 
 3. Compressor, harmonic color, and stereo width modules.
 4. Popup start and preset workflow with the language selector.
 5. Privacy statement explaining local processing and no host permissions.
+
+## Mandatory dashboard replacement for the 0.3.112 update
+
+The existing public 0.3.100 listing must not be reused unchanged. Before submitting the update:
+
+- Replace the old short description that mentions **output routing**.
+- Remove every detailed-description claim about selecting or storing an output device or output route.
+- Replace screenshots that show an obsolete output-device selector or an older Studio layout.
+- Confirm the displayed version and release notes describe 0.3.112.
+- Keep the category, support URL, website URL, and privacy-policy URL current.
