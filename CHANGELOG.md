@@ -4,6 +4,18 @@ All notable project changes are documented here. The format follows Keep a Chang
 
 ## [Unreleased]
 
+## [0.3.113] - 2026-07-23
+
+### Fixed
+
+- Routed `OPEN_STUDIO`, `REGISTER_STUDIO`, `GET_STATE`, and other UI/read commands outside the serialized state-mutation queue so a delayed Brave tab or session API cannot deadlock the whole extension.
+- Added bounded Brave-safe tab/context/session calls and made Studio tab-session persistence fire-and-forget.
+- Rendered complete local fallback controls in Popup and Studio before waiting for service-worker state, preventing blank shells during delayed background startup.
+
+### Added
+
+- Regression coverage for direct UI command routing, non-blocking Studio registration, and fallback rendering before `GET_STATE`.
+
 ## [0.3.112] - 2026-07-22
 
 ### Fixed
@@ -211,7 +223,8 @@ All notable project changes are documented here. The format follows Keep a Chang
 - GitHub Pages landing site with English and Indonesian content.
 - SEO metadata, canonical URLs, structured data, sitemap, robots file, and social-sharing image.
 
-[Unreleased]: https://github.com/masarray/arsonkupik-extension/compare/v0.3.112...HEAD
+[Unreleased]: https://github.com/masarray/arsonkupik-extension/compare/v0.3.113...HEAD
+[0.3.113]: https://github.com/masarray/arsonkupik-extension/compare/v0.3.112...v0.3.113
 [0.3.112]: https://github.com/masarray/arsonkupik-extension/compare/v0.3.111...v0.3.112
 [0.3.111]: https://github.com/masarray/arsonkupik-extension/compare/v0.3.110...v0.3.111
 [0.3.107]: https://github.com/masarray/arsonkupik-extension/compare/v0.3.106...v0.3.107

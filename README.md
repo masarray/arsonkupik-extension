@@ -16,7 +16,7 @@ ArSonKuPik is a privacy-first Chrome extension that transforms browser playback 
 
 > Audio stays inside the browser. The extension has no host permissions, analytics, telemetry, account system, or cloud audio upload.
 
-**Current stable release: 0.3.112.**
+**Current stable release: 0.3.113.**
 
 ## Highlights
 

@@ -1,4 +1,4 @@
-import { FACTORY_PRESETS, PRIMARY_MASTER_PRESET_IDS } from '../shared/presets.js';
+import { FACTORY_PRESETS, PRIMARY_MASTER_PRESET_IDS, createDefaultState } from '../shared/presets.js';
 import { getEngineState, startEnhance, stopEnhance, applyPreset, updateEngineState, sendMessage, acceptPrivacyNotice, clearSitePreferences, resetAllLocalData, openPrivacyPolicy, openSupportPage } from '../shared/messaging.js';
 
 const ui = {
@@ -47,7 +47,26 @@ init();
 
 async function init() {
   bindEvents();
+  applyFallbackState();
   await refreshState();
+}
+
+function applyFallbackState() {
+  state = {
+    ...createDefaultState(),
+    currentTabId: null,
+    currentDomain: '',
+    captureDomain: '',
+    isCurrentTabCapture: false,
+    domainEnhanceEnabled: false,
+    privacy: {
+      accepted: false,
+      sitePreferenceCount: 0,
+      customPresetCount: 0
+    }
+  };
+  presets = [...FACTORY_PRESETS];
+  render();
 }
 
 function bindEvents() {
@@ -165,10 +184,11 @@ async function refreshState() {
     setHint(error.message);
     return null;
   });
-  if (!next) return;
+  if (!next) return false;
   state = next;
   presets = next.presets || FACTORY_PRESETS;
   render();
+  return true;
 }
 
 
