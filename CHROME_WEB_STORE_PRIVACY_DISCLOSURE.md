@@ -1,6 +1,6 @@
-# Chrome Web Store Privacy Disclosure
+# Chrome Web Store Privacy Disclosure — ArSonKuPik 0.3.112
 
-This is the release checklist for ArSonKuPik 0.3.111. Keep the dashboard, public policy, listing, manifest, and shipped runtime consistent.
+Keep the Developer Dashboard, public policy, listing, manifest, screenshots, and shipped runtime consistent.
 
 ## Single purpose
 
@@ -16,9 +16,9 @@ The selected tab's audio is transiently processed on the user's device after the
 
 ### Web history / browsing activity
 
-**Declare handling: Yes, limited to the active or captured tab metadata required for functionality.**
+**Declare handling: Yes, limited to active or captured tab metadata required for functionality.**
 
-ArSonKuPik may read the selected tab URL and title to identify the source and can derive a normalized hostname for an optional per-site preference. It does not collect a browsing-history feed, page paths, query strings, or unrelated-tab records. Saved preferences remain local.
+ArSonKuPik may read the selected tab URL and title to identify the source and can derive a normalized hostname for an optional per-site enhancement preference. It does not collect a browsing-history feed, page paths, query strings, or unrelated-tab records. Saved preferences remain local.
 
 ### Authentication, financial, health, location, personal communications, and personally identifiable information
 
@@ -26,7 +26,7 @@ ArSonKuPik may read the selected tab URL and title to identify the source and ca
 
 ### Device and configuration data
 
-Settings, custom presets, consent metadata, manual language choice, active-capture coordination state, and normalized per-site preferences may be stored locally. The extension does not read or store speaker identifiers or named output routes.
+Settings, custom presets, consent metadata, manual language choice, active-capture coordination state, and normalized per-site enhancement preferences may be stored locally. The extension does not read or store speaker identifiers or named output routes.
 
 ## Permitted purposes
 
@@ -62,6 +62,16 @@ Before first use, the popup states that tab audio is processed only on the devic
 - **Clear Site Preferences** removes saved per-site enhancement preferences.
 - **Reset All Local Data** stops capture and removes extension-local settings, presets, language choice, site preferences, and consent.
 
+## Mandatory dashboard corrections for the 0.3.112 update
+
+The currently published item discloses Website content but does not visibly list limited browsing activity. Before submitting 0.3.112:
+
+1. Keep **Website content** selected.
+2. Add **Web history / browsing activity** for active/captured tab URL, title, and normalized hostname handling.
+3. Select only **App functionality** and **User customization** as purposes.
+4. Confirm all sale, advertising, unrelated-use, and creditworthiness certifications remain negative.
+5. Confirm the privacy-policy URL points to the live 0.3.112-aligned policy.
+
 ## Submission verification
 
 1. Run `npm run release:check`.
@@ -71,4 +81,5 @@ Before first use, the popup states that tab audio is processed only on the devic
 5. Test consent, Enhance, presets, Studio, language switching, deletion controls, and restart behavior in a new Chrome profile.
 6. Confirm the public privacy-policy URL is live and matches this build.
 7. Confirm the listing does not mention output-device routing or stored output routes.
-8. In Privacy Practices, declare Website content and limited browsing activity as described above.
+8. Confirm screenshots do not show an obsolete output-device selector or an older Studio layout.
+9. In Privacy Practices, declare Website content and limited browsing activity as described above.

@@ -15,26 +15,27 @@
   <a class="skip-link" href="#main">Skip to content</a>
   <header class="site-header"><div class="container nav"><a class="brand" href="./"><img src="assets/icon-192.png" alt="" width="34" height="34"><span class="brand-word"><span class="arson">ArSon</span><span class="kupik">KuPik</span></span></a><button class="menu-button" type="button" data-menu-button aria-label="Open navigation" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button><nav class="nav-links" data-menu><a href="./">Home</a><a href="support.html">Support</a><a href="https://github.com/masarray/arsonkupik-extension">GitHub</a></nav></div></header>
   <main id="main">
-    <section class="doc-hero"><div class="container"><p class="eyebrow">Policy · Effective July 19, 2026</p><h1>Privacy is part of the signal path.</h1><p>ArSonKuPik processes selected browser-tab audio locally and is intentionally designed without analytics, advertising, accounts, or cloud audio transport.</p></div></section>
+    <section class="doc-hero"><div class="container"><p class="eyebrow">Policy · Effective July 24, 2026</p><h1>Privacy is part of the signal path.</h1><p>ArSonKuPik 0.3.112 processes selected browser-tab audio locally and is intentionally designed without analytics, advertising, accounts, or cloud audio transport.</p></div></section>
     <div class="container doc-layout">
       <article class="prose">
         <h2 id="summary">Summary</h2>
         <p>ArSonKuPik processes selected browser-tab audio locally. It does not upload, record, retain, sell, or share audio. Before enhancement can start, the extension presents a local-processing notice and requires an explicit user action.</p>
 
         <h2 id="consent">First-use notice</h2>
-        <p>The popup explains that tab audio remains on the device and that a normalized site hostname and selected playback preference may be stored locally when per-site preferences are used. The accepted notice version and acceptance time are stored locally so a materially changed notice can require renewed consent.</p>
+        <p>The popup explains that tab audio remains on the device and that a normalized site hostname and per-site enhancement preference may be stored locally when that feature is used. The accepted notice version and acceptance time are stored locally so a materially changed notice can require renewed consent.</p>
 
         <h2 id="audio">Audio processing</h2>
-        <p>Audio capture starts only after the user chooses a normal HTTP or HTTPS tab and starts enhancement. Chrome supplies that tab's audio stream to an offscreen extension document, where the Web Audio API applies equalization, dynamics, harmonic color, stereo shaping, gain, limiting, metering, and supported system-default playback.</p>
+        <p>Audio capture starts only after the user chooses a normal HTTP or HTTPS tab and starts enhancement. Chrome supplies that tab's audio stream to an offscreen extension document, where the Web Audio API applies equalization, dynamics, harmonic color, stereo shaping, gain, limiting, metering, and system-default playback.</p>
         <p>Audio is not sent to a server and is not used for advertising, profiling, analytics, model training, or any unrelated purpose.</p>
 
         <h2 id="local-data">Information handled locally</h2>
-        <p>ArSonKuPik may read the active or captured tab's URL and title to identify the user-selected source. It derives only the normalized hostname, such as <code>example.com</code>, for a saved per-site preference.</p>
+        <p>ArSonKuPik may read the active or captured tab's URL and title to identify the user-selected source. It derives only the normalized hostname, such as <code>example.com</code>, for a saved per-site enhancement preference.</p>
         <ul>
           <li>Audio-engine settings and selected preset.</li>
           <li>Custom preset names and values.</li>
           <li>A normalized hostname associated with an optional per-site enhancement preference.</li>
           <li>Preference update times and privacy-consent metadata.</li>
+          <li>A manual English or Bahasa Indonesia language preference.</li>
           <li>Active capture state needed to coordinate the service worker and offscreen document.</li>
         </ul>
         <p>The extension does not store page paths, query strings, saved per-site tab titles, saved per-site tab identifiers, page content, forms, passwords, messages, cookies, or account credentials.</p>
@@ -46,10 +47,10 @@
             <tr><td><code>activeTab</code></td><td>Limits user-triggered access to the tab the user currently selects.</td></tr>
             <tr><td><code>tabCapture</code></td><td>Obtains audio from the tab the user explicitly chooses to enhance.</td></tr>
             <tr><td><code>offscreen</code></td><td>Hosts the continuous local Web Audio graph after the popup closes.</td></tr>
-            <tr><td><code>storage</code></td><td>Saves settings, presets, consent, language choice, and per-site preferences locally.</td></tr>
+            <tr><td><code>storage</code></td><td>Saves settings, presets, consent, language choice, and per-site enhancement preferences locally.</td></tr>
           </tbody>
         </table>
-        <p>ArSonKuPik declares no host permissions and does not request microphone or location access. Playback uses the browser and operating system default audio output.</p>
+        <p>ArSonKuPik declares no host permissions and does not request microphone or location access. Playback uses the browser and operating system default audio output; no speaker identifier or named output route is stored.</p>
 
         <h2 id="network">Network and third parties</h2>
         <p>The extension runtime has no remote application code, analytics SDK, advertising SDK, telemetry endpoint, cloud synchronization, account system, or ArSonKuPik web-service request. Links opened by the user are normal browser navigation and are subject to the destination's own policy.</p>
@@ -60,7 +61,7 @@
         <h2 id="deletion">Retention and deletion</h2>
         <p>Local configuration remains in the current Chrome profile until the user changes or deletes it. The popup provides two direct controls:</p>
         <ul>
-          <li><strong>Clear Site Preferences</strong> removes per-site enhancement preferences and per-domain preferences while keeping custom presets and general settings.</li>
+          <li><strong>Clear Site Preferences</strong> removes per-site enhancement preferences while keeping custom presets and general settings.</li>
           <li><strong>Reset All Local Data</strong> stops capture and removes settings, custom presets, site preferences, language preference, and privacy consent.</li>
         </ul>
         <p>Uninstalling the extension also removes Chrome-managed extension data according to browser behavior.</p>
