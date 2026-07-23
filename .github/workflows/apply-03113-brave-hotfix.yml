@@ -6,6 +6,13 @@ on:
       - agent/fix-brave-studio-deadlock-0.3.113
     paths:
       - .github/hotfix-03113.trigger
+  pull_request:
+    branches:
+      - main
+    paths:
+      - .github/hotfix-03113.trigger
+      - scripts/apply_03113_brave_hotfix.py
+      - .github/workflows/apply-03113-brave-hotfix.yml
 
 permissions:
   contents: write
