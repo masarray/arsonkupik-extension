@@ -80,5 +80,6 @@ The currently published item discloses Website content but does not visibly list
 4. Confirm `_locales/en/messages.json` and `_locales/id/messages.json` are inside the ZIP.
 5. Test consent, Enhance, presets, Studio, language switching, deletion controls, and restart behavior in a new Chrome profile.
 6. Confirm the public privacy-policy URL is live and matches this build.
-7. Confirm the listing and screenshots do not mention output-device routing or stored output routes.
-8. In Privacy Practices, declare Website content and limited browsing activity as described above.
+7. Confirm the listing does not mention output-device routing or stored output routes.
+8. Confirm screenshots do not show an obsolete output-device selector or an older Studio layout.
+9. In Privacy Practices, declare Website content and limited browsing activity as described above.
