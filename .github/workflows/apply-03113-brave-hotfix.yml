@@ -33,6 +33,30 @@ jobs:
           git clone -q "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" repo
           cd repo
           git checkout -q "$TARGET_BRANCH"
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path('scripts/apply_03113_brave_hotfix.py')
+          text = path.read_text(encoding='utf-8')
+          old = '''lock_path = Path("package-lock.json")
+          lock = json.loads(lock_path.read_text(encoding="utf-8"))
+          lock["version"] = "0.3.113"
+          if "" in lock.get("packages", {}):
+              lock["packages"][""]["version"] = "0.3.113"
+          lock_path.write_text(json.dumps(lock, indent=2, ensure_ascii=False) + "\\n", encoding="utf-8")
+          '''
+          new = '''lock_path = Path("package-lock.json")
+          if lock_path.exists():
+              lock = json.loads(lock_path.read_text(encoding="utf-8"))
+              lock["version"] = "0.3.113"
+              if "" in lock.get("packages", {}):
+                  lock["packages"][""]["version"] = "0.3.113"
+              lock_path.write_text(json.dumps(lock, indent=2, ensure_ascii=False) + "\\n", encoding="utf-8")
+          '''
+          if old not in text:
+              raise SystemExit('package-lock patch anchor not found')
+          path.write_text(text.replace(old, new, 1), encoding='utf-8')
+          PY
           python3 scripts/apply_03113_brave_hotfix.py
           npm run check
           npm run package
